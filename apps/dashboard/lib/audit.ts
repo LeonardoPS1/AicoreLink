@@ -1,10 +1,11 @@
 import { db } from "./db";
+import type { Prisma } from "@prisma/client";
 
 interface AuditEntry {
   tenantId?: string | null;
   actorId?: string | null;
   action: string;
-  meta?: Record<string, unknown>;
+  meta?: Prisma.InputJsonValue;
 }
 
 /**
