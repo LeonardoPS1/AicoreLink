@@ -1,11 +1,11 @@
 # --- Etapa 1: dependencias ---
-FROM node:20-alpine AS deps
+FROM node:20-alpine3.19 AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # --- Etapa 2: build ---
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.19 AS builder
 WORKDIR /app
 RUN apk add --no-cache openssl1.1-compat
 COPY --from=deps /app/node_modules ./node_modules
@@ -15,7 +15,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # --- Etapa 3: runtime ---
-FROM node:20-alpine AS runner
+FROM node:20-alpine3.19 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
