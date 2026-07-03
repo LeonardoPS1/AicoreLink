@@ -1,25 +1,25 @@
 # --- Etapa 1: dependencias ---
-FROM node:20-alpine3.19 AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # --- Etapa 2: build ---
-FROM node:20-alpine3.19 AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
-RUN apk add --no-cache openssl1.1-compat
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Prisma necesita generar el client antes del build de Next.js
+# Prisma 5.x detecta y usa automaticamente el motor compatible con OpenSSL 3
+# de Alpine moderno - NO se necesita instalar openssl1.1-compat (ese paquete
+# fue removido de los repos de Alpine 3.17+ y rompe el build si se agrega).
 RUN npx prisma generate
 RUN npm run build
 
 # --- Etapa 3: runtime ---
-FROM node:20-alpine3.19 AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN apk add --no-cache openssl1.1-compat
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
