@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { asAdmin } from "@/lib/tenant-context";
 
+// Esta pagina consulta la base de datos por tenant en cada request -nunca
+// debe pre-renderizarse como pagina estatica en build time (ademas de que
+// durante el build de Docker no hay conexion real a la base de datos).
+export const dynamic = "force-dynamic";
+
 export default async function TenantsPage() {
   const tenants = await asAdmin((tx) =>
     tx.tenant.findMany({ orderBy: { createdAt: "desc" } })

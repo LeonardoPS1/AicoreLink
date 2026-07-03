@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { getTenantChannels } from "@/lib/entitlements";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const tenantId = (session?.user as any)?.tenantId as string;
