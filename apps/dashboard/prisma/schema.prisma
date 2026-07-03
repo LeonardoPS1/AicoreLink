@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AICORELINK_DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("basico")
+  status    String   @default("activo")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users       TenantUser[]
+  channels    TenantChannel[]
+  usage       TenantUsage[]
+  credentials ChannelCredential[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?  @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenantLinks TenantUser[]
+
+  @@map("users")
+}
+
+model TenantUser {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  userId   String @map("user_id")
+  role     String @default("cliente") // cliente | admin_clinica | dev_aicore
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([tenantId, userId])
+  @@map("tenant_users")
+}
+
+model TenantChannel {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  channel     String // whatsapp_text | whatsapp_voice | email | social
+  enabled     Boolean   @default(false)
+  config      Json      @default("{}")
+  activatedAt DateTime? @map("activated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, channel])
+  @@map("tenant_channels")
+}
+
+model ChannelCredential {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  channel         String
+  provider        String
+  externalId      String?  @map("external_id")
+  encryptedSecret String   @map("encrypted_secret")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("channel_credentials")
+}
+
+model TenantUsage {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  channel      String
+  period       DateTime
+  messagesIn   Int      @default(0) @map("messages_in")
+  messagesOut  Int      @default(0) @map("messages_out")
+  tokensUsed   Int      @default(0) @map("tokens_used")
+  costEstimate Decimal  @default(0) @map("cost_estimate")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, channel, period])
+  @@map("tenant_usage")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String?  @map("tenant_id")
+  actorId   String?  @map("actor_id")
+  action    String
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_log")
+}

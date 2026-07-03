@@ -1,0 +1,34 @@
+# Referencia. Si despliegas cada servicio como "Application" en Dokploy
+# (recomendado para la Fase 0-1), este archivo es solo documentacion de las
+# variables y labels equivalentes. Util si mas adelante prefieres migrar a
+# un stack Compose unico.
+version: "3.8"
+
+services:
+  aicorelink-dashboard:
+    build:
+      context: ../apps/dashboard
+      dockerfile: Dockerfile
+    environment:
+      - AICORELINK_DATABASE_URL=${AICORELINK_DATABASE_URL}
+      - AICORELINK_NEXTAUTH_SECRET=${AICORELINK_NEXTAUTH_SECRET}
+      - AICORELINK_NEXTAUTH_URL=https://link.aicorebots.com
+      - NEXTAUTH_URL=https://link.aicorebots.com
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - traefik-public
+      - internal
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.aicorelink.rule=Host(`link.aicorebots.com`)
+      - traefik.http.routers.aicorelink.tls.certresolver=letsencrypt
+      - traefik.http.services.aicorelink.loadbalancer.server.port=3000
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    external: true
