@@ -2,6 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 
+// Aplica a TODAS las paginas dentro de (cliente)/*: mismo motivo que en el
+// layout de (admin) - datos por tenant, nunca estaticos.
+export const dynamic = "force-dynamic";
+
 export default async function ClienteLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 

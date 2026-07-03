@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+// Aplica a TODAS las paginas dentro de (admin)/*: nunca pre-renderizar en
+// build time, porque consultan datos por tenant en cada request. Ademas,
+// durante el build de Docker no hay conexion real a la base de datos.
+export const dynamic = "force-dynamic";
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
