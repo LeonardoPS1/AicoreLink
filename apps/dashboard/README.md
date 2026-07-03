@@ -61,7 +61,7 @@ Para crear una clínica de prueba (rol `cliente`), repite el mismo patrón con
    que Nixpacks para un proyecto con Prisma.
 4. Variables de entorno: copia el contenido de `.env.example` completado con
    valores reales en la sección **Environment** del servicio.
-5. **Domain**: `link.aicorebots.com`, HTTPS activado.
+5. **Domain**: `AicoreLink.aicorebots.com`, HTTPS activado.
 6. Tras el primer deploy exitoso, corre las migraciones contra la base de
    producción (`npx prisma migrate deploy` desde una terminal con acceso a la
    `AICORELINK_DATABASE_URL` de producción, o vía el botón "Open Terminal" del
@@ -73,4 +73,4 @@ Para crear una clínica de prueba (rol `cliente`), repite el mismo patrón con
 - Un usuario de un tenant no puede ver ni modificar datos de otro tenant.
 - Las políticas RLS están activas y verificadas.
 - El panel admin puede activar/desactivar canales y el cambio queda en `audit_log`.
-- El servicio responde correctamente en `https://link.aicorebots.com`.
+- El servicio responde correctamente en `https://AicoreLink.aicorebots.com`.

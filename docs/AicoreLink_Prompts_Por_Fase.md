@@ -24,7 +24,7 @@ por tenant.
 
 Prefijo de variables de entorno del proyecto: AICORELINK_
 Prefijo de nombres de servicio Docker: aicorelink-*
-Dominio del dashboard: link.aicorebots.com (un solo dominio, el tenant se resuelve por sesión de login, NO
+Dominio del dashboard: AicoreLink.aicorebots.com (un solo dominio, el tenant se resuelve por sesión de login, NO
 por subdominio).
 ```
 
@@ -97,7 +97,7 @@ services:
     environment:
       - AICORELINK_DATABASE_URL=${AICORELINK_DATABASE_URL}
       - AICORELINK_NEXTAUTH_SECRET=${AICORELINK_NEXTAUTH_SECRET}
-      - AICORELINK_NEXTAUTH_URL=https://link.aicorebots.com
+      - AICORELINK_NEXTAUTH_URL=https://AicoreLink.aicorebots.com
     deploy:
       replicas: 2
       restart_policy:
@@ -107,7 +107,7 @@ services:
       - internal
     labels:
       - traefik.enable=true
-      - traefik.http.routers.aicorelink.rule=Host(`link.aicorebots.com`)
+      - traefik.http.routers.aicorelink.rule=Host(`AicoreLink.aicorebots.com`)
       - traefik.http.routers.aicorelink.tls.certresolver=letsencrypt
       - traefik.http.services.aicorelink.loadbalancer.server.port=3000
 
@@ -122,7 +122,7 @@ networks:
 ```
 AICORELINK_DATABASE_URL=postgresql://user:pass@host:5432/aicorelink
 AICORELINK_NEXTAUTH_SECRET=
-AICORELINK_NEXTAUTH_URL=https://link.aicorebots.com
+AICORELINK_NEXTAUTH_URL=https://AicoreLink.aicorebots.com
 AICORELINK_ENCRYPTION_KEY=          # usada por lib de encriptación de channel_credentials en fases futuras
 ```
 
@@ -318,7 +318,7 @@ paralelo o en una fase posterior sin bloquear el resto.
 - [ ] El panel admin puede activar/desactivar un canal para un tenant y el cambio queda registrado en
       `audit_log`.
 - [ ] El servicio `aicorelink-dashboard` levanta correctamente en Docker Swarm vía Dokploy y responde en
-      `https://link.aicorebots.com`.
+      `https://AicoreLink.aicorebots.com`.
 
 ---
 

@@ -12,8 +12,8 @@ services:
     environment:
       - AICORELINK_DATABASE_URL=${AICORELINK_DATABASE_URL}
       - AICORELINK_NEXTAUTH_SECRET=${AICORELINK_NEXTAUTH_SECRET}
-      - AICORELINK_NEXTAUTH_URL=https://link.aicorebots.com
-      - NEXTAUTH_URL=https://link.aicorebots.com
+      - AICORELINK_NEXTAUTH_URL=https://AicoreLink.aicorebots.com
+      - NEXTAUTH_URL=https://AicoreLink.aicorebots.com
     deploy:
       replicas: 2
       restart_policy:
@@ -23,7 +23,7 @@ services:
       - internal
     labels:
       - traefik.enable=true
-      - traefik.http.routers.aicorelink.rule=Host(`link.aicorebots.com`)
+      - traefik.http.routers.aicorelink.rule=Host(`AicoreLink.aicorebots.com`)
       - traefik.http.routers.aicorelink.tls.certresolver=letsencrypt
       - traefik.http.services.aicorelink.loadbalancer.server.port=3000
 
