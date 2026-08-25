@@ -28,25 +28,30 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-          include: { tenantLinks: { include: { tenant: true } } },
-        });
+        try {
+          const user = await db.user.findUnique({
+            where: { email: credentials.email },
+            include: { tenantLinks: { include: { tenant: true } } },
+          });
 
-        if (!user || !user.passwordHash) return null;
+          if (!user || !user.passwordHash) return null;
 
-        const validPassword = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!validPassword) return null;
+          const validPassword = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!validPassword) return null;
 
-        const primaryLink = user.tenantLinks[0];
-        if (!primaryLink) return null; // usuario sin tenant asociado: no puede entrar
+          const primaryLink = user.tenantLinks[0];
+          if (!primaryLink) return null; // usuario sin tenant asociado: no puede entrar
 
-        return {
-          id: user.id,
-          email: user.email,
-          tenantId: primaryLink.tenantId,
-          role: primaryLink.role,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            tenantId: primaryLink.tenantId,
+            role: primaryLink.role,
+          };
+        } catch (error) {
+          console.error("[auth] Database error during authorize:", error);
+          return null;
+        }
       },
     }),
   ],

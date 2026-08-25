@@ -1,5 +1,8 @@
+import { PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { withTenant, asAdmin } from "./tenant-context";
 import { logAudit } from "./audit";
+import { db } from "./db";
 
 export type Channel = "whatsapp_text" | "whatsapp_voice" | "email" | "social";
 
@@ -16,10 +19,12 @@ export async function hasFeature(tenantId: string, channel: Channel): Promise<bo
   return !!row;
 }
 
-export async function getTenantChannels(tenantId: string) {
-  return withTenant(tenantId, (tx) =>
-    tx.tenantChannel.findMany({ where: { tenantId } })
-  );
+export async function getTenantChannels(
+  tenantId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const client = tx ?? db;
+  return client.tenantChannel.findMany({ where: { tenantId } });
 }
 
 /**

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTenantChannels } from "@/lib/entitlements";
+import { withTenant } from "@/lib/tenant-context";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +10,11 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const tenantId = (session?.user as any)?.tenantId as string;
 
-  const tenant = await db.tenant.findUnique({ where: { id: tenantId } });
-  const channels = await getTenantChannels(tenantId);
+  const { tenant, channels } = await withTenant(tenantId, async (tx) => {
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId } });
+    const channels = await getTenantChannels(tenantId, tx);
+    return { tenant, channels };
+  });
 
   return (
     <div>
@@ -19,7 +23,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(["whatsapp_text", "whatsapp_voice", "email", "social"] as const).map((ch) => {
-          const found = channels.find((c) => c.channel === ch);
+          const found = channels.find((c: { channel: string; enabled: boolean }) => c.channel === ch);
           const enabled = found?.enabled ?? false;
           return (
             <div key={ch} className="rounded-lg border border-slate-200 bg-white p-4">
