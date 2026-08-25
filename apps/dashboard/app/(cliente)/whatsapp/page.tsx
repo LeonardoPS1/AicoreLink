@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { signOut } from "next-auth/react";
 
 interface TenantWhatsAppConfig {
   tone: "formal" | "amable" | "empatico";
@@ -14,6 +13,8 @@ interface TenantWhatsAppConfig {
   escalationKeywords: string[];
   escalationNotify: "email" | "telegram" | "none";
   escalationMessage: string;
+  voiceReplyEnabled: boolean;
+  voiceId: string;
 }
 
 interface ChannelStatus {
@@ -33,22 +34,29 @@ export default function WhatsappPage() {
     escalationKeywords: ["humano", "persona", "agente", "reclamo", "queja"],
     escalationNotify: "none",
     escalationMessage: "Un agente humano se pondra en contacto contigo en breve.",
+    voiceReplyEnabled: false,
+    voiceId: "21m00Tcm4TlvDq8ikWAM",
   });
-  const [enabled, setEnabled] = useState(false);
+  const [textEnabled, setTextEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"general" | "ia" | "escalado">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "ia" | "escalado" | "voz">("general");
 
   async function loadConfig() {
     try {
       const res = await fetch("/api/tenants/channels");
       if (!res.ok) throw new Error("No se pudo cargar la configuracion");
       const data = await res.json();
-      const whatsapp = data.find((c: ChannelStatus) => c.channel === "whatsapp_text");
-      if (whatsapp) {
-        setEnabled(whatsapp.enabled);
-        setConfig(whatsapp.config);
+      const whatsappText = data.find((c: ChannelStatus) => c.channel === "whatsapp_text");
+      const whatsappVoice = data.find((c: ChannelStatus) => c.channel === "whatsapp_voice");
+      if (whatsappText) {
+        setTextEnabled(whatsappText.enabled);
+        setConfig(whatsappText.config);
+      }
+      if (whatsappVoice) {
+        setVoiceEnabled(whatsappVoice.enabled);
       }
     } catch (error) {
       console.error(error);
@@ -67,7 +75,7 @@ export default function WhatsappPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           channel: "whatsapp_text",
-          enabled,
+          enabled: textEnabled,
           config,
         }),
       });
@@ -75,6 +83,31 @@ export default function WhatsappPage() {
       setMessage({ type: "success", text: "Configuracion guardada correctamente" });
     } catch (error) {
       setMessage({ type: "error", text: "Error al guardar configuracion" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveVoiceConfig() {
+    setSaving(true);
+    setMessage(null);
+    try {
+      if (voiceEnabled && !textEnabled) {
+        throw new Error("No se puede activar WhatsApp Voz sin WhatsApp Texto activo");
+      }
+      const res = await fetch("/api/tenants/channels", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel: "whatsapp_voice",
+          enabled: voiceEnabled,
+          config,
+        }),
+      });
+      if (!res.ok) throw new Error("Error al guardar");
+      setMessage({ type: "success", text: "Configuracion de voz guardada correctamente" });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Error al guardar configuracion" });
     } finally {
       setSaving(false);
     }
@@ -102,18 +135,13 @@ export default function WhatsappPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-navy">WhatsApp Texto</h1>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
-            className="w-5 h-5 text-navy border-slate-300 rounded focus:ring-navy"
-          />
-          <span className="text-sm font-medium text-slate-700">
-            {enabled ? "Activo" : "Inactivo"}
-          </span>
-        </label>
+        <h1 className="text-2xl font-bold text-navy">WhatsApp</h1>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 text-sm font-medium transition-colors"
+        >
+          Cerrar sesion
+        </button>
       </div>
 
       {message && (
@@ -160,6 +188,16 @@ export default function WhatsappPage() {
               }`}
             >
               Escalado
+            </button>
+            <button
+              onClick={() => setActiveTab("voz")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "voz"
+                  ? "bg-navy text-white"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Voz
             </button>
           </nav>
         </div>
@@ -329,11 +367,80 @@ export default function WhatsappPage() {
               </div>
             </div>
           )}
+
+          {activeTab === "voz" && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="voiceEnabled"
+                  checked={voiceEnabled}
+                  onChange={(e) => setVoiceEnabled(e.target.checked)}
+                  disabled={!textEnabled}
+                  className="w-5 h-5 text-navy border-slate-300 rounded focus:ring-navy disabled:opacity-50"
+                />
+                <label htmlFor="voiceEnabled" className="text-sm text-slate-700">
+                  {textEnabled ? "Activar WhatsApp Voz" : "Requiere WhatsApp Texto activo"}
+                </label>
+              </div>
+
+              {!textEnabled && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                  Debes activar primero el canal "WhatsApp Texto" para poder usar WhatsApp Voz.
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="voiceReplyEnabled"
+                  checked={config.voiceReplyEnabled}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, voiceReplyEnabled: e.target.checked }))
+                  }
+                  disabled={!voiceEnabled}
+                  className="w-5 h-5 text-navy border-slate-300 rounded focus:ring-navy disabled:opacity-50"
+                />
+                <label htmlFor="voiceReplyEnabled" className="text-sm text-slate-700">
+                  Responder en audio (nota de voz)
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Voice ID (ElevenLabs)
+                </label>
+                <input
+                  type="text"
+                  value={config.voiceId}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, voiceId: e.target.value }))
+                  }
+                  disabled={!voiceEnabled}
+                  className="w-full max-w-md px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent disabled:opacity-50"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  ID de la voz de ElevenLabs. Default: Rachel (21m00Tcm4TlvDq8ikWAM)
+                </p>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
+                <p className="font-medium mb-1">Como funciona:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>El paciente envia una nota de voz</li>
+                  <li>Se transcribe automaticamente con Whisper</li>
+                  <li>Se procesa igual que un mensaje de texto (pipeline IA existente)</li>
+                  <li>Si "Responder en audio" esta activo, la respuesta se genera con ElevenLabs y se envia como nota de voz</li>
+                  <li>Si esta desactivado, la respuesta llega en texto</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-slate-200 p-6 flex justify-end">
           <button
-            onClick={saveConfig}
+            onClick={activeTab === "voz" ? saveVoiceConfig : saveConfig}
             disabled={saving}
             className="px-6 py-2 bg-navy text-white rounded-md hover:bg-navy/90 disabled:opacity-50 transition-colors"
           >

@@ -136,6 +136,9 @@ model Message {
   aiGenerated    Boolean  @default(false) @map("ai_generated")
   tokensUsed     Int?     @map("tokens_used")
   createdAt      DateTime @default(now()) @map("created_at")
+  mediaType      String?  @default("text") @map("media_type")
+  audioUrl       String?  @map("audio_url")
+  transcript     String?
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
 

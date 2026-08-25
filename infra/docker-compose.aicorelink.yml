@@ -27,6 +27,19 @@ services:
       - traefik.http.routers.aicorelink.tls.certresolver=letsencrypt
       - traefik.http.services.aicorelink.loadbalancer.server.port=3000
 
+  aicorelink-whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    environment:
+      - ASR_MODEL=base
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+    networks:
+      - internal
+
 networks:
   traefik-public:
     external: true

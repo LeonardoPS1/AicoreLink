@@ -11,6 +11,9 @@ export interface TenantWhatsAppConfig {
   escalationKeywords: string[];
   escalationNotify: "email" | "telegram" | "none";
   escalationMessage: string;
+  // Voz
+  voiceReplyEnabled: boolean;
+  voiceId: string;
 }
 
 export const DEFAULT_WHATSAPP_CONFIG: TenantWhatsAppConfig = {
@@ -23,6 +26,8 @@ export const DEFAULT_WHATSAPP_CONFIG: TenantWhatsAppConfig = {
   escalationKeywords: ["humano", "persona", "agente", "reclamo", "queja"],
   escalationNotify: "none",
   escalationMessage: "Un agente humano se pondra en contacto contigo en breve.",
+  voiceReplyEnabled: false,
+  voiceId: "21m00Tcm4TlvDq8ikWAM",
 };
 
 export function mergeWhatsAppConfig(
