@@ -102,3 +102,13 @@ model AuditLog {
 
   @@map("audit_log")
 }
+
+model CostRate {
+  id        String   @id @default(uuid())
+  provider  String   // openrouter | meta_cloud_api | elevenlabs | whisper
+  unit      String   // token | message | minute
+  rate      Decimal
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("cost_rates")
+}
