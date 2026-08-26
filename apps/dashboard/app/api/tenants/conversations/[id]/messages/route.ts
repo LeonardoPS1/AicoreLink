@@ -16,20 +16,13 @@ export async function GET(
   }
 
   const tenantId = (session?.user as any)?.tenantId;
-  if (!tenantId) {
-    return NextResponse.json({ error: "Sin tenant" }, { status: 400 });
-  }
+  if (!tenantId) return NextResponse.json({ error: "Sin tenant" }, { status: 400 });
+
+  const { id } = params;
 
   const messages = await withTenant(tenantId, async (tx) => {
-    const conv = await tx.conversation.findFirst({
-      where: { id: params.id },
-      select: { id: true },
-    });
-
-    if (!conv) return [];
-
     return tx.message.findMany({
-      where: { conversationId: conv.id },
+      where: { conversationId: id },
       orderBy: { createdAt: "asc" },
     });
   });
