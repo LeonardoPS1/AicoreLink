@@ -20,7 +20,7 @@ async function main() {
   const passwordHash = await hash("dev123456", 12);
   const user = await db.user.upsert({
     where: { email: "dev@aicore.com" },
-    update: {},
+    update: { passwordHash },
     create: {
       email: "dev@aicore.com",
       passwordHash,
