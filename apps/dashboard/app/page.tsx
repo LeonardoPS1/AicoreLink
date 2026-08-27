@@ -14,5 +14,5 @@ export default async function RootPage() {
     redirect("/tenants");
   }
 
-  redirect("/dashboard");
+  redirect("/whatsapp");
 }
