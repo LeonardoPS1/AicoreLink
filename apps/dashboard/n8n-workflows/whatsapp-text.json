@@ -122,7 +122,7 @@
         "method": "POST",
         "jsonParameters": true,
         "options": {},
-        "headerParametersJson": "={\n  \"Authorization\": \"Bearer {{ $env.AICORELINK_OPENROUTER_API_KEY }}\",\n  \"Content-Type\": \"application/json\",\n  \"HTTP-Referer\": \"https://AicoreLink.aicorebots.com\",\n  \"X-Title\": \"AicoreLink\"\n}",
+        "headerParametersJson": "={\n  \"Authorization\": \"Bearer {{ $env.AICORELINK_OPENROUTER_API_KEY }}\",\n  \"Content-Type\": \"application/json\",\n  \"HTTP-Referer\": \"https://aicorelink.aicorebots.com\",\n  \"X-Title\": \"AicoreLink\"\n}",
         "bodyParametersJson": "={\n  \"model\": \"z-ai/glm-4.5-air:free\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres un asistente virtual de una clinica medica.\\nTono: {{ $json.config.tone }}\" + \"\\nBase de conocimiento/FAQ:\\n\" + \"{{ $json.config.knowledgeBase || 'No hay informacion adicional.' }}\" + \"\\n\\nResponde de forma util, breve y profesional. No inventes informacion medica.\\nSi no sabes algo, di que un humano te contactara.\"\n    },\n    {{ $json.history.map(h => ({ role: h.direction === 'in' ? 'user' : 'assistant', content: h.content })) }},\n    { \"role\": \"user\", \"content\": \"{{ $json.message }}\" }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": {{ $json.config.maxTokensResponse }}\n}",
         "options": {}
       },

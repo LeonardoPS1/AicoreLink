@@ -35,7 +35,7 @@ export async function openRouterGenerate(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://AicoreLink.aicorebots.com",
+      "HTTP-Referer": "https://aicorelink.aicorebots.com",
       "X-Title": "AicoreLink",
     },
     body: JSON.stringify({

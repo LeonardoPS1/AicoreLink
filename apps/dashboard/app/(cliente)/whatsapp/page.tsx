@@ -455,7 +455,7 @@ export default function WhatsappPage() {
           Configura la URL del webhook en Meta Developer Console:
         </p>
         <code className="text-sm text-blue-900 bg-blue-100 px-2 py-1 rounded">
-          https://AicoreLink.aicorebots.com/api/webhooks/whatsapp
+          https://aicorelink.aicorebots.com/api/webhooks/whatsapp
         </code>
         <p className="text-xs text-blue-600 mt-2">
           Verify Token: configurar en variables de entorno (AICORELINK_META_VERIFY_TOKEN)

@@ -1,0 +1,1 @@
+# SDD ledger — plan: docs/superpowers/plans/2026-08-25-fix-deployment-database-setup.md

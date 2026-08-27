@@ -22,14 +22,14 @@ Incluye `@dokploy` al inicio de cualquier prompt relacionado con despliegue en D
 |---|---|
 | `AICORELINK_DATABASE_URL` | PostgreSQL connection string |
 | `AICORELINK_NEXTAUTH_SECRET` | Secret de NextAuth |
-| `AICORELINK_NEXTAUTH_URL` | `https://AicoreLink.aicorebots.com` |
+| `AICORELINK_NEXTAUTH_URL` | `https://aicorelink.aicorebots.com` |
 | `NEXTAUTH_URL` | Idem (NextAuth lo requiere) |
 
 ## Labels Traefik para AicoreLink
 
 ```
 traefik.enable=true
-traefik.http.routers.aicorelink.rule=Host(`AicoreLink.aicorebots.com`)
+traefik.http.routers.aicorelink.rule=Host(`aicorelink.aicorebots.com`)
 traefik.http.routers.aicorelink.tls.certresolver=letsencrypt
 traefik.http.services.aicorelink.loadbalancer.server.port=3000
 ```
