@@ -1,0 +1,33 @@
+# Environment files
+*.env
+*.env.*
+
+# Debug / SSH scripts (never commit these)
+ssh_*.py
+find_*.py
+try_dokploy_*.py
+debug*.py
+check_deps*.py
+deploy_bcryptjs.py
+fix_password.js
+fix_nextauth_url.py
+test_password*.py
+test-login.ps1
+test-db.js
+set-env-vars.sh
+container_logs.txt
+latest_logs.txt
+update_env_api.py
+
+# Passwords, keys, certificates
+*.pem
+*.key
+
+# Logs
+*.log
+latest_logs.txt
+container_logs.txt
+
+# Build artifacts
+*.tsbuildinfo
+node_modules/
