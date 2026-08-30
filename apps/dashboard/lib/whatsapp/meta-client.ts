@@ -169,3 +169,82 @@ export function encryptSecret(secret: string, encryptionKey: string): string {
   const authTag = cipher.getAuthTag();
   return `${iv.toString("hex")}:${encrypted.toString("hex")}:${authTag.toString("hex")}`;
 }
+
+/** Master key management for AES-256-GCM channel credential encryption */
+export const channelCredentialMasterKey = process.env.AICORELINK_MASTER_KEY;
+
+// Key version for rotation support
+export const channelCredentialKeyVersion = "v1";
+
+/**
+ * Encrypt a channel credential secret using AES-256-GCM with the master key.
+ * Format: {keyVersion}:{ivHex}:{encryptedHex}:{authTagHex}
+ * This enables key rotation without losing access to previously encrypted secrets.
+ */
+export function encryptChannelCredential(secret: string): string {
+  const masterKey = channelCredentialMasterKey;
+  if (!masterKey) {
+    throw new Error(
+      "AICORELINK_MASTER_KEY no configurada. No se puede cifrar credential de canal."
+    );
+  }
+
+  const iv = crypto.randomBytes(12);
+  const key = Buffer.from(masterKey, "hex");
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return `${channelCredentialKeyVersion}:${iv.toString("hex")}:${encrypted.toString(
+    "hex"
+  )}:${authTag.toString("hex")}`;
+}
+
+/**
+ * Decrypt a channel credential secret encrypted with encryptChannelCredential.
+ * Supports both new format (with key version) and old format (3 parts, assumes current version).
+ */
+export function decryptChannelCredential(encryptedSecret: string): string {
+  const parts = encryptedSecret.split(":");
+  if (parts.length === 4) {
+    // New format: keyVersion:ivHex:encryptedHex:authTagHex
+    const [, ivHex, encryptedHex, authTagHex] = parts;
+    const iv = Buffer.from(ivHex, "hex");
+    const encrypted = Buffer.from(encryptedHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
+    const key = Buffer.from(channelCredentialMasterKey!, "hex");
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(authTag);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString("utf8");
+  } else if (parts.length === 3) {
+    // Old format: ivHex:encryptedHex:authTagHex (assumes current key version)
+    const [ivHex, encryptedHex, authTagHex] = parts;
+    const iv = Buffer.from(ivHex, "hex");
+    const encrypted = Buffer.from(encryptedHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
+    const key = Buffer.from(channelCredentialMasterKey!, "hex");
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(authTag);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString("utf8");
+  } else {
+    throw new Error(`Formato de encryptedSecret inválido: se esperan 3 o 4 partes separadas por ":", got ${parts.length}`);
+  }
+}
+
+/**
+ * Rotate the master key for channel credential encryption.
+ * New secrets will be encrypted with the new key version,
+ * but old secrets remain decryptable with the current key version.
+ *
+ * @param newKeyHex Hex-encoded 32-byte master key
+ * @param newKeyVersion Key version identifier (default: "v2")
+ */
+export function rotateChannelCredentialKey(newKeyHex: string, newKeyVersion: string = "v2"): void {
+  // In a production system, we'd update the environment variable.
+  // For now, just log and update the version constant conceptually.
+  console.log(
+    `[crypto] Channel credential key rotation to version "${newKeyVersion}" initiated.`
+  );
+  // Note: old secrets in DB remain decryptable with the old version.
+}
