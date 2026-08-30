@@ -3,11 +3,14 @@ import { resolveTenantByPhoneNumberId } from "@/lib/whatsapp/resolve-tenant";
 import { hasFeature } from "@/lib/entitlements";
 import { verifyMetaSignature, getMediaUrl, downloadMedia } from "@/lib/whatsapp/meta-client";
 import { transcribeAudioFromUrl } from "@/lib/voice/stt";
+import { db } from "@/lib/db";
 
 const META_VERIFY_TOKEN = process.env.AICORELINK_META_VERIFY_TOKEN ?? "";
 const N8N_WEBHOOK_URL = process.env.AICORELINK_N8N_WHATSAPP_WEBHOOK_URL ?? "";
 const META_APP_SECRET = process.env.AICORELINK_META_APP_SECRET ?? "";
 const META_CLOUD_API_TOKEN = process.env.AICORELINK_META_CLOUD_API_TOKEN ?? "";
+
+const escalationKeywords: string[] = ["humano", "persona", "agente", "reclamo", "queja"];
 
 interface MetaWebhookPayload {
   entry: Array<{
@@ -41,6 +44,43 @@ export async function GET(request: NextRequest) {
   return new NextResponse("Forbidden", { status: 403 });
 }
 
+async function persistMessage(
+  tenantId: string,
+  conversationId: string | null,
+  direction: "in" | "out",
+  content: string,
+  mediaType: "text" | "audio",
+  metadata?: { messageId?: string; aiGenerated?: boolean; tokensUsed?: number; audioId?: string; transcript?: string }
+) {
+  await db.conversation.upsert({
+    where: { id: conversationId ?? "" },
+    update: {},
+    create: {
+      id: conversationId ?? "",
+      tenantId,
+      channel: "whatsapp_text",
+      contactRef: metadata?.messageId ? `whatsapp:${metadata.messageId}` : undefined,
+      status: "abierta",
+      escalado: false,
+    },
+  });
+
+  await db.message.create({
+    data: {
+      id: metadata?.messageId ?? "",
+      conversationId: conversationId ?? "",
+      tenantId,
+      direction,
+      content,
+      aiGenerated: metadata?.aiGenerated ?? false,
+      tokensUsed: metadata?.tokensUsed,
+      mediaType,
+      ...(metadata?.audioId && { audioId: metadata.audioId }),
+      ...(metadata?.transcript && { transcript: metadata.transcript }),
+    },
+  });
+}
+
 async function processTextMessage(
   tenantId: string,
   phoneNumberId: string,
@@ -53,6 +93,33 @@ async function processTextMessage(
   if (!featureActive) {
     return;
   }
+
+  const isEscalated = escalationKeywords.some((kw) => textBody.toLowerCase().includes(kw.toLowerCase()));
+
+  const conversationId = await db.conversation.upsert({
+    where: { id: `temp_${tenantId}_${msgId}` },
+    update: {},
+    create: {
+      id: `temp_${tenantId}_${msgId}`,
+      tenantId,
+      channel: "whatsapp_text",
+      contactRef: from,
+      status: "abierta",
+      escalado: isEscalated,
+    },
+  });
+
+  await db.message.create({
+    data: {
+      id: msgId,
+      conversationId: conversationId.id,
+      tenantId,
+      direction: "in",
+      content: textBody,
+      aiGenerated: false,
+      mediaType: "text",
+    },
+  });
 
   if (N8N_WEBHOOK_URL) {
     try {
@@ -67,6 +134,7 @@ async function processTextMessage(
           messageId: msgId,
           timestamp: parseInt(timestamp, 10) * 1000,
           mediaType: "text",
+          escalated: isEscalated,
         }),
       });
     } catch (error) {
