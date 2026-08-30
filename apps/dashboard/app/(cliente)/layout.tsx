@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 // Aplica a TODAS las paginas dentro de (cliente)/*: mismo motivo que en el
 // layout de (admin) - datos por tenant, nunca estaticos.
@@ -28,8 +29,16 @@ export default async function ClienteLayout({ children }: { children: React.Reac
           </Link>
           {isAdmin && (
             <Link href="/tenants" className="rounded px-3 py-2 hover:bg-white/10">
-              Admin (Fase 5)
+              Admin
             </Link>
+          )}
+          {!isAdmin && (
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="rounded px-3 py-2 hover:bg-white/10 text-sm text-slate-700"
+            >
+              Cerrar sesión
+            </button>
           )}
         </nav>
       </aside>
