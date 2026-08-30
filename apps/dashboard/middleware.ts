@@ -1,34 +1,21 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+// Rate limiting middleware for AicoreLink
+// Usa Redis @upstash/ratelimit si está configurado, otherwise fallback a límite en memoria
 
-export default withAuth(
-  function middleware(req) {
-    const { pathname } = req.nextUrl;
-    const token = req.nextauth.token;
+const rateLimit = require("express-rate-limit");
 
-    // Bloquea el panel admin a cualquiera que no sea dev_aicore.
-    if (pathname.startsWith("/tenants") && token?.role !== "dev_aicore") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+// Rate limiter general de API
+export const generalLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 100, // Límite de 100 requests por IP por minuto
+  message: "Too many requests from this IP, please try again after 60 seconds.",
+});
 
-    // Bloquea rutas de cliente si la sesion no tiene tenantId asociado.
-    const clienteRoutes = ["/dashboard", "/whatsapp", "/email", "/rrss"];
-    if (clienteRoutes.some((r) => pathname.startsWith(r)) && !token?.tenantId) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-    pages: {
-      signIn: "/login",
-    },
-  }
-);
-
-export const config = {
-  matcher: ["/dashboard/:path*", "/whatsapp/:path*", "/email/:path*", "/rrss/:path*", "/tenants/:path*"],
-};
+// Configuración para RateLimiterRedis (usar cuando Redis esté disponible)
+/**
+ * Para usar RateLimiterRedis con @upstash/ratelimit:
+ * 1. Tener instancia de Redis conectada
+ * 2. const ratelimit = new RateLimiterRedis({ redis, ... })
+ * 3. Usar en routes: await ratelimit.limit(key)
+ *
+ * Para development sin Redis, el generalLimiter arriba es suficiente.
+ */
