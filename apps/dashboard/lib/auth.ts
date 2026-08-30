@@ -6,8 +6,7 @@ import { db } from "./db";
 /**
  * Multi-tenant auth support:
  * - Users can belong to multiple tenants via tenantLinks
- * - After login, the first tenantLink is set as active by default
- * - The active tenant can be changed without logout via /api/set-tenant
+ - After login, the first tenantLink is set as active by default
  * - JWT stores the active tenantId; session callback propagates it
  * - multiTenant flag indicates if user has access to more than one tenant
  */
@@ -47,10 +46,13 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             tenantId: primaryLink.tenantId,
             role: primaryLink.role,
-            // flag para indicar si el usuario tiene múltiples tenants (para UI de selección)
+            // flag para indicar si el usuario tiene múltiples tenants
             multiTenant: user.tenantLinks.length > 1,
           };
         } catch (error) {
+          // Log differentiate: error de DB vs. credenciales inválidas
+          // El return null fuera del catch ya cubre ambos casos visualmente,
+          // pero el log interno permite diagnóstico posterior.
           console.error("[auth] Database error during authorize:", error);
           return null;
         }
