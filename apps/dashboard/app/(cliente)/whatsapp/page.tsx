@@ -13,6 +13,7 @@ interface TenantWhatsAppConfig {
   escalationKeywords: string[];
   escalationNotify: "email" | "telegram" | "none";
   escalationMessage: string;
+  descripcion: string;
   voiceReplyEnabled: boolean;
   voiceId: string;
 }
@@ -34,6 +35,7 @@ export default function WhatsappPage() {
     escalationKeywords: ["humano", "persona", "agente", "reclamo", "queja"],
     escalationNotify: "none",
     escalationMessage: "Un agente humano se pondra en contacto contigo en breve.",
+    descripcion: "",
     voiceReplyEnabled: false,
     voiceId: "21m00Tcm4TlvDq8ikWAM",
   });
@@ -248,6 +250,21 @@ export default function WhatsappPage() {
                   rows={6}
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent font-mono text-sm"
                   placeholder="Ej: La clinica abre de lunes a viernes 9 a 18hs. Direccion: Av. Siempre Viva 123. Servicios: Clinica general, Pediatria, Cardiologia..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Descripcion del canal (visible para los pacientes)
+                </label>
+                <textarea
+                  value={config.descripcion || ""}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, descripcion: e.target.value }))
+                  }
+                  rows={3}
+                  className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent font-mono text-sm"
+                  placeholder="Ej: Atencion al paciente para consultas medicas y turnos"
                 />
               </div>
 

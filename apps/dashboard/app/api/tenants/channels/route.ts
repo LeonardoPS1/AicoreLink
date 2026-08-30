@@ -16,6 +16,7 @@ const configSchema = z.object({
   escalationKeywords: z.array(z.string()).optional(),
   escalationNotify: z.enum(["email", "telegram", "none"]).optional(),
   escalationMessage: z.string().optional(),
+  descripcion: z.string().optional(),
 });
 
 export async function GET() {
@@ -72,8 +73,8 @@ export async function PUT(req: NextRequest) {
     const result = await asAdmin(async (tx) => {
       return tx.tenantChannel.upsert({
         where: { tenantId_channel: { tenantId, channel } },
-        update: { enabled, config: parsedConfig.data },
-        create: { tenantId, channel, enabled, config: parsedConfig.data },
+        update: { enabled, config: parsedConfig.data, descripcion: parsedConfig.data?.descripcion },
+        create: { tenantId, channel, enabled, config: parsedConfig.data, descripcion: parsedConfig.data?.descripcion },
       });
     });
 

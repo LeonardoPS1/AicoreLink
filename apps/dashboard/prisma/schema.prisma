@@ -54,6 +54,7 @@ model TenantChannel {
   channel     String // whatsapp_text | whatsapp_voice | email | social
   enabled     Boolean   @default(false)
   config      Json      @default("{}")
+  descripcion String?   @map("descripcion")
   activatedAt DateTime? @map("activated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
