@@ -27,7 +27,7 @@ export default async function ClienteLayout({ children }: { children: React.Reac
             RRSS (proximamente)
           </Link>
           {isAdmin && (
-            <Link href="/admin/tenants" className="rounded px-3 py-2 hover:bg-white/10">
+            <Link href="/tenants" className="rounded px-3 py-2 hover:bg-white/10">
               Admin (Fase 5)
             </Link>
           )}

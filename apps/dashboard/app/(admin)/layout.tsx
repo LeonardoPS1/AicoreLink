@@ -14,12 +14,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/tenants" className="rounded px-3 py-2 hover:bg-white/10">
             Tenants
           </Link>
-          <Link href="/metricas" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
-            Metricas (Fase 5)
-          </Link>
-          <Link href="/infraestructura" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
-            Infraestructura (Fase 5)
-          </Link>
+<Link href="/metricas" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
+              Metricas
+            </Link>
+<Link href="/infraestructura" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
+              Infraestructura
+            </Link>
         </nav>
       </aside>
       <main className="flex-1 bg-slate-50 p-8">{children}</main>
