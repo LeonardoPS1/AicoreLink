@@ -59,7 +59,7 @@ async function persistMessage(
       id: conversationId ?? "",
       tenantId,
       channel: "whatsapp_text",
-      contactRef: metadata?.messageId ? `whatsapp:${metadata.messageId}` : undefined,
+      contactRef: `whatsapp:${String(metadata?.messageId)}`,
       status: "abierta",
       escalado: false,
     },
