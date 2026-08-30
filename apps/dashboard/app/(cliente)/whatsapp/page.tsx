@@ -322,7 +322,7 @@ export default function WhatsappPage() {
                 </label>
                 <input
                   type="text"
-                  value={config.escalationKeywords.join(", ")}
+                  value={config.escalationKeywords?.join(", ") || ""}
                   onChange={(e) => handleKeywordChange(e.target.value)}
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent"
                 />
@@ -337,7 +337,7 @@ export default function WhatsappPage() {
                   Notificar escalado por
                 </label>
                 <select
-                  value={config.escalationNotify}
+                  value={config.escalationNotify || "none"}
                   onChange={(e) =>
                     setConfig((prev) => ({
                       ...prev,
@@ -357,7 +357,7 @@ export default function WhatsappPage() {
                   Mensaje automatico al escalar
                 </label>
                 <textarea
-                  value={config.escalationMessage}
+                  value={config.escalationMessage || ""}
                   onChange={(e) =>
                     setConfig((prev) => ({ ...prev, escalationMessage: e.target.value }))
                   }

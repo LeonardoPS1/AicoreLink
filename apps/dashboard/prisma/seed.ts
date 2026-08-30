@@ -41,12 +41,39 @@ async function main() {
   // 4. Enable whatsapp_text channel for tenant
   await db.tenantChannel.upsert({
     where: { tenantId_channel: { tenantId: tenant.id, channel: "whatsapp_text" } },
-    update: { enabled: true, config: { tone: "amable", autoReplyEnabled: true } },
+    update: {
+      enabled: true,
+      config: {
+        tone: "amable",
+        businessHours: "09:00-18:00",
+        knowledgeBase: "",
+        autoReplyEnabled: true,
+        preferLocalAi: false,
+        maxTokensResponse: 500,
+        escalationKeywords: ["humano", "persona", "agente", "reclamo", "queja"],
+        escalationNotify: "none",
+        escalationMessage: "Un agente humano se pondra en contacto contigo en breve.",
+        voiceReplyEnabled: false,
+        voiceId: "21m00Tcm4TlvDq8ikWAM",
+      },
+    },
     create: {
       tenantId: tenant.id,
       channel: "whatsapp_text",
       enabled: true,
-      config: { tone: "amable", autoReplyEnabled: true },
+      config: {
+        tone: "amable",
+        businessHours: "09:00-18:00",
+        knowledgeBase: "",
+        autoReplyEnabled: true,
+        preferLocalAi: false,
+        maxTokensResponse: 500,
+        escalationKeywords: ["humano", "persona", "agente", "reclamo", "queja"],
+        escalationNotify: "none",
+        escalationMessage: "Un agente humano se pondra en contacto contigo en breve.",
+        voiceReplyEnabled: false,
+        voiceId: "21m00Tcm4TlvDq8ikWAM",
+      },
     },
   });
 
