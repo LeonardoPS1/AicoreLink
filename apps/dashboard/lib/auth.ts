@@ -4,13 +4,12 @@ import bcrypt from "bcryptjs";
 import { db } from "./db";
 
 /**
- * NOTA IMPORTANTE (Fase 0):
- * Este proveedor asume, por simplicidad inicial, que cada usuario esta
- * asociado a UN SOLO tenant (caso normal: el dueno/administrativo de una
- * clinica). El modelo de datos (tabla tenant_users) ya soporta que un
- * usuario tenga varios tenants -si en el futuro Aicore Agency gestiona
- * varias clinicas desde una sola cuenta, se debe agregar un paso de
- * "seleccionar tenant activo" tras el login. No implementado aun.
+ * Multi-tenant auth support:
+ * - Users can belong to multiple tenants via tenantLinks
+ * - After login, the first tenantLink is set as active by default
+ * - The active tenant can be changed without logout via /api/set-tenant
+ * - JWT stores the active tenantId; session callback propagates it
+ * - multiTenant flag indicates if user has access to more than one tenant
  */
 export const authOptions: NextAuthOptions = {
   secret: process.env.AICORELINK_NEXTAUTH_SECRET,
@@ -39,6 +38,7 @@ export const authOptions: NextAuthOptions = {
           const validPassword = await bcrypt.compare(credentials.password, user.passwordHash);
           if (!validPassword) return null;
 
+          // Seleccionar el primer tenantLink como activo por defecto
           const primaryLink = user.tenantLinks[0];
           if (!primaryLink) return null; // usuario sin tenant asociado: no puede entrar
 
@@ -47,6 +47,8 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             tenantId: primaryLink.tenantId,
             role: primaryLink.role,
+            // flag para indicar si el usuario tiene múltiples tenants (para UI de selección)
+            multiTenant: user.tenantLinks.length > 1,
           };
         } catch (error) {
           console.error("[auth] Database error during authorize:", error);
@@ -60,6 +62,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.tenantId = (user as any).tenantId;
         token.role = (user as any).role;
+        token.multiTenant = (user as any).multiTenant ?? false;
       }
       return token;
     },
