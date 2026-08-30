@@ -4,6 +4,8 @@ import { hasFeature } from "@/lib/entitlements";
 import { verifyMetaSignature, getMediaUrl, downloadMedia } from "@/lib/whatsapp/meta-client";
 import { transcribeAudioFromUrl } from "@/lib/voice/stt";
 import { db } from "@/lib/db";
+import { ollamaClassifyIntent } from "@/lib/ai/ollama-client";
+import { openRouterClassifyIntent } from "@/lib/ai/openrouter-client";
 
 const META_VERIFY_TOKEN = process.env.AICORELINK_META_VERIFY_TOKEN ?? "";
 const N8N_WEBHOOK_URL = process.env.AICORELINK_N8N_WHATSAPP_WEBHOOK_URL ?? "";
@@ -94,8 +96,26 @@ async function processTextMessage(
     return;
   }
 
-  const isEscalated = escalationKeywords.some((kw) => textBody.toLowerCase().includes(kw.toLowerCase()));
+  // Step 1: Clasificar intención usando Ollama local primero
+  let classification = await ollamaClassifyIntent(textBody, [], undefined);
 
+  // Step 2: Si la confianza es baja, hacer fallback a OpenRouter
+  if (classification.confidence < 0.6) {
+    try {
+      classification = await openRouterClassifyIntent(textBody, []);
+    } catch (error) {
+      console.error("[webhook] OpenRouter fallback failed:", error);
+      // Mantener clasificación de Ollama aunque sea baja
+    }
+  }
+
+  // Step 3: Determinar si requiere escalado por palabras clave
+  const hasEscalationKeyword = escalationKeywords.some((kw) =>
+    textBody.toLowerCase().includes(kw.toLowerCase())
+  );
+  const escalated = hasEscalationKeyword || classification.intent === "reclamo";
+
+  // Step 4: Persistir conversación y mensaje con clasificación
   const conversationId = await db.conversation.upsert({
     where: { id: `temp_${tenantId}_${msgId}` },
     update: {},
@@ -105,7 +125,7 @@ async function processTextMessage(
       channel: "whatsapp_text",
       contactRef: from,
       status: "abierta",
-      escalado: isEscalated,
+      escalado: escalated,
     },
   });
 
@@ -121,6 +141,7 @@ async function processTextMessage(
     },
   });
 
+  // Step 5: Enviar a n8n con los datos de clasificación
   if (N8N_WEBHOOK_URL) {
     try {
       await fetch(N8N_WEBHOOK_URL, {
@@ -134,7 +155,9 @@ async function processTextMessage(
           messageId: msgId,
           timestamp: parseInt(timestamp, 10) * 1000,
           mediaType: "text",
-          escalated: isEscalated,
+          intent: classification.intent,
+          confidence: classification.confidence,
+          escalated,
         }),
       });
     } catch (error) {
