@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { useRouter } from "next/router";
 
 // Aplica a TODAS las paginas dentro de (admin)/*: nunca pre-renderizar en
 // build time, porque consultan datos por tenant en cada request. Ademas,
@@ -7,8 +6,6 @@ import { useRouter } from "next/router";
 export const dynamic = "force-dynamic";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
   return (
     <div className="flex min-h-screen">
       <aside className="w-60 shrink-0 bg-slate-900 p-6 text-white">
