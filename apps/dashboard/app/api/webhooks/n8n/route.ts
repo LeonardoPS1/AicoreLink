@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { withTenant, asAdmin } from "@/lib/tenant-context";
 import { db } from "@/lib/db";
@@ -15,6 +16,35 @@ interface N8nWebhookPayload {
   escalated?: boolean;
 }
 
+/**
+ * Verifica la firma del webhook N8N usando el secreto compartido.
+ * Configura AICORELINK_N8N_WEBHOOK_SECRET en las variables de entorno.
+ * Si no está configurado, emite warning pero sigue procesando (modo desarrollo).
+ */
+function verifyN8nWebhookSignature(req: NextRequest, secret?: string): boolean {
+  if (!secret) {
+    console.warn(
+      "[n8n/webhook] AICORELINK_N8N_WEBHOOK_SECRET no configurado - firma no verificada"
+    );
+    return true; // En desarrollo, permitir pasar; en producción configurar secreto
+  }
+
+  const signature = req.headers.get("x-n8n-signature") ?? "";
+  const body = req.body || "";
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(typeof body === "string" ? body : JSON.stringify(body))
+    .digest("hex");
+
+  // El signature de N8N puede venir con prefijo "sha256="
+  const cleanSignature = signature.replace("sha256=", "");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(cleanSignature)
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const payload: N8nWebhookPayload = await request.json();
@@ -25,6 +55,13 @@ export async function POST(request: NextRequest) {
         { error: "Payload inválido: faltan campos requeridos" },
         { status: 400 }
       );
+    }
+
+    // Verify webhook signature if secret is configured
+    const n8nWebhookSecret = process.env.AICORELINK_N8N_WEBHOOK_SECRET;
+    if (n8nWebhookSecret && !verifyN8nWebhookSignature(request, n8nWebhookSecret)) {
+      console.warn("[n8n/webhook] Invalid webhook signature");
+      return new NextResponse("Invalid signature", { status: 401 });
     }
 
     // Persistir la clasificación IA en la conversación
