@@ -4,18 +4,15 @@
 // Para rate limiting real, configurar @upstash/ratelimit con Redis en los API routes
 // o usar middleware de nivel de infraigura (Dokploy/Traefik).
 //
-// Este archivo se mantiene para exportar configuraciones y tipos que pueden
-// ser utilizados por los API routes individualmente.
+// Este archivo exporta configuraciones para uso en API routes y un middleware mínimo.
 
-/**
- * Configuración de rate limiting para usar en API routes.
- * Cuando Redis @upstash/ratelimit esté disponible:
- *   const ratelimit = new RateLimiterRedis({ redis, ... })
- *   export const GET = async (req) => { const result = await ratelimit.limit(ip); ... }
- *
- * Para development sin Redis, usar generalLimiter en los API routes con express o
- * confiar en las cabeceras de seguridad HTTP already configuradas en next.config.mjs.
- */
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+/** Minimal middleware - passes through all requests. Real rate limiting at infra level. */
+export function middleware(request: NextRequest) {
+  return NextResponse.next();
+}
 
 /** Limite general de API: 100 requests por IP por minuto */
 export const generalLimiter = {
