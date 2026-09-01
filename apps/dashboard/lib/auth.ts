@@ -16,8 +16,8 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  // Disable CSRF check behind reverse proxy (Traefik/Cloudflare) - trustHost not working in v4.24.7
-  csrf: async () => true,
+  // Disable CSRF check behind reverse proxy (Traefik/Cloudflare)
+  csrf: false,
   providers: [
     CredentialsProvider({
       name: "Credenciales",
