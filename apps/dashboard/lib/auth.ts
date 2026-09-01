@@ -18,6 +18,7 @@ export const authOptions: NextAuthOptions = {
   },
   // trustHost needed behind reverse proxy (Traefik/Cloudflare) to prevent CSRF redirect loop
   trustHost: true,
+  csrf: { trustHost: true },
   providers: [
     CredentialsProvider({
       name: "Credenciales",
