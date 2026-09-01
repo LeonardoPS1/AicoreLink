@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  // Force rebuild: cache bust
+  generateBuildId: async () => "build-" + Date.now(),
   reactStrictMode: true,
   async headers() {
     return [
