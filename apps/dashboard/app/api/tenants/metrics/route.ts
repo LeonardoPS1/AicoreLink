@@ -18,37 +18,46 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Sin tenant" }, { status: 400 });
   }
 
-  const conversations = await withTenant(tenantId, async (tx) => {
-    return tx.conversation.count({
-      where: { tenantId },
+  let conversations, openConversations, escalatedConversations, closedConversations, usage;
+  try {
+    conversations = await withTenant(tenantId, async (tx) => {
+      return tx.conversation.count({
+        where: { tenantId },
+      });
     });
-  });
 
-  const openConversations = await withTenant(tenantId, async (tx) => {
-    return tx.conversation.count({
-      where: { tenantId, status: "abierta" },
+    openConversations = await withTenant(tenantId, async (tx) => {
+      return tx.conversation.count({
+        where: { tenantId, status: "abierta" },
+      });
     });
-  });
 
-  const escalatedConversations = await withTenant(tenantId, async (tx) => {
-    return tx.conversation.count({
-      where: { tenantId, escalado: true },
+    escalatedConversations = await withTenant(tenantId, async (tx) => {
+      return tx.conversation.count({
+        where: { tenantId, escalado: true },
+      });
     });
-  });
 
-  const closedConversations = await withTenant(tenantId, async (tx) => {
-    return tx.conversation.count({
-      where: { tenantId, status: "cerrada" },
+    closedConversations = await withTenant(tenantId, async (tx) => {
+      return tx.conversation.count({
+        where: { tenantId, status: "cerrada" },
+      });
     });
-  });
 
-  const usage = await withTenant(tenantId, async (tx) => {
-    return tx.tenantUsage.findMany({
-      where: { tenantId },
-      orderBy: { period: "desc" },
-      take: 1,
+    usage = await withTenant(tenantId, async (tx) => {
+      return tx.tenantUsage.findMany({
+        where: { tenantId },
+        orderBy: { period: "desc" },
+        take: 1,
+      });
     });
-  });
+  } catch (error) {
+    console.error("[metrics GET] Error:", error);
+    return NextResponse.json(
+      { error: "Error al cargar métricas" },
+      { status: 500 }
+    );
+  }
 
   const totalMessagesIn = (usage?.[0]?.messagesIn ?? 0);
   const totalMessagesOut = (usage?.[0]?.messagesOut ?? 0);

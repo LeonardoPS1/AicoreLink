@@ -21,27 +21,36 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const search = searchParams.get("search");
 
-  const conversations = await withTenant(tenantId, async (tx) => {
-    const where: Record<string, unknown> = {
-      channel: "whatsapp_text",
-    };
-    if (status && status !== "all") where.status = status;
-    if (search) where.contactRef = { contains: search, mode: "insensitive" };
+  let conversations;
+  try {
+    conversations = await withTenant(tenantId, async (tx) => {
+      const where: Record<string, unknown> = {
+        channel: "whatsapp_text",
+      };
+      if (status && status !== "all") where.status = status;
+      if (search) where.contactRef = { contains: search, mode: "insensitive" };
 
-    return tx.conversation.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+      return tx.conversation.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          messages: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+          _count: {
+            select: { messages: true },
+          },
         },
-        _count: {
-          select: { messages: true },
-        },
-      },
+      });
     });
-  });
+  } catch (error) {
+    console.error("[conversations GET] Error:", error);
+    return NextResponse.json(
+      { error: "Error al cargar conversaciones" },
+      { status: 500 }
+    );
+  }
 
   const result = conversations.map((c) => ({
     id: c.id,

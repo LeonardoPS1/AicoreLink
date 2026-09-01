@@ -22,7 +22,13 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const tenants = await asAdmin((tx) => tx.tenant.findMany({ orderBy: { createdAt: "desc" } }));
+  let tenants;
+  try {
+    tenants = await asAdmin((tx) => tx.tenant.findMany({ orderBy: { createdAt: "desc" } }));
+  } catch (error) {
+    console.error("[tenants GET] Error:", error);
+    return NextResponse.json({ error: "Error al cargar tenants" }, { status: 500 });
+  }
   return NextResponse.json(tenants);
 }
 

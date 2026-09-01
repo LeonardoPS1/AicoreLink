@@ -32,11 +32,17 @@ export async function GET() {
     return NextResponse.json({ error: "Sin tenant" }, { status: 400 });
   }
 
-  const channels = await withTenant(tenantId, async (tx) => {
-    return tx.tenantChannel.findMany({
-      where: { tenantId },
+  let channels;
+  try {
+    channels = await withTenant(tenantId, async (tx) => {
+      return tx.tenantChannel.findMany({
+        where: { tenantId },
+      });
     });
-  });
+  } catch (error) {
+    console.error("[channels GET] Error:", error);
+    return NextResponse.json({ error: "Error al cargar canales" }, { status: 500 });
+  }
 
   return NextResponse.json(channels);
 }

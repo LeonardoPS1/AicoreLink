@@ -20,12 +20,18 @@ export async function GET(
 
   const { id } = params;
 
-  const messages = await withTenant(tenantId, async (tx) => {
-    return tx.message.findMany({
-      where: { conversationId: id },
-      orderBy: { createdAt: "asc" },
+  let messages;
+  try {
+    messages = await withTenant(tenantId, async (tx) => {
+      return tx.message.findMany({
+        where: { conversationId: id },
+        orderBy: { createdAt: "asc" },
+      });
     });
-  });
+  } catch (error) {
+    console.error("[conversations messages GET] Error:", error);
+    return NextResponse.json({ error: "Error al cargar mensajes" }, { status: 500 });
+  }
 
   return NextResponse.json(messages);
 }
