@@ -23,6 +23,9 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Contraseña", type: "password" },
       },
+      // Explicit callbackUrl to prevent CSRF redirect loop
+      callbackUrl: "https://aicorelink.aicorebots.com/",
+
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
