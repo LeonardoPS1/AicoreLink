@@ -3,10 +3,16 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 
+declare module "next-auth" {
+  interface NextAuthOptions {
+    csrf?: boolean;
+  }
+}
+
 /**
  * Multi-tenant auth support:
  * - Users can belong to multiple tenants via tenantLinks
- - After login, the first tenantLink is set as active by default
+ * - After login, the first tenantLink is set as active by default
  * - JWT stores the active tenantId; session callback propagates it
  * - multiTenant flag indicates if user has access to more than one tenant
  */
