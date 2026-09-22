@@ -1,0 +1,6 @@
+  ▲ Next.js 14.2.15
+  - Local:        http://fa3f2d72b057:3000
+  - Network:      http://10.0.1.230:3000
+
+ ✓ Starting...
+ ✓ Ready in 99ms

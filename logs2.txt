@@ -1,0 +1,39 @@
+  ▲ Next.js 14.2.15
+  - Local:        http://067accf48ec3:3000
+  - Network:      http://10.0.1.229:3000
+
+ ✓ Starting...
+ ✓ Ready in 116ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Authentication failed against database server at `172.18.0.1`, the provided database credentials for `aicorelink_app` are not valid.
+
+Please make sure to provide valid database credentials for the database server at `172.18.0.1`.
+[auth] Database error during authorize: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Authentication failed against database server at `172.18.0.1`, the provided database credentials for `aicorelink_app` are not valid.
+
+Please make sure to provide valid database credentials for the database server at `172.18.0.1`.
+    at $n.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7615)
+    at $n.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.authorize (/app/.next/server/app/page.js:1:3515)
+    at async Object.c (/app/.next/server/chunks/756.js:25:4505)
+    at async m (/app/.next/server/chunks/756.js:1:17830)
+    at async a (/app/.next/server/chunks/756.js:25:20125)
+    at async e.length.t (/app/.next/server/chunks/756.js:25:21615)
+    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:36957 {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+  ▲ Next.js 14.2.15
+  - Local:        http://067accf48ec3:3000
+  - Network:      http://10.0.1.229:3000
+
+ ✓ Starting...
+ ✓ Ready in 132ms

@@ -33,23 +33,47 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          console.log("[auth] Missing credentials");
+          return null;
+        }
 
         try {
+          console.log("[auth] Looking up user:", credentials.email);
           const user = await db.user.findUnique({
             where: { email: credentials.email },
             include: { tenantLinks: { include: { tenant: true } } },
           });
 
-          if (!user || !user.passwordHash) return null;
+          if (!user) {
+            console.log("[auth] User not found:", credentials.email);
+            return null;
+          }
 
+          console.log("[auth] User found:", user.id, "hasPasswordHash:", !!user.passwordHash);
+
+          if (!user.passwordHash) {
+            console.log("[auth] No password hash for user:", user.id);
+            return null;
+          }
+
+          console.log("[auth] Comparing password...");
           const validPassword = await bcrypt.compare(credentials.password, user.passwordHash);
-          if (!validPassword) return null;
+          console.log("[auth] Password valid:", validPassword);
+          
+          if (!validPassword) {
+            console.log("[auth] Password mismatch for user:", user.id);
+            return null;
+          }
 
           // Seleccionar el primer tenantLink como activo por defecto
           const primaryLink = user.tenantLinks[0];
-          if (!primaryLink) return null; // usuario sin tenant asociado: no puede entrar
+          if (!primaryLink) {
+            console.log("[auth] No tenant links for user:", user.id);
+            return null;
+          }
 
+          console.log("[auth] Login successful for:", user.email, "tenant:", primaryLink.tenantId);
           return {
             id: user.id,
             email: user.email,
@@ -59,9 +83,6 @@ export const authOptions: NextAuthOptions = {
             multiTenant: user.tenantLinks.length > 1,
           };
         } catch (error) {
-          // Log differentiate: error de DB vs. credenciales inválidas
-          // El return null fuera del catch ya cubre ambos casos visualmente,
-          // pero el log interno permite diagnóstico posterior.
           console.error("[auth] Database error during authorize:", error);
           return null;
         }
