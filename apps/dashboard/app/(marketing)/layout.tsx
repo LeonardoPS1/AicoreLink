@@ -1,14 +1,9 @@
-import type { Metadata } from "next";
-
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { StickyWhatsApp } from "@/components/marketing/sticky-whatsapp";
 
-export const metadata: Metadata = {
-  title: "AicoreLink — Sitios web con IA para negocios locales",
-  description:
-    "Creamos tu página web con un asistente de IA que responde por WhatsApp, agenda citas y nunca deja un cliente sin contestar. Todo incluido en una cuota mensual.",
-};
+// Document metadata for the landing lives in ./page.tsx (D1): one route, one
+// source of truth. The root layout supplies metadataBase and the title template.
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
