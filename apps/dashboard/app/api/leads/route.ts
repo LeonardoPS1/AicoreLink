@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { db } from "@/lib/db";
+import { notifyNewLead } from "@/lib/leads/notify";
 import { leadSchema } from "@/lib/leads/schema";
 
 export const dynamic = "force-dynamic";
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { nombre, negocio, whatsapp, rubro, mensaje } = parsed.data;
+  const userAgent = request.headers.get("user-agent")?.slice(0, 300) ?? null;
 
   const lead = await db.landingLead.create({
     data: {
@@ -93,10 +95,27 @@ export async function POST(request: NextRequest) {
       whatsapp,
       vertical: rubro,
       message: mensaje || null,
-      userAgent: request.headers.get("user-agent")?.slice(0, 300) ?? null,
+      userAgent,
     },
-    select: { id: true },
+    select: { id: true, createdAt: true },
   });
+
+  // The lead is already stored; notifying is a side effect that must never turn a
+  // successful submission into an error the visitor would retry.
+  try {
+    await notifyNewLead({
+      id: lead.id,
+      name: nombre,
+      business: negocio,
+      whatsapp,
+      vertical: rubro,
+      message: mensaje || null,
+      userAgent,
+      createdAt: lead.createdAt,
+    });
+  } catch (error) {
+    console.error("[leads] notification step failed", error);
+  }
 
   return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
 }

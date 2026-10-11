@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { create } = vi.hoisted(() => ({ create: vi.fn() }));
+const { create, notifyNewLead } = vi.hoisted(() => ({
+  create: vi.fn(),
+  notifyNewLead: vi.fn(),
+}));
 
 vi.mock("@/lib/db", () => ({ db: { landingLead: { create } } }));
+vi.mock("@/lib/leads/notify", () => ({ notifyNewLead }));
 
 const { POST } = await import("@/app/api/leads/route");
 
@@ -33,7 +37,9 @@ function makeRequest(body: unknown, rawBody?: string) {
 
 beforeEach(() => {
   create.mockReset();
-  create.mockResolvedValue({ id: "lead_123" });
+  create.mockResolvedValue({ id: "lead_123", createdAt: new Date("2026-10-11T12:00:00.000Z") });
+  notifyNewLead.mockReset();
+  notifyNewLead.mockResolvedValue(undefined);
 });
 
 describe("POST /api/leads", () => {
@@ -54,6 +60,26 @@ describe("POST /api/leads", () => {
         userAgent: "vitest",
       },
     });
+  });
+
+  it("notifies the team after the lead is stored", async () => {
+    await POST(makeRequest(VALID_BODY));
+
+    expect(notifyNewLead).toHaveBeenCalledTimes(1);
+    expect(notifyNewLead.mock.calls[0][0]).toMatchObject({
+      id: "lead_123",
+      name: "Juan Pérez",
+      business: "Barbería El Corte",
+      vertical: "barberia",
+    });
+  });
+
+  it("still returns 201 when the notification fails", async () => {
+    notifyNewLead.mockImplementation(() => Promise.reject(new Error("n8n down")));
+
+    const response = await POST(makeRequest(VALID_BODY));
+
+    expect(response.status).toBe(201);
   });
 
   it("rejects an invalid payload without touching the database", async () => {
