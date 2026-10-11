@@ -145,3 +145,23 @@ model Message {
 
   @@map("messages")
 }
+
+/// Pre-sale enquiries submitted from the public landing page.
+/// Tenant-less by design: these are not customer data, so no tenant_id and no RLS.
+model LandingLead {
+  id        String   @id @default(uuid())
+  name      String
+  business  String
+  whatsapp  String
+  vertical  String
+  message   String?
+  status    String   @default("new")
+  source    String   @default("landing")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@index([status])
+  @@map("landing_leads")
+}
