@@ -333,10 +333,10 @@ export const copy: LandingCopy = {
 
 /**
  * WhatsApp destination number (E.164 without the leading +).
- * TODO(leonardo): replace the placeholder with the real business number.
+ * Número de WhatsApp del negocio (Chile: +56975680702).
  */
 export const WHATSAPP_PHONE =
-  process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "5491100000000";
+  process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "+56975680702";
 
 /**
  * Booking link for the 15-minute diagnostic call.

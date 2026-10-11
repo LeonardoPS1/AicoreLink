@@ -1,0 +1,68 @@
+{
+  "name": "Landing Lead Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "landing-leads",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "name": "Webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Verify HMAC signature\nconst crypto = require(\"crypto\");\nconst signatureHeader = $json[\"x-signature\"];\nconst payload = JSON.stringify($json);\n\nif (!signatureHeader) {\n  // No signature - still process but mark as unverified\n  $return = [{ event: $json.event, lead: $json.lead, signatureValid: false }];\n  return;\n}\n\n// Parse signature format: timestamp=signature\nconst parts = signatureHeader.split(\"=\");\nconst timestamp = parseInt(parts[0], 10);\nconst providedSignature = parts[1] || signatureHeader;\n\n// Check timestamp (5 minutes replay prevention)\nconst now = Math.floor(Date.now() / 1000);\nif (isNaN(timestamp) || Math.abs(now - timestamp) > 300) {\n  $return = [{ event: $json.event, lead: $json.lead, signatureValid: false, error: \"Invalid timestamp\" }];\n  return;\n}\n\n// Verify HMAC-SHA256\nconst secret = \"tu-secreto-aqui\";\nconst hmac = crypto.createHmac(\"sha256\", secret);\nhmac.update(payload);\nconst calculatedSignature = hmac.digest(\"hex\");\n\nconst signatureValid = crypto.timingSafeEqual(\n  Buffer.from(calculatedSignature, \"hex\"),\n  Buffer.from(providedSignature, \"hex\")\n);\n\n$return = [{ event: $json.event, lead: $json.lead, signatureValid }];\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.function",
+      "name": "Verify Signature",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "sourceName": "Nuevo lead de landing",
+        "sourceNumber": "+56975680702",
+        "destinationNumber": "+56975680702",
+        "message": "Hola {{ $json.lead.name }}, recibimos tu solicitud para tu negocio {{ $json.lead.business }}. Te escribimos pronto por WhatsApp para coordinar el diagnóstico de 15 minutos.\n\nDetalles:\n- Nombre: {{ $json.lead.name }}\n- Negocio: {{ $json.lead.business }}\n- WhatsApp: {{ $json.lead.whatsapp }}\n- Rubro: {{ $json.lead.vertical }}\n- Mensaje: {{ $json.lead.message }}\n\nResponde a este mensaje para agendar tu diagnóstico."
+      },
+      "type": "n8n-nodes-base.twilio",
+      "name": "Send WhatsApp",
+      "typeVersion": 2,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signature": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionTimeout": 3600
+  },
+  "id": "1"
+}
