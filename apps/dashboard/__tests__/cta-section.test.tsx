@@ -46,4 +46,10 @@ describe("CtaSection", () => {
 
     expect(screen.getByText(copy.cta.guarantee)).toBeInTheDocument();
   });
+
+  it("embeds the lead form next to the pitch", () => {
+    render(<CtaSection />);
+
+    expect(screen.getByRole("button", { name: /Solicitar diagnóstico gratis/ })).toBeInTheDocument();
+  });
 });
