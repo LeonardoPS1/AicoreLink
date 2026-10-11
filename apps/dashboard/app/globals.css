@@ -41,6 +41,36 @@
 }
 
 @layer utilities {
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  /* Entrance for above-the-fold content; pairs with inline animation-delay. */
+  .animate-fade-up {
+    animation: fade-up 700ms var(--ease-out-strong) both;
+  }
+
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
   /* Fade-up used by scroll-revealed marketing sections (CSS-only, GPU friendly). */
   .reveal {
     opacity: 0;
