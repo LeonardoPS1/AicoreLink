@@ -2,10 +2,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import type { Metadata } from "next";
 
 // Aplica a TODAS las páginas dentro de (cliente)/*: mismo motivo que en el
 // layout de (admin) - datos por tenant, nunca estáticos.
 export const dynamic = "force-dynamic";
+
+// Ninguna pantalla del panel debe indexarse: sin sesión sólo muestran un
+// esqueleto. Ver el comentario equivalente en (admin)/layout.tsx.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function ClienteLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
