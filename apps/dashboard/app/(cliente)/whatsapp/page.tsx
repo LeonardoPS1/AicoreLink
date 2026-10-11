@@ -403,7 +403,7 @@ export default function WhatsappPage() {
 
               {!textEnabled && (
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                  Debes activar primero el canal "WhatsApp Texto" para poder usar WhatsApp Voz.
+                  Debes activar primero el canal &quot;WhatsApp Texto&quot; para poder usar WhatsApp Voz.
                 </div>
               )}
 
@@ -447,7 +447,7 @@ export default function WhatsappPage() {
                   <li>El paciente envía una nota de voz</li>
                   <li>Se transcribe automáticamente con Whisper</li>
                   <li>Se procesa igual que un mensaje de texto (pipeline IA existente)</li>
-                  <li>Si "Responder en audio" está activo, la respuesta se genera con ElevenLabs y se envía como nota de voz</li>
+                  <li>Si &quot;Responder en audio&quot; está activo, la respuesta se genera con ElevenLabs y se envía como nota de voz</li>
                   <li>Si está desactivado, la respuesta llega en texto</li>
                 </ul>
               </div>
