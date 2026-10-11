@@ -61,6 +61,7 @@ export function Accordion({ items, defaultOpenId = null, tone = "light", classNa
               id={panelId}
               role="region"
               aria-labelledby={triggerId}
+              aria-hidden={!isOpen}
               data-state={isOpen ? "open" : "closed"}
               className="grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none"
               style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
