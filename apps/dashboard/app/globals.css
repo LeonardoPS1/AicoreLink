@@ -85,6 +85,25 @@
     transform: translateY(0);
   }
 
+  /*
+   * Hover elevation for cards. Gated behind a real pointer so touch devices
+   * never get a stuck hover state, and limited to transform + shadow so it
+   * stays off the layout path.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .lift {
+      transition:
+        transform 200ms var(--ease-out-strong),
+        box-shadow 200ms var(--ease-out-strong),
+        border-color 200ms var(--ease-out-strong);
+    }
+
+    .lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.35);
+    }
+  }
+
   /* Text gradient for hero accents. */
   .text-gradient {
     background-image: linear-gradient(
