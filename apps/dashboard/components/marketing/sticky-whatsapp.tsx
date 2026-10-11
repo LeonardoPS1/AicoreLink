@@ -19,6 +19,7 @@ export function StickyWhatsApp() {
   return (
     <a
       href={whatsappUrl(copy.stickyWhatsApp.message)}
+      data-label="sticky"
       target="_blank"
       rel="noopener noreferrer"
       data-visible={visible}

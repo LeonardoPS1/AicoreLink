@@ -55,6 +55,8 @@ export function PricingCard({ plan }: Props) {
 
       <a
         href="#contacto"
+        data-track="cta_click"
+        data-label={`planes-${plan.id}`}
         className={buttonClasses(plan.highlighted ? "primary" : "secondary", "lg", "mt-7 w-full")}
       >
         {plan.ctaLabel}

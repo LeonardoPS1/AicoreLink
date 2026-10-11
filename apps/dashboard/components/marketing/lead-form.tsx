@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 
+import { trackFormSubmit } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { FormField, controlClasses } from "@/components/ui/form-field";
 import { leadSchema, type LeadInput } from "@/lib/leads/schema";
@@ -46,6 +47,7 @@ export function LeadForm() {
 
       reset();
       setStatus("success");
+      trackFormSubmit(values.rubro || undefined);
     } catch {
       setStatus("error");
     }

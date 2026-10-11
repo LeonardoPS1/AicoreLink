@@ -25,8 +25,9 @@ export function CtaSection() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <a
-              href={bookingUrl}
+            <a href={bookingUrl}
+              data-track="cta_click"
+              data-label="agendar-diagnostico"
               target="_blank"
               rel="noopener noreferrer"
               className={buttonClasses("primary", "lg")}

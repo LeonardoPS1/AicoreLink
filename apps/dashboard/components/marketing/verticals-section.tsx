@@ -2,7 +2,8 @@ import { Info } from "lucide-react";
 
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { Tabs, type TabItem } from "@/components/ui/tabs";
+import { VerticalTabs } from "@/components/marketing/vertical-tabs";
+import type { TabItem } from "@/components/ui/tabs";
 import { buttonClasses } from "@/components/ui/button";
 import { copy } from "@/lib/marketing/copy";
 import { verticals, type Vertical } from "@/lib/marketing/verticals";
@@ -27,7 +28,12 @@ function VerticalPanel({ vertical }: { vertical: Vertical }) {
           <span className="text-xs text-slate-300">{vertical.highlight.label}</span>
         </div>
 
-        <a href="#contacto" className={buttonClasses("primary", "md", "mt-6 self-start")}>
+        <a
+          href="#contacto"
+          data-track="cta_click"
+          data-label={`rubros-${vertical.id}`}
+          className={buttonClasses("primary", "md", "mt-6 self-start")}
+        >
           {vertical.ctaLabel}
         </a>
       </div>
@@ -58,7 +64,7 @@ export function VerticalsSection() {
         />
 
         <Reveal className="mt-12">
-          <Tabs items={items} ariaLabel="Rubros" tone="dark" />
+          <VerticalTabs items={items} ariaLabel="Rubros" />
         </Reveal>
 
         <div className="mt-10 flex items-start gap-3 rounded-xl border border-amber/30 bg-amber/10 px-5 py-4">

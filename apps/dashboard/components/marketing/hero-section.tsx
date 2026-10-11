@@ -54,7 +54,7 @@ export function HeroSection() {
           </p>
 
           <div className="animate-fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center [animation-delay:240ms]">
-            <a href="#contacto" className={buttonClasses("primary", "lg")}>
+            <a href="#contacto" data-track="cta_click" data-label="hero" className={buttonClasses("primary", "lg")}>
               {copy.hero.primaryCta}
               <ArrowRight aria-hidden="true" className="size-4" />
             </a>

@@ -79,6 +79,8 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <a
             href="#contacto"
+            data-track="cta_click"
+            data-label="header"
             className={cn(
               buttonClasses(solid ? "primary" : "secondary", "md"),
               "hidden sm:inline-flex",
@@ -125,6 +127,8 @@ export function SiteHeader() {
           </ul>
           <a
             href="#contacto"
+            data-track="cta_click"
+            data-label="header-movil"
             onClick={() => setOpen(false)}
             className={cn(buttonClasses("primary", "lg"), "mt-3 w-full")}
           >

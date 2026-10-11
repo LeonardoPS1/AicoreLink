@@ -48,6 +48,7 @@ export function SiteFooter() {
               <li>
                 <a
                   href={whatsappUrl(copy.stickyWhatsApp.message)}
+                  data-label="footer"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-slate-400 transition-colors duration-150 hover:text-teal-light"

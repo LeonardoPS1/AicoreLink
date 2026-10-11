@@ -17,10 +17,12 @@ export interface TabsProps {
   ariaLabel: string;
   defaultId?: string;
   tone?: "light" | "dark";
+  /** Called with the newly selected tab id. */
+  onChange?: (id: string) => void;
   className?: string;
 }
 
-export function Tabs({ items, ariaLabel, defaultId, tone = "light", className }: TabsProps) {
+export function Tabs({ items, ariaLabel, defaultId, tone = "light", onChange, className }: TabsProps) {
   const uid = useId();
   const [activeId, setActiveId] = useState(defaultId ?? items[0]?.id ?? "");
   const triggers = useRef<Array<HTMLButtonElement | null>>([]);
@@ -82,7 +84,10 @@ export function Tabs({ items, ariaLabel, defaultId, tone = "light", className }:
               aria-selected={selected}
               aria-controls={`${uid}-${item.id}-panel`}
               tabIndex={selected ? 0 : -1}
-              onClick={() => setActiveId(item.id)}
+              onClick={() => {
+                setActiveId(item.id);
+                onChange?.(item.id);
+              }}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
