@@ -1,16 +1,33 @@
 import type { Config } from "tailwindcss";
+import { colors, fonts } from "./lib/design/tokens";
 
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-        navy: "#0F172A",
-        brand: {
-          DEFAULT: "#2563EB",
-          dark: "#1D4ED8",
+        navy: {
+          DEFAULT: colors.navy,
+          800: colors.navy800,
         },
-        teal: "#0D9488",
+        brand: {
+          DEFAULT: colors.brand,
+          dark: colors.brandDark,
+        },
+        teal: {
+          DEFAULT: colors.teal,
+          light: colors.tealLight,
+        },
+        amber: {
+          DEFAULT: colors.amber,
+        },
+      },
+      fontFamily: {
+        sans: [...fonts.sans],
       },
     },
   },
