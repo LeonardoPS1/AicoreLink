@@ -12,12 +12,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Valor de relleno SOLO para que `next build` no falle si alguna pagina
+# Valor de relleno para que `next build` no falle si alguna pagina
 # intentara ejecutarse en build time (defensa adicional; el fix real es
 # `export const dynamic = "force-dynamic"` en los layouts de (admin) y
 # (cliente)). Dokploy inyecta el valor REAL en runtime, que sobrescribe
 # este placeholder automaticamente - esto nunca llega a producción.
-ENV AICORELINK_DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 
 RUN npx prisma generate
 RUN npm run build

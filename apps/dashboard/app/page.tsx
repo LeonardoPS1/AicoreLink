@@ -10,7 +10,7 @@ export default async function RootPage() {
   }
 
   const role = (session?.user as any)?.role;
-  if (role === "dev_aicore") {
+  if (role === "admin") {
     redirect("/tenants");
   }
 

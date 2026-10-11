@@ -1,7 +1,7 @@
 ---
 name: backend
 description: >-
-  Guía de desarrollo backend para AicoreLink: API Routes de Next.js, Prisma ORM, NextAuth, RLS,
+  Guía de desarrollo backend: API Routes de Next.js, Prisma ORM, NextAuth, RLS,
   multi-tenancy, y patrones de seguridad.
 ---
 

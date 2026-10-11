@@ -1,7 +1,7 @@
 ---
 name: frontend
 description: >-
-  Guía de desarrollo frontend para AicoreLink: Next.js 14 App Router, Server Components, Tailwind CSS,
+  Guía de desarrollo frontend: Next.js 14 App Router, Server Components, Tailwind CSS,
   layout system, y buenas prácticas de componentes.
 ---
 
@@ -28,7 +28,7 @@ Incluye `@frontend` al inicio de cualquier prompt relacionado con el frontend de
 ```
 app/
 ├── (admin)/
-│   ├── layout.tsx        # layout admin (sidebar Aicore Agency)
+│   ├── layout.tsx        # layout admin (sidebar)
 │   ├── tenants/
 │   └── page.tsx          # overview admin
 ├── (cliente)/

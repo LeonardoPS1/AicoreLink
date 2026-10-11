@@ -11,12 +11,12 @@ export async function textToSpeech(
   text: string,
   options: ElevenLabsTTSOptions = {}
 ): Promise<Buffer> {
-  const apiKey = process.env.AICORELINK_ELEVENLABS_API_KEY;
+  const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    throw new Error("AICORELINK_ELEVENLABS_API_KEY not set");
+    throw new Error("ELEVENLABS_API_KEY not set");
   }
 
-  const voiceId = options.voiceId ?? process.env.AICORELINK_ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM";
+  const voiceId = options.voiceId ?? process.env.ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM";
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
   const response = await fetch(url, {
@@ -51,12 +51,12 @@ export async function textToSpeechStream(
   text: string,
   options: ElevenLabsTTSOptions = {}
 ): Promise<ReadableStream> {
-  const apiKey = process.env.AICORELINK_ELEVENLABS_API_KEY;
+  const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    throw new Error("AICORELINK_ELEVENLABS_API_KEY not set");
+    throw new Error("ELEVENLABS_API_KEY not set");
   }
 
-  const voiceId = options.voiceId ?? process.env.AICORELINK_ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM";
+  const voiceId = options.voiceId ?? process.env.ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM";
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
 
   const response = await fetch(url, {

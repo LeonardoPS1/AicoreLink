@@ -25,9 +25,9 @@ export async function openRouterGenerate(
     max_tokens?: number;
   } = {}
 ): Promise<{ text: string; tokensUsed: number }> {
-  const apiKey = process.env.AICORELINK_OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error("AICORELINK_OPENROUTER_API_KEY not set");
+    throw new Error("OPENROUTER_API_KEY not set");
   }
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -35,8 +35,8 @@ export async function openRouterGenerate(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://aicorelink.aicorebots.com",
-      "X-Title": "AicoreLink",
+      "HTTP-Referer": "https://your-domain.com",
+      "X-Title": "Dashboard",
     },
     body: JSON.stringify({
       model: options.model ?? "z-ai/glm-4.5-air:free",
@@ -65,11 +65,11 @@ export async function openRouterClassifyIntent(
   const messages: OpenRouterMessage[] = [
     {
       role: "system",
-      content: `Eres un clasificador de intenciones para un asistente de clinica medica por WhatsApp.
-Clasifica el mensaje del paciente en UNA de estas categorias:
+      content: `Eres un clasificador de intenciones para un asistente conversacional por WhatsApp.
+Clasifica el mensaje en UNA de estas categorias:
 - "simple": consultas basicas (horarios, ubicacion, servicios, saludos, gracias)
 - "agendamiento": solicitud de turno, cita, agendar, reprogramar, cancelar turno
-- "reclamo": queja, problema, insatisfaccion, error medico, facturacion incorrecta
+- "reclamo": queja, problema, insatisfaccion, error, facturacion incorrecta
 - "otro": todo lo que no encaje en lo anterior
 
 Responde SOLO con JSON valido: {"intent": "categoria", "confidence": 0.0-1.0}`,
@@ -109,12 +109,12 @@ export async function openRouterGenerateResponse(
   const messages: OpenRouterMessage[] = [
     {
       role: "system",
-      content: `Eres un asistente virtual de una clinica medica.
+      content: `Eres un asistente virtual.
 Tono: ${config.tone}
 Base de conocimiento/FAQ:
 ${config.knowledgeBase || "No hay informacion adicional."}
 
-Responde de forma util, breve y profesional. No inventes informacion medica.
+Responde de forma util, breve y profesional. No inventes informacion.
 Si no sabes algo, di que un humano te contactara.`,
     },
     ...history.map((h) => ({

@@ -12,7 +12,7 @@ export async function transcribeAudio(
     baseUrl?: string;
   } = {}
 ): Promise<WhisperTranscribeResponse> {
-  const baseUrl = options.baseUrl ?? process.env.AICORELINK_WHISPER_URL ?? "http://172.18.0.1:9000";
+  const baseUrl = options.baseUrl ?? process.env.WHISPER_URL ?? "http://172.18.0.1:9000";
   const url = `${baseUrl}/asr`;
 
   const formData = new FormData();

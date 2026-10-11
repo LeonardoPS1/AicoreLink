@@ -7,10 +7,10 @@ import { db } from "@/lib/db";
 import { ollamaClassifyIntent } from "@/lib/ai/ollama-client";
 import { openRouterClassifyIntent } from "@/lib/ai/openrouter-client";
 
-const META_VERIFY_TOKEN = process.env.AICORELINK_META_VERIFY_TOKEN ?? "";
-const N8N_WEBHOOK_URL = process.env.AICORELINK_N8N_WHATSAPP_WEBHOOK_URL ?? "";
-const META_APP_SECRET = process.env.AICORELINK_META_APP_SECRET ?? "";
-const META_CLOUD_API_TOKEN = process.env.AICORELINK_META_CLOUD_API_TOKEN ?? "";
+const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN ?? "";
+const N8N_WEBHOOK_URL = process.env.N8N_WHATSAPP_WEBHOOK_URL ?? "";
+const META_APP_SECRET = process.env.META_APP_SECRET ?? "";
+const META_CLOUD_API_TOKEN = process.env.META_CLOUD_API_TOKEN ?? "";
 
 const escalationKeywords: string[] = ["humano", "persona", "agente", "reclamo", "queja"];
 

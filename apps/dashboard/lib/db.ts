@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
-if (!process.env.AICORELINK_DATABASE_URL) {
-  throw new Error("AICORELINK_DATABASE_URL is not set");
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set");
 }
 
 // Evita crear multiples instancias de PrismaClient en desarrollo (hot reload).

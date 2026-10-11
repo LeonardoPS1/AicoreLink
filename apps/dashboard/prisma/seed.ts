@@ -6,35 +6,35 @@ const db = new PrismaClient();
 async function main() {
   // 1. Create tenant
   const tenant = await db.tenant.upsert({
-    where: { slug: "clinica-demo" },
+    where: { slug: "demo" },
     update: {},
     create: {
-      name: "Clínica Demo",
-      slug: "clinica-demo",
+      name: "Demo Tenant",
+      slug: "demo",
       plan: "pro",
       status: "activo",
     },
   });
 
-  // 2. Create dev_aicore user
-  const passwordHash = await hash("dev123456", 12);
+  // 2. Create admin user
+  const passwordHash = await hash("admin123456", 12);
   const user = await db.user.upsert({
-    where: { email: "dev@aicore.com" },
+    where: { email: "admin@example.com" },
     update: { passwordHash },
     create: {
-      email: "dev@aicore.com",
+      email: "admin@example.com",
       passwordHash,
     },
   });
 
-  // 3. Link user to tenant as dev_aicore
+  // 3. Link user to tenant as admin
   await db.tenantUser.upsert({
     where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
-    update: { role: "dev_aicore" },
+    update: { role: "admin" },
     create: {
       tenantId: tenant.id,
       userId: user.id,
-      role: "dev_aicore",
+      role: "admin",
     },
   });
 

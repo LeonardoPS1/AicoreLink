@@ -17,7 +17,7 @@ declare module "next-auth" {
  * - multiTenant flag indicates if user has access to more than one tenant
  */
 export const authOptions: NextAuthOptions = {
-  secret: process.env.AICORELINK_NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

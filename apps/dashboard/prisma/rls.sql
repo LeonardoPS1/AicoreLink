@@ -1,7 +1,7 @@
--- Ejecutar manualmente contra la base "aicorelink" DESPUES de correr
+-- Ejecutar manualmente contra la base de datos DESPUÉS de correr
 -- `npx prisma migrate dev` por primera vez. Prisma no gestiona RLS de forma nativa.
 --
--- Uso: psql "$AICORELINK_DATABASE_URL" -f prisma/rls.sql
+-- Uso: psql "$DATABASE_URL" -f prisma/rls.sql
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS tenant_isolation ON tenant_channels;
@@ -34,6 +34,6 @@ CREATE POLICY tenant_isolation ON messages
 -- para poder listar todos los tenants. El rol usado por el panel CLIENTE nunca
 -- debe tener BYPASSRLS. Ejemplo de creación de ambos roles:
 --
--- CREATE ROLE aicorelink_app LOGIN PASSWORD 'cambia-esto';
--- CREATE ROLE aicorelink_admin LOGIN PASSWORD 'cambia-esto' BYPASSRLS;
--- GRANT ALL ON ALL TABLES IN SCHEMA public TO aicorelink_app, aicorelink_admin;
+-- CREATE ROLE app_user LOGIN PASSWORD 'cambia-esto';
+-- CREATE ROLE app_admin LOGIN PASSWORD 'cambia-esto' BYPASSRLS;
+-- GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user, app_admin;

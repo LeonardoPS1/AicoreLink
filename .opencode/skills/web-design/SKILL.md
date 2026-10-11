@@ -1,7 +1,7 @@
 ---
 name: web-design
 description: >-
-  Guía de diseño UI/UX para AicoreLink: Tailwind CSS, layouts responsivos, paleta de colores, accesibilidad,
+  Guía de diseño UI/UX: Tailwind CSS, layouts responsivos, paleta de colores, accesibilidad,
   y patrones de interfaz para dashboards multi-tenant.
 ---
 

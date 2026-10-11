@@ -3,13 +3,13 @@ import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 
-// Aplica a TODAS las paginas dentro de (cliente)/*: mismo motivo que en el
-// layout de (admin) - datos por tenant, nunca estaticos.
+// Aplica a TODAS las páginas dentro de (cliente)/*: mismo motivo que en el
+// layout de (admin) - datos por tenant, nunca estáticos.
 export const dynamic = "force-dynamic";
 
 export default async function ClienteLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  const isAdmin = (session?.user as any)?.role === "dev_aicore";
+  const isAdmin = (session?.user as any)?.role === "admin";
 
   return (
     <div className="flex min-h-screen">
@@ -22,10 +22,10 @@ export default async function ClienteLayout({ children }: { children: React.Reac
             WhatsApp
           </Link>
           <Link href="/email" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
-            Email (proximamente)
+            Email (próximamente)
           </Link>
           <Link href="/rrss" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
-            RRSS (proximamente)
+            RRSS (próximamente)
           </Link>
           {isAdmin && (
             <Link href="/tenants" className="rounded px-3 py-2 hover:bg-white/10">
@@ -44,7 +44,7 @@ export default async function ClienteLayout({ children }: { children: React.Reac
       </aside>
       <main className="flex-1 bg-slate-50 p-8">
         <div className="mb-6 text-sm text-slate-500">
-          Sesion: {(session?.user as any)?.email}
+          Sesión: {(session?.user as any)?.email}
         </div>
         {children}
       </main>

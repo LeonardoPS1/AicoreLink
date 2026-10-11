@@ -4,7 +4,7 @@ import { logAudit } from "@/lib/audit";
 /**
  * Placeholder de Fase 0. Falta implementar:
  *  1. Verificacion de firma del webhook (Stripe: stripe-signature header;
- *     Flow: firma HMAC propia) usando AICORELINK_BILLING_WEBHOOK_SECRET.
+ *     Flow: firma HMAC propia) usando BILLING_WEBHOOK_SECRET.
  *  2. Mapeo del evento de pago confirmado -> tenantId + plan/canal a activar.
  *  3. Llamada a setFeature() para activar el modulo correspondiente.
  *

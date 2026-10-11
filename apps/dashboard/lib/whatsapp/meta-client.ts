@@ -171,7 +171,7 @@ export function encryptSecret(secret: string, encryptionKey: string): string {
 }
 
 /** Master key management for AES-256-GCM channel credential encryption */
-export const channelCredentialMasterKey = process.env.AICORELINK_MASTER_KEY;
+export const channelCredentialMasterKey = process.env.ENCRYPTION_KEY;
 
 // Key version for rotation support
 export const channelCredentialKeyVersion = "v1";
@@ -185,7 +185,7 @@ export function encryptChannelCredential(secret: string): string {
   const masterKey = channelCredentialMasterKey;
   if (!masterKey) {
     throw new Error(
-      "AICORELINK_MASTER_KEY no configurada. No se puede cifrar credential de canal."
+      "ENCRYPTION_KEY no configurada. No se puede cifrar credential de canal."
     );
   }
 

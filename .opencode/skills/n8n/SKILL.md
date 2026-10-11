@@ -11,8 +11,8 @@ Incluye `@n8n` al inicio de cualquier prompt relacionado con workflows de n8n.
 
 ## Conceptos clave
 
-- n8n corre en el mismo VPS que AicoreLink, conectado a la misma instancia PostgreSQL compartida.
-- Los workflows se exportan como JSON y se versionan en `n8n-workflows/`.
+- n8n corre en el mismo VPS, conectado a la misma instancia PostgreSQL compartida.
+- Los workflows se exportan como JSON y se versionan.
 - Cada workflow debe ser **idempotente**: ejecutarlo múltiples veces no debe duplicar datos.
 
 ## Patrón típico: Webhook → Postgres → IF → HTTP Request → Postgres
@@ -36,7 +36,7 @@ Incluye `@n8n` al inicio de cualquier prompt relacionado con workflows de n8n.
 
 ```json
 {
-  "name": "aicorelink-whatsapp-text",
+  "name": "whatsapp-text",
   "nodes": [...],
   "connections": {...},
   "settings": {
@@ -48,6 +48,6 @@ Incluye `@n8n` al inicio de cualquier prompt relacionado con workflows de n8n.
 ## Import en Dokploy
 
 1. Ir a n8n → **Workflows** → **Import from File**
-2. Seleccionar el JSON desde `n8n-workflows/`
+2. Seleccionar el JSON
 3. Configurar las credenciales (Postgres, Meta, etc.)
 4. Activar el workflow

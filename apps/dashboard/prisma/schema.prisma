@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("AICORELINK_DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model Tenant {
@@ -51,7 +51,7 @@ model TenantUser {
 model TenantChannel {
   id          String    @id @default(uuid())
   tenantId    String    @map("tenant_id")
-  channel     String // whatsapp_text | whatsapp_voice | email | social
+  channel     String    // whatsapp_text | whatsapp_voice | email | social
   enabled     Boolean   @default(false)
   config      Json      @default("{}")
   descripcion String?   @map("descripcion")

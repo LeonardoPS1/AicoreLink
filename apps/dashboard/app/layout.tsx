@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "AicoreLink",
-  description: "Plataforma agentica multicanal de Aicore Agency",
+  title: "Dashboard",
+  description: "Plataforma multitenant para gestión de canales conversacionales",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

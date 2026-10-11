@@ -18,13 +18,13 @@ interface N8nWebhookPayload {
 
 /**
  * Verifica la firma del webhook N8N usando el secreto compartido.
- * Configura AICORELINK_N8N_WEBHOOK_SECRET en las variables de entorno.
+ * Configura N8N_WEBHOOK_SECRET en las variables de entorno.
  * Si no está configurado, emite warning pero sigue procesando (modo desarrollo).
  */
 function verifyN8nWebhookSignature(req: NextRequest, secret?: string): boolean {
   if (!secret) {
     console.warn(
-      "[n8n/webhook] AICORELINK_N8N_WEBHOOK_SECRET no configurado - firma no verificada"
+      "[n8n/webhook] N8N_WEBHOOK_SECRET no configurado - firma no verificada"
     );
     return true; // En desarrollo, permitir pasar; en producción configurar secreto
   }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify webhook signature if secret is configured
-    const n8nWebhookSecret = process.env.AICORELINK_N8N_WEBHOOK_SECRET;
+    const n8nWebhookSecret = process.env.N8N_WEBHOOK_SECRET;
     if (n8nWebhookSecret && !verifyN8nWebhookSignature(request, n8nWebhookSecret)) {
       console.warn("[n8n/webhook] Invalid webhook signature");
       return new NextResponse("Invalid signature", { status: 401 });

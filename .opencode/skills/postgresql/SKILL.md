@@ -1,7 +1,7 @@
 ---
 name: postgresql
 description: >-
-  Guía de operaciones PostgreSQL para AicoreLink: consultas, migraciones con Prisma, Row Level Security (RLS),
+  Guía de operaciones PostgreSQL: consultas, migraciones con Prisma, Row Level Security (RLS),
   administración de bases de datos multi-tenant, y troubleshooting.
 ---
 
@@ -11,10 +11,10 @@ Incluye `@postgresql` al inicio de cualquier prompt relacionado con PostgreSQL.
 
 ## Modelo multi-tenant
 
-- Una sola base de datos `aicorelink` en la misma instancia de AiCoreMed
+- Una sola base de datos compartida
 - Cada tabla operativa tiene columna `tenant_id`
 - RLS activado para aislar tenants por fila
-- El rol `aicorelink_admin` tiene `BYPASSRLS` para el panel admin
+- El rol admin tiene `BYPASSRLS` para el panel admin
 
 ## RLS SQL
 
@@ -41,14 +41,14 @@ cd apps/dashboard && npx prisma migrate dev --name descripcion
 npx prisma migrate deploy
 
 # Aplicar RLS después de migrar
-psql "$AICORELINK_DATABASE_URL" -f apps/dashboard/prisma/rls.sql
+psql "$DATABASE_URL" -f apps/dashboard/prisma/rls.sql
 ```
 
 ## Consultas útiles
 
 ```sql
 -- Crear tenant de prueba
-INSERT INTO tenants (id, name, slug) VALUES (gen_random_uuid(), 'Clinica Test', 'clinica-test');
+INSERT INTO tenants (id, name, slug) VALUES (gen_random_uuid(), 'Test Tenant', 'test');
 
 -- Ver todos los tenants con sus usuarios
 SELECT t.name, t.slug, u.email, tu.role
@@ -68,4 +68,4 @@ SELECT * FROM tenant_channels;
 
 - **`relation "public.xxx" does not exist`**: Prisma usa `@@map()` con nombres snake_case, verificar el nombre real en la BD con `\dt`
 - **RLS no funciona**: verificar que el usuario de BD no tenga `BYPASSRLS`, y que la política esté creada
-- **Error de conexión**: verificar que `AICORELINK_DATABASE_URL` tenga el formato correcto y el host sea accesible
+- **Error de conexión**: verificar que `DATABASE_URL` tenga el formato correcto y el host sea accesible

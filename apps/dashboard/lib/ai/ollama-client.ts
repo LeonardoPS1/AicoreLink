@@ -26,7 +26,7 @@ export async function ollamaGenerate(
   request: OllamaGenerateRequest,
   baseUrl?: string
 ): Promise<OllamaGenerateResponse> {
-  const url = `${baseUrl ?? process.env.AICORELINK_OLLAMA_BASE_URL ?? "http://172.18.0.1:11434"}/api/generate`;
+  const url = `${baseUrl ?? process.env.OLLAMA_BASE_URL ?? "http://172.18.0.1:11434"}/api/generate`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
 

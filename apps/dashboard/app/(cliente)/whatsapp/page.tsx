@@ -142,7 +142,7 @@ export default function WhatsappPage() {
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 text-sm font-medium transition-colors"
         >
-          Cerrar sesion
+          Cerrar sesión
         </button>
       </div>
 
@@ -226,7 +226,7 @@ export default function WhatsappPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Horario de atencion (ej. 09:00-18:00)
+                  Horario de atención (ej. 09:00-18:00)
                 </label>
                 <input
                   type="text"
@@ -249,13 +249,13 @@ export default function WhatsappPage() {
                   }
                   rows={6}
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent font-mono text-sm"
-                  placeholder="Ej: La clinica abre de lunes a viernes 9 a 18hs. Direccion: Av. Siempre Viva 123. Servicios: Clinica general, Pediatria, Cardiologia..."
+                  placeholder="Ej: La clínica abre de lunes a viernes 9 a 18hs. Dirección: Av. Siempre Viva 123. Servicios: Clínica general, Pediatría, Cardiología..."
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Descripcion del canal (visible para los pacientes)
+                  Descripción del canal (visible para los pacientes)
                 </label>
                 <textarea
                   value={config.descripcion || ""}
@@ -264,7 +264,7 @@ export default function WhatsappPage() {
                   }
                   rows={3}
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent font-mono text-sm"
-                  placeholder="Ej: Atencion al paciente para consultas medicas y turnos"
+                  placeholder="Ej: Atención al paciente para consultas médicas y turnos"
                 />
               </div>
 
@@ -279,7 +279,7 @@ export default function WhatsappPage() {
                   className="w-5 h-5 text-navy border-slate-300 rounded focus:ring-navy"
                 />
                 <label htmlFor="autoReply" className="text-sm text-slate-700">
-                  Respuesta automatica habilitada
+                  Respuesta automática habilitada
                 </label>
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function WhatsappPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Maximo tokens por respuesta
+                  Máximo tokens por respuesta
                 </label>
                 <input
                   type="number"
@@ -324,7 +324,7 @@ export default function WhatsappPage() {
               <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
                 <p className="font-medium mb-1">Modelos utilizados:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Local (Ollama): Gemma 3 1B - Clasificacion y respuestas simples</li>
+                  <li>Local (Ollama): Gemma 3 1B - Clasificación y respuestas simples</li>
                   <li>Cloud (OpenRouter): GLM 4.5 Air - Respuestas complejas, agendamiento, reclamos</li>
                 </ul>
               </div>
@@ -344,7 +344,7 @@ export default function WhatsappPage() {
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent"
                 />
                 <p className="mt-1 text-xs text-slate-500">
-                  Si el paciente escribe alguna de estas palabras, la conversacion se marca como
+                  Si el paciente escribe alguna de estas palabras, la conversación se marca como
                   escalada y se notifica al staff.
                 </p>
               </div>
@@ -371,7 +371,7 @@ export default function WhatsappPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Mensaje automatico al escalar
+                  Mensaje automático al escalar
                 </label>
                 <textarea
                   value={config.escalationMessage || ""}
@@ -442,13 +442,13 @@ export default function WhatsappPage() {
               </div>
 
               <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
-                <p className="font-medium mb-1">Como funciona:</p>
+                <p className="font-medium mb-1">Cómo funciona:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>El paciente envia una nota de voz</li>
-                  <li>Se transcribe automaticamente con Whisper</li>
+                  <li>El paciente envía una nota de voz</li>
+                  <li>Se transcribe automáticamente con Whisper</li>
                   <li>Se procesa igual que un mensaje de texto (pipeline IA existente)</li>
-                  <li>Si "Responder en audio" esta activo, la respuesta se genera con ElevenLabs y se envia como nota de voz</li>
-                  <li>Si esta desactivado, la respuesta llega en texto</li>
+                  <li>Si "Responder en audio" está activo, la respuesta se genera con ElevenLabs y se envía como nota de voz</li>
+                  <li>Si está desactivado, la respuesta llega en texto</li>
                 </ul>
               </div>
             </div>
@@ -461,7 +461,7 @@ export default function WhatsappPage() {
             disabled={saving}
             className="px-6 py-2 bg-navy text-white rounded-md hover:bg-navy/90 disabled:opacity-50 transition-colors"
           >
-            {saving ? "Guardando..." : "Guardar configuracion"}
+            {saving ? "Guardando..." : "Guardar configuración"}
           </button>
         </div>
       </div>
@@ -472,10 +472,10 @@ export default function WhatsappPage() {
           Configura la URL del webhook en Meta Developer Console:
         </p>
         <code className="text-sm text-blue-900 bg-blue-100 px-2 py-1 rounded">
-          https://aicorelink.aicorebots.com/api/webhooks/whatsapp
+          https://your-domain.com/api/webhooks/whatsapp
         </code>
         <p className="text-xs text-blue-600 mt-2">
-          Verify Token: configurar en variables de entorno (AICORELINK_META_VERIFY_TOKEN)
+          Verify Token: configurar en variables de entorno (META_VERIFY_TOKEN)
         </p>
       </div>
     </div>

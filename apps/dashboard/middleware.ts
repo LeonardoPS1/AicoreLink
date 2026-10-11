@@ -1,8 +1,8 @@
-// Rate limiting middleware for AicoreLink
+// Rate limiting middleware
 // 
 // NOTA: Next.js App Router tiene su propio sistema de middleware.
 // Para rate limiting real, configurar @upstash/ratelimit con Redis en los API routes
-// o usar middleware de nivel de infraigura (Dokploy/Traefik).
+// o usar middleware de nivel de infraestructura (Dokploy/Traefik).
 //
 // Este archivo exporta configuraciones para uso en API routes y un middleware mínimo.
 

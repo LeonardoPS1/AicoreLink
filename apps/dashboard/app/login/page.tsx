@@ -25,7 +25,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Credenciales invalidas");
+      setError("Credenciales inválidas");
       return;
     }
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-xl bg-white p-8 shadow-lg"
       >
-        <h1 className="mb-1 text-2xl font-bold text-navy">AicoreLink</h1>
+        <h1 className="mb-1 text-2xl font-bold text-navy">Dashboard</h1>
         <p className="mb-6 text-sm text-slate-500">Ingresa a tu panel</p>
 
         <label className="mb-1 block text-sm font-medium">Email</label>

@@ -15,11 +15,11 @@ interface WorkerHealth {
 }
 
 const WORKERS: Omit<WorkerHealth, "status" | "lastCheck" | "details" | "error">[] = [
-  { name: "aicorelink-whatsapp-worker", type: "WhatsApp", port: 3001 },
-  { name: "aicorelink-email-worker", type: "Email", port: 3002 },
-  { name: "aicorelink-social-worker", type: "RRSS", port: 3003 },
-  { name: "aicorelink-whisper", type: "Whisper ASR", port: 9000 },
-  { name: "aicorelink-monitor", type: "Monitor/Alerts", port: 3004 },
+  { name: "whatsapp-worker", type: "WhatsApp", port: 3001 },
+  { name: "email-worker", type: "Email", port: 3002 },
+  { name: "social-worker", type: "RRSS", port: 3003 },
+  { name: "whisper", type: "Whisper ASR", port: 9000 },
+  { name: "monitor", type: "Monitor/Alerts", port: 3004 },
 ];
 
 async function getWorkerHealth(): Promise<WorkerHealth[]> {
