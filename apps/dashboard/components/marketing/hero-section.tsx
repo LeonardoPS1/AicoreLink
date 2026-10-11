@@ -43,17 +43,17 @@ export function HeroSection() {
             {copy.hero.eyebrow}
           </p>
 
-          <h1 className="animate-fade-up mt-6 text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.4rem] [animation-delay:80ms]">
+          <h1 className="animate-fade-up mt-6 text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.4rem]">
             {headlineBefore}
             <span className="text-gradient">24/7</span>
             {headlineAfter}
           </h1>
 
-          <p className="animate-fade-up mt-6 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg [animation-delay:160ms]">
+          <p className="animate-fade-up mt-6 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg [animation-delay:80ms]">
             {copy.hero.subhead}
           </p>
 
-          <div className="animate-fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center [animation-delay:240ms]">
+          <div className="animate-fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center [animation-delay:160ms]">
             <a href="#contacto" data-track="cta_click" data-label="hero" className={buttonClasses("primary", "lg")}>
               {copy.hero.primaryCta}
               <ArrowRight aria-hidden="true" className="size-4" />
@@ -66,7 +66,7 @@ export function HeroSection() {
             </a>
           </div>
 
-          <p className="animate-fade-up mt-6 text-sm text-slate-400 [animation-delay:320ms]">
+          <p className="animate-fade-up mt-6 text-sm text-slate-400 [animation-delay:240ms]">
             {copy.hero.trustLine}
           </p>
         </div>
@@ -99,7 +99,7 @@ export function HeroSection() {
                       className={cn(
                         "max-w-[86%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed",
                         message.from === "ai"
-                          ? "rounded-br-md bg-teal text-white"
+                          ? "rounded-br-md bg-teal-dark text-white"
                           : "rounded-bl-md bg-slate-100 text-slate-700",
                       )}
                     >

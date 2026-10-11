@@ -74,7 +74,7 @@ export function TestimonialsSection() {
                   {example.outcome}
                 </p>
 
-                <p className="mt-5 border-t border-slate-100 pt-4 text-xs font-semibold uppercase tracking-wide text-teal">
+                <p className="mt-5 border-t border-slate-100 pt-4 text-xs font-semibold uppercase tracking-wide text-teal-dark">
                   {example.capability}
                 </p>
               </article>

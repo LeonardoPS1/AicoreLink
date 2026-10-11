@@ -21,7 +21,7 @@ export function PricingCard({ plan }: Props) {
       )}
     >
       {plan.highlighted && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-teal px-3 py-1 text-xs font-semibold text-white shadow-sm">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-teal-dark px-3 py-1 text-xs font-semibold text-white shadow-sm">
           {plan.badge}
         </span>
       )}
@@ -43,7 +43,7 @@ export function PricingCard({ plan }: Props) {
               aria-hidden="true"
               className={cn(
                 "mt-0.5 grid size-5 shrink-0 place-items-center rounded-full",
-                plan.highlighted ? "bg-teal/10 text-teal" : "bg-brand/10 text-brand",
+                plan.highlighted ? "bg-teal/10 text-teal-dark" : "bg-brand/10 text-brand",
               )}
             >
               <Check className="size-3.5" strokeWidth={3} />

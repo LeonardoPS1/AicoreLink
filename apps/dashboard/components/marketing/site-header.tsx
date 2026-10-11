@@ -35,7 +35,7 @@ export function SiteHeader() {
         "fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 ease-out",
         solid
           ? "border-b border-slate-200 bg-white/85 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent",
+          : "border-b border-transparent bg-navy",
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:h-20">

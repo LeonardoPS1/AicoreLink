@@ -47,9 +47,12 @@ describe("CtaSection", () => {
     expect(screen.getByText(copy.cta.guarantee)).toBeInTheDocument();
   });
 
-  it("embeds the lead form next to the pitch", () => {
+  it("embeds the lead form next to the pitch", async () => {
     render(<CtaSection />);
 
-    expect(screen.getByRole("button", { name: /Solicitar diagnóstico gratis/ })).toBeInTheDocument();
+    // The form mounts lazily (dynamic import off the critical path).
+    expect(
+      await screen.findByRole("button", { name: /Solicitar diagnóstico gratis/ }),
+    ).toBeInTheDocument();
   });
 });

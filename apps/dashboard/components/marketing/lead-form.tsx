@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 
 import { trackFormSubmit } from "@/lib/analytics";
@@ -13,27 +11,55 @@ import { verticals } from "@/lib/marketing/verticals";
 import { cn } from "@/lib/utils";
 
 type Status = "idle" | "submitting" | "success" | "error";
+type FieldErrors = Partial<Record<keyof LeadInput, string>>;
+
+const EMPTY: LeadInput = { nombre: "", negocio: "", whatsapp: "", rubro: "", mensaje: "" };
 
 const FIELDS: { name: keyof LeadInput; label: string; placeholder: string; autoComplete: string }[] = [
   { name: "nombre", label: "Tu nombre", placeholder: "Juan Pérez", autoComplete: "name" },
   { name: "negocio", label: "Tu negocio", placeholder: "Barbería El Corte", autoComplete: "organization" },
 ];
 
+/**
+ * Lead capture form. Deliberately dependency-free (no react-hook-form): this is
+ * the only place the landing touches heavy form machinery, and dropping it cut
+ * the biggest client-side script chunk and the longest main-thread task in the
+ * Lighthouse budget. Validation runs on submit against the same Zod schema the
+ * API route uses (lib/leads/schema.ts), so client and server agree on the rules.
+ */
 export function LeadForm() {
+  const [values, setValues] = useState<LeadInput>(EMPTY);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<Status>("idle");
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<LeadInput>({
-    resolver: zodResolver(leadSchema),
-    defaultValues: { nombre: "", negocio: "", whatsapp: "", rubro: "", mensaje: "" },
-  });
+  function update(name: keyof LeadInput) {
+    return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+      setValues((prev) => ({ ...prev, [name]: event.target.value }));
 
-  const onSubmit = handleSubmit(async (values) => {
+      // The visitor is fixing the field; clear its error right away.
+      if (fieldErrors[name]) {
+        setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
+    };
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const parsed = leadSchema.safeParse(values);
+
+    if (!parsed.success) {
+      const flattened = parsed.error.flatten().fieldErrors;
+      setFieldErrors(
+        Object.fromEntries(
+          Object.entries(flattened).map(([key, messages]) => [key, messages?.[0]]),
+        ),
+      );
+      return;
+    }
+
     setStatus("submitting");
+
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
@@ -45,13 +71,14 @@ export function LeadForm() {
         throw new Error(`Lead submission failed with status ${response.status}`);
       }
 
-      reset();
+      setValues(EMPTY);
+      setFieldErrors({});
       setStatus("success");
-      trackFormSubmit(values.rubro || undefined);
+      trackFormSubmit(parsed.data.rubro || undefined);
     } catch {
       setStatus("error");
     }
-  });
+  }
 
   if (status === "success") {
     return (
@@ -59,7 +86,7 @@ export function LeadForm() {
         role="status"
         className="flex h-full flex-col items-center justify-center rounded-2xl border border-teal/30 bg-white p-8 text-center shadow-[0_24px_60px_-32px_rgba(13,148,136,0.55)]"
       >
-        <CheckCircle2 aria-hidden="true" className="size-10 text-teal" />
+        <CheckCircle2 aria-hidden="true" className="size-10 text-teal-dark" />
         <h3 className="mt-4 text-lg font-semibold text-navy">¡Recibimos tus datos!</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">
           Te escribimos por WhatsApp en las próximas horas para coordinar el diagnóstico.
@@ -85,43 +112,45 @@ export function LeadForm() {
             key={field.name}
             id={field.name}
             label={field.label}
-            error={errors[field.name]?.message}
+            error={fieldErrors[field.name]}
           >
             <input
               id={field.name}
               type="text"
               autoComplete={field.autoComplete}
               placeholder={field.placeholder}
-              aria-invalid={errors[field.name] ? true : undefined}
-              aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
-              className={cn(controlClasses, errors[field.name] && "border-red-400")}
-              {...register(field.name)}
+              value={values[field.name]}
+              onChange={update(field.name)}
+              aria-invalid={fieldErrors[field.name] ? true : undefined}
+              aria-describedby={fieldErrors[field.name] ? `${field.name}-error` : undefined}
+              className={cn(controlClasses, fieldErrors[field.name] && "border-red-400")}
             />
           </FormField>
         ))}
 
-        <FormField id="whatsapp" label="Tu WhatsApp" error={errors.whatsapp?.message}>
+        <FormField id="whatsapp" label="Tu WhatsApp" error={fieldErrors.whatsapp}>
           <input
             id="whatsapp"
             type="tel"
             inputMode="tel"
             autoComplete="tel"
             placeholder="+54 9 11 5555 5555"
-            aria-invalid={errors.whatsapp ? true : undefined}
-            aria-describedby={errors.whatsapp ? "whatsapp-error" : undefined}
-            className={cn(controlClasses, errors.whatsapp && "border-red-400")}
-            {...register("whatsapp")}
+            value={values.whatsapp}
+            onChange={update("whatsapp")}
+            aria-invalid={fieldErrors.whatsapp ? true : undefined}
+            aria-describedby={fieldErrors.whatsapp ? "whatsapp-error" : undefined}
+            className={cn(controlClasses, fieldErrors.whatsapp && "border-red-400")}
           />
         </FormField>
 
-        <FormField id="rubro" label="Tu rubro" error={errors.rubro?.message}>
+        <FormField id="rubro" label="Tu rubro" error={fieldErrors.rubro}>
           <select
             id="rubro"
-            defaultValue=""
-            aria-invalid={errors.rubro ? true : undefined}
-            aria-describedby={errors.rubro ? "rubro-error" : undefined}
-            className={cn(controlClasses, "appearance-none", errors.rubro && "border-red-400")}
-            {...register("rubro")}
+            value={values.rubro}
+            onChange={update("rubro")}
+            aria-invalid={fieldErrors.rubro ? true : undefined}
+            aria-describedby={fieldErrors.rubro ? "rubro-error" : undefined}
+            className={cn(controlClasses, "appearance-none", fieldErrors.rubro && "border-red-400")}
           >
             <option value="" disabled>
               Elegí una opción
@@ -139,19 +168,18 @@ export function LeadForm() {
           id="mensaje"
           label="¿Qué te gustaría resolver?"
           hint="Opcional"
-          error={errors.mensaje?.message}
+          error={fieldErrors.mensaje}
           className="sm:col-span-2"
         >
           <textarea
             id="mensaje"
             rows={3}
             placeholder="Ej: pierdo consultas porque no llego a contestar el WhatsApp."
-            aria-invalid={errors.mensaje ? true : undefined}
-            aria-describedby={
-              errors.mensaje ? "mensaje-error" : "mensaje-hint"
-            }
-            className={cn(controlClasses, "resize-y", errors.mensaje && "border-red-400")}
-            {...register("mensaje")}
+            value={values.mensaje}
+            onChange={update("mensaje")}
+            aria-invalid={fieldErrors.mensaje ? true : undefined}
+            aria-describedby={fieldErrors.mensaje ? "mensaje-error" : "mensaje-hint"}
+            className={cn(controlClasses, "resize-y", fieldErrors.mensaje && "border-red-400")}
           />
         </FormField>
       </div>

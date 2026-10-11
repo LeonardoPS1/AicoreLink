@@ -20,6 +20,7 @@ const config: Config = {
         },
         teal: {
           DEFAULT: colors.teal,
+          dark: colors.tealDark,
           light: colors.tealLight,
         },
         amber: {

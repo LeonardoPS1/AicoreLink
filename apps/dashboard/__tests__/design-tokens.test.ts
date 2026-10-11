@@ -11,6 +11,7 @@ describe("design tokens — palette (spec §5)", () => {
       brand: "#2563EB",
       brandDark: "#1D4ED8",
       teal: "#0D9488",
+      tealDark: "#0F766E",
       tealLight: "#5EEAD4",
       slate50: "#F8FAFC",
       slate200: "#E2E8F0",
@@ -43,6 +44,7 @@ describe("tailwind config wiring", () => {
     expect(resolved.theme.colors.navy.DEFAULT).toBe("#0F172A");
     expect(resolved.theme.colors.navy["800"]).toBe("#1E293B");
     expect(resolved.theme.colors.teal.DEFAULT).toBe("#0D9488");
+    expect(resolved.theme.colors.teal.dark).toBe("#0F766E");
     expect(resolved.theme.colors.teal.light).toBe("#5EEAD4");
     expect(resolved.theme.colors.amber.DEFAULT).toBe("#F59E0B");
   });

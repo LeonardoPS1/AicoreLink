@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
-import { Providers } from "./providers";
 import { SITE_URL } from "@/lib/marketing/site";
 
 export const metadata: Metadata = {
@@ -16,9 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={GeistSans.variable}>
-      <body className="bg-slate-50 font-sans text-slate-900 antialiased">
-        <Providers>{children}</Providers>
-      </body>
+      <body className="bg-slate-50 font-sans text-slate-900 antialiased">{children}</body>
     </html>
   );
 }

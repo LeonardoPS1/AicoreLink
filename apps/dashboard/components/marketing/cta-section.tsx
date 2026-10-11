@@ -1,10 +1,34 @@
+import dynamic from "next/dynamic";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 
-import { LeadForm } from "@/components/marketing/lead-form";
 import { WhatsAppGlyph } from "@/components/marketing/whatsapp-glyph";
 import { buttonClasses } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { copy, bookingUrl, whatsappUrl } from "@/lib/marketing/copy";
+
+/**
+ * The lead form (and its zod chunk) is the heaviest client module on the
+ * landing. Loading it lazily keeps the form off the critical path: the rest of
+ * the page hydrates first, then the form mounts. Server-side it renders the
+ * skeleton below, so visitors see a stable layout either way.
+ */
+const LeadForm = dynamic(
+  () => import("@/components/marketing/lead-form").then((mod) => mod.LeadForm),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden="true"
+        className="rounded-2xl border border-white/10 bg-white p-6 sm:p-8"
+      >
+        <div className="h-5 w-2/3 animate-pulse rounded bg-slate-200" />
+        <div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-slate-200" />
+        <div className="mt-6 h-28 animate-pulse rounded-xl bg-slate-100" />
+        <div className="mt-4 h-11 animate-pulse rounded-lg bg-slate-200" />
+      </div>
+    ),
+  },
+);
 
 export function CtaSection() {
   return (

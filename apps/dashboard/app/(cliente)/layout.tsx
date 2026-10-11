@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import type { Metadata } from "next";
+import { Providers } from "@/app/providers";
 
 // Aplica a TODAS las páginas dentro de (cliente)/*: mismo motivo que en el
 // layout de (admin) - datos por tenant, nunca estáticos.
@@ -53,7 +54,7 @@ export default async function ClienteLayout({ children }: { children: React.Reac
         <div className="mb-6 text-sm text-slate-500">
           Sesión: {(session?.user as any)?.email}
         </div>
-        {children}
+        <Providers>{children}</Providers>
       </main>
     </div>
   );

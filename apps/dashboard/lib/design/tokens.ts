@@ -15,6 +15,7 @@ export const colors = {
   brand: "#2563EB",
   brandDark: "#1D4ED8",
   teal: "#0D9488",
+  tealDark: "#0F766E",
   tealLight: "#5EEAD4",
   slate50: "#F8FAFC",
   slate200: "#E2E8F0",
