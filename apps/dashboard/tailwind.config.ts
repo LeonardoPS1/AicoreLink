@@ -27,7 +27,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: [...fonts.sans],
+        // `--font-geist-sans` is injected by `geist/font/sans` in the root layout;
+        // the literal fallbacks keep tests and non-font environments readable.
+        sans: ["var(--font-geist-sans)", ...fonts.sans],
       },
     },
   },
