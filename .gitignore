@@ -31,3 +31,6 @@ container_logs.txt
 # Build artifacts
 *.tsbuildinfo
 node_modules/
+
+# Superpowers SDD workspace (ledger, briefs, review packages)
+.superpowers/

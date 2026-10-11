@@ -1,0 +1,82 @@
+/* Print stylesheet for AicoreLink plans */
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: #0F172A;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+h1 {
+  font-size: 22pt;
+  color: #0F172A;
+  border-bottom: 3px solid #2563EB;
+  padding-bottom: 6px;
+  margin-top: 0;
+}
+h2 {
+  font-size: 15pt;
+  color: #1D4ED8;
+  margin-top: 22px;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 4px;
+  page-break-after: avoid;
+}
+h3 {
+  font-size: 12.5pt;
+  color: #0D9488;
+  margin-top: 16px;
+  page-break-after: avoid;
+}
+h4 { font-size: 11pt; color: #1E293B; margin-top: 12px; }
+p { margin: 6px 0; }
+a { color: #2563EB; text-decoration: none; }
+code {
+  background: #F1F5F9;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 9pt;
+}
+pre {
+  background: #0F172A;
+  color: #E2E8F0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 8.5pt;
+  line-height: 1.35;
+  page-break-inside: avoid;
+}
+pre code { background: none; color: inherit; padding: 0; }
+blockquote {
+  border-left: 4px solid #0D9488;
+  background: #F0FDFA;
+  margin: 8px 0;
+  padding: 6px 12px;
+  color: #134E4A;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 9pt;
+  page-break-inside: avoid;
+}
+th {
+  background: #0F172A;
+  color: #fff;
+  text-align: left;
+  padding: 6px 8px;
+  font-weight: 600;
+}
+td { padding: 5px 8px; border-bottom: 1px solid #E2E8F0; vertical-align: top; }
+tr:nth-child(even) td { background: #F8FAFC; }
+ul, ol { margin: 6px 0; padding-left: 22px; }
+li { margin: 3px 0; }
+hr { border: none; border-top: 1px solid #E2E8F0; margin: 18px 0; }
+strong { color: #0F172A; }
+h1 + p strong, blockquote strong { color: inherit; }
