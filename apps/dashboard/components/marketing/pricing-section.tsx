@@ -13,7 +13,7 @@ export function PricingSection() {
           subtitle={copy.pricing.subtitle}
         />
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {copy.pricing.plans.map((plan, index) => (
             <Reveal key={plan.id} delay={index * 70} className="h-full">
               <PricingCard plan={plan} />

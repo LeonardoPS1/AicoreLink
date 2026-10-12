@@ -1,6 +1,8 @@
 /**
  * Landing verticals — the service businesses AicoreLink targets.
- * Plan: docs/superpowers/plans/2026-10-11-aicorelink-landing-plan.md (§2, §6.7)
+ * Plan: docs/superpowers/plans/2026-10-12-aicorelink-web-master-build-plan.md (§10).
+ *
+ * Voice rules: neutral Chilean Spanish, always tuteo, never voseo.
  *
  * Scope note: these are businesses that sell services, time or consultations.
  * Catalog / e-commerce stores are explicitly out of scope.
@@ -51,10 +53,10 @@ export const verticals: Vertical[] = [
     tab: "Talleres",
     icon: "🔧",
     singular: "Taller mecánico",
-    pain: "Estás debajo del auto, no podés atender. El cliente llama a otro taller.",
+    pain: "Estás debajo del auto, no puedes atender. El cliente llama a otro taller.",
     anchor: "El cliente no espera a que te limpies las manos",
     solution:
-      "Mientras trabajás, el asistente cotiza, agenda el ingreso y te avisa cuando hay un presupuesto listo para aprobar.",
+      "Mientras trabajas, el asistente cotiza, agenda el ingreso y te avisa cuando hay un presupuesto listo para aprobar.",
     ctaLabel: "Quiero esto para mi Taller mecánico",
     highlight: { value: "Al instante", label: "Cotiza y agenda ingresos" },
   },
@@ -99,11 +101,11 @@ export const verticals: Vertical[] = [
     tab: "A domicilio",
     icon: "🚚",
     singular: "Servicio a domicilio",
-    pain: "Mientras trabajás, tu teléfono es tu mejor vendedor y está apagado.",
+    pain: "Mientras trabajas, tu teléfono es tu mejor vendedor y está apagado.",
     anchor: "Tu mejor vendedor, siempre encendido",
     solution:
       "La IA toma el pedido, confirma zona y horario, y te deja la ruta ordenada para que solo ejecutes.",
     ctaLabel: "Quiero esto para mi Servicio a domicilio",
-    highlight: { value: "Siempre activo", label: "Contesta mientras trabajás" },
+    highlight: { value: "Siempre activo", label: "Contesta mientras trabajas" },
   },
 ];

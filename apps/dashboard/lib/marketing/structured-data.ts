@@ -35,7 +35,7 @@ export function organizationSchema(): JsonLdNode {
     sameAs: copy.footer.ecosystem.links.map((link) => link.href),
     areaServed: {
       "@type": "Country",
-      name: "Argentina",
+      name: "Chile",
     },
     // Points at the on-page conversion path (booking + WhatsApp) on purpose:
     // a ContactPoint with a placeholder phone number would publish a fake number.
@@ -48,14 +48,11 @@ export function organizationSchema(): JsonLdNode {
   };
 }
 
-/** Prices in `copy.pricing.plans` are display strings like "$49". */
-function priceAmount(price: string): string {
-  return price.replace(/[^\d.]/g, "");
-}
-
 /**
  * The product being sold: an AI-powered website plus its monthly maintenance,
  * expressed as one Offer per plan so Rich Results can list the tiering.
+ *
+ * Prices come from `plan.priceCLP` (numbers) and are quoted in CLP, VAT excluded.
  */
 export function serviceSchema(): JsonLdNode {
   return {
@@ -68,7 +65,7 @@ export function serviceSchema(): JsonLdNode {
     provider: { "@id": ORGANIZATION_ID },
     areaServed: {
       "@type": "Country",
-      name: "Argentina",
+      name: "Chile",
     },
     audience: {
       "@type": "BusinessAudience",
@@ -78,14 +75,14 @@ export function serviceSchema(): JsonLdNode {
       "@type": "Offer",
       name: plan.name,
       description: plan.forWho,
-      price: priceAmount(plan.price),
-      priceCurrency: "USD",
+      price: plan.priceCLP,
+      priceCurrency: "CLP",
       availability: "https://schema.org/InStock",
       url: absoluteUrl("/#planes"),
       priceSpecification: {
         "@type": "UnitPriceSpecification",
-        price: priceAmount(plan.price),
-        priceCurrency: "USD",
+        price: plan.priceCLP,
+        priceCurrency: "CLP",
         billingDuration: "P1M",
         billingIncrement: 1,
       },

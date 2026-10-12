@@ -69,10 +69,10 @@ describe("site identity", () => {
     ]);
   });
 
-  it("declares the Argentine Spanish locale used by the copy", async () => {
+  it("declares the Chilean Spanish locale used by the copy", async () => {
     const { SITE_LOCALE, SITE_NAME } = await loadSite();
 
-    expect(SITE_LOCALE).toBe("es_AR");
+    expect(SITE_LOCALE).toBe("es_CL");
     expect(SITE_NAME).toBe(copy.brand.name);
   });
 });

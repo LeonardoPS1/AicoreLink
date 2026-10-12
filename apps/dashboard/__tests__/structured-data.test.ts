@@ -88,10 +88,10 @@ describe("serviceSchema", () => {
       const offer = offers[index];
 
       expect(offer.name).toBe(plan.name);
-      expect(offer.price).toBe(plan.price.replace(/[^\d.]/g, ""));
-      expect(Number(offer.price)).toBeGreaterThan(0);
-      expect(offer.priceCurrency).toBe("USD");
+      expect(offer.price).toBe(plan.priceCLP);
+      expect(offer.priceCurrency).toBe("CLP");
       expect(offer.url).toBe(`${SITE_URL}/#planes`);
+      expect(offer.priceSpecification.price).toBe(plan.priceCLP);
       expect(offer.priceSpecification.billingDuration).toBe("P1M");
     }
   });

@@ -1,24 +1,31 @@
 /**
  * Landing copy — single source of truth for all marketing text.
- * Plan: docs/superpowers/plans/2026-10-11-aicorelink-landing-plan.md (§6)
+ * Source of truth: AicoreLink_Web_Plan_de_Ejecucion.md §10 and §23 (v2 copy).
  *
  * Keeping copy out of components lets us revise wording without touching JSX.
+ * Voice rules (§10.1): close, neutral Chilean Spanish, always tuteo, never voseo.
  */
 
 export type NavItem = { label: string; href: string };
 export type PainItem = { icon: string; title: string; description: string };
 export type SolutionColumn = { icon: string; title: string; description: string };
 export type Step = { title: string; description: string };
-export type PlanId = "starter" | "growth" | "elite";
+export type PlanId = "semilla" | "starter" | "growth" | "elite";
 export type Plan = {
   id: PlanId;
   name: string;
-  price: string;
-  priceLabel: string;
+  /** Monthly price in CLP. VAT is added separately (see `priceNote`). */
+  priceCLP: number;
+  /** Short note rendered next to the price ("+ IVA" / "sin costo"). */
+  priceNote: string;
   forWho: string;
+  /** Positioning line (§10.6). Reserved for the pricing redesign. */
+  tagline: string;
   features: string[];
   ctaLabel: string;
   highlighted: boolean;
+  /** Exactly one plan (Growth) is flagged as the most chosen. */
+  bestSeller?: boolean;
   badge?: string;
 };
 export type FaqItem = { question: string; answer: string };
@@ -81,8 +88,8 @@ export const copy: LandingCopy = {
     eyebrow: "Sitios web con IA para negocios que viven de sus clientes",
     headline: "Tu negocio atiende y capta clientes 24/7. Aunque tú estés trabajando.",
     subhead:
-      "Creamos tu página web y le conectamos un asistente con IA que responde por WhatsApp, agenda citas y nunca deja un mensaje sin contestar. Todo incluido en una cuota mensual.",
-    primaryCta: "Quiero mi sitio con IA",
+      "Creamos tu sitio web con IA que responde por WhatsApp, agenda citas y pide reseñas. Listo en días, sin que tengas que saber de tecnología.",
+    primaryCta: "Quiero mi diagnóstico gratis",
     secondaryCta: "Ver cómo funciona",
     trustLine:
       "Ideal para barberías, talleres, estudios, inmobiliarias, clínicas y todo negocio de servicios.",
@@ -100,41 +107,51 @@ export const copy: LandingCopy = {
   },
 
   pains: {
-    title: "Si te identificás con esto, estás perdiendo clientes todos los días",
+    title: "Cada mensaje sin responder es un cliente que se va.",
     items: [
       {
         icon: "💬",
-        title: "No llegás a contestar",
-        description:
-          "Estás con un cliente, manejando o ya cerraste. El mensaje llega igual. Y el cliente no espera: le escribe al siguiente de la lista.",
+        title: "El cliente que no recibe respuesta en minutos le escribe a tu competencia.",
+        description: "Tu sitio responde en segundos, a cualquier hora.",
       },
       {
-        icon: "🌐",
-        title: "Tu web existe, pero no vende",
-        description:
-          "Una página que solo muestra información es un folleto caro. Sin formulario, sin chat y sin agenda, el visitante se va sin dejar rastro.",
+        icon: "🌙",
+        title: "Tu negocio cierra a las 19:00. Tus clientes, no.",
+        description: "Atiende y agenda de noche y en fines de semana.",
       },
       {
-        icon: "📅",
-        title: "Agendás a mano",
-        description:
-          "Turnos por WhatsApp, llamadas perdidas y citas que se superponen. Tu agenda te consume más tiempo del que te ahorra.",
+        icon: "🔁",
+        title: "Cada consulta repetida es tiempo que le quitas a tu trabajo.",
+        description: "Responde horarios, precios y ubicación por ti.",
+      },
+      {
+        icon: "🔎",
+        title: "Tienes Instagram, pero cuando buscan en Google no apareces.",
+        description: "Un sitio pensado para que te contacten, no solo para verse bien.",
+      },
+      {
+        icon: "⏰",
+        title: "La hora que no llega es plata que no vuelve.",
+        description: "Recordatorios automáticos con confirmación.",
       },
       {
         icon: "⭐",
-        title: "No tenés reseñas y Google te ignora",
-        description:
-          "Los negocios con más reseñas consiguen hasta 3 veces más contactos. Pedirlas una por una, nunca alcanza.",
+        title: "Atiendes bien, pero nadie lo ve en Google.",
+        description: "Pedimos la reseña en el momento justo.",
       },
       {
-        icon: "💸",
-        title: "Pagar una web es caro y mantenerla, peor",
-        description:
-          "Precios altísimos por un sitio que después nadie actualiza. Y cada cambio se cobra aparte.",
+        icon: "📞",
+        title: "Estás con las manos ocupadas y suena el teléfono.",
+        description: "Una recepcionista de voz atiende, toma el mensaje y te avisa.",
+      },
+      {
+        icon: "🗂️",
+        title: "WhatsApp aquí, agenda allá, planilla en otro lado.",
+        description: "Todo en un solo lugar, con un reporte cada mes.",
       },
     ],
     closing:
-      "Todos estos problemas tienen la misma causa: falta de atención automática. Y la misma solución.",
+      "Todos estos problemas tienen la misma causa: la atención no puede esperar. Y la misma solución.",
   },
 
   solution: {
@@ -157,96 +174,122 @@ export const copy: LandingCopy = {
         icon: "🤖",
         title: "Atiende",
         description:
-          "La IA agenda citas, envía recordatorios, pide reseñas automáticamente y te avisa cuando hace falta que intervengas vos.",
+          "La IA agenda citas, envía recordatorios, pide reseñas automáticamente y te avisa cuando hace falta que intervengas.",
       },
     ],
   },
 
   howItWorks: {
-    title: "Empezás a recibir clientes en pocos días",
+    title: "Empieza a recibir clientes en pocos días",
     subtitle: "Sin formularios eternos ni reuniones interminables.",
     steps: [
       {
-        title: "Nos contás tu negocio.",
-        description:
-          "Una llamada de 15 minutos. Nos contás qué hacés, a quién atendés y qué querés lograr.",
+        title: "Conversamos 20 minutos",
+        description: "Nos cuentas cómo trabajas y qué consultas se repiten.",
       },
       {
-        title: "Te armamos el sitio.",
+        title: "Armamos tu sitio en 48–72 h",
         description:
-          "Diseñamos tu página web con IA, lista para convertir. Vos aprobás el contenido.",
+          "Con tu logo, tus servicios y tu estilo. Tú apruebas antes de publicar.",
       },
       {
-        title: "Conectamos WhatsApp e IA.",
-        description: "Enlazamos tu WhatsApp y entrenamos al asistente con tu información.",
+        title: "Conectamos WhatsApp, agenda y reseñas",
+        description: "Todo configurado por nosotros; tú no tocas nada técnico.",
       },
       {
-        title: "Recibís clientes.",
+        title: "Atiende por ti y te reportamos",
         description:
-          "Tu web capta, tu IA atiende y vos te enfocás en trabajar. Nosotros nos ocupamos del resto.",
+          "Cada mes recibes un resumen con consultas, citas y reseñas.",
       },
     ],
   },
 
   verticals: {
     title: "Hecho para negocios como el tuyo",
-    subtitle: "Si vendés servicios, tiempo o consultas (no un catálogo de productos), esto es para vos.",
+    subtitle:
+      "Si tu negocio vende servicios, tiempo o consultas (no un catálogo de productos), esto es para ti.",
     note: "No es para tiendas con catálogo. Es para negocios que necesitan captar, convertir y atender.",
     ctaTemplate: "Quiero esto para mi {singular}",
   },
 
   pricing: {
     title: "Planes claros. Sin costos escondidos.",
-    subtitle: "Todo incluido: diseño, hosting, WhatsApp Business, IA y soporte.",
+    subtitle: "Todo incluido: diseño, hosting, WhatsApp y el asistente según tu plan.",
+    // Monthly prices are CLP with VAT excluded. Implementation amounts are shown
+    // without the currency symbol: the card headline already establishes CLP.
     plans: [
+      {
+        id: "semilla",
+        name: "Semilla",
+        priceCLP: 0,
+        priceNote: "sin costo",
+        forWho: "Negocio que recién parte",
+        tagline: "Para tener presencia online hoy, sin costo.",
+        features: [
+          "1 página",
+          "Botón de WhatsApp",
+          "Formulario de contacto",
+          'Sello "Hecho con AicoreLink"',
+        ],
+        ctaLabel: "Quiero mi diagnóstico gratis",
+        highlighted: false,
+      },
       {
         id: "starter",
         name: "Starter",
-        price: "$49",
-        priceLabel: "desde $49 / mes",
+        priceCLP: 19990,
+        priceNote: "+ IVA",
         forWho: "Negocio que arranca",
+        tagline: "Para verte profesional y no perder mensajes.",
         features: [
           "3 páginas",
           "Formulario de contacto",
-          "Chat con IA básico",
-          "Hosting y SSL incluidos",
+          "Chat básico con IA",
+          "Implementación sin costo con permanencia de 6 meses",
         ],
-        ctaLabel: "Agendar diagnóstico gratis",
+        ctaLabel: "Quiero mi diagnóstico gratis",
         highlighted: false,
       },
       {
         id: "growth",
         name: "Growth",
-        price: "$99",
-        priceLabel: "desde $99 / mes",
+        priceCLP: 49990,
+        priceNote: "+ IVA",
         forWho: "Negocio que quiere crecer",
+        tagline: "Para llenar tu agenda con reservas y reseñas automáticas.",
         features: [
           "5 páginas",
           "Calendario de citas",
           "Reseñas automáticas",
-          "Chat con IA avanzado",
+          "Notas de voz",
+          "Derivación a tu equipo",
+          "Implementación desde 49.990",
         ],
-        ctaLabel: "Agendar diagnóstico gratis",
+        ctaLabel: "Quiero mi diagnóstico gratis",
         highlighted: true,
+        bestSeller: true,
         badge: "Más elegido",
       },
       {
         id: "elite",
         name: "Elite",
-        price: "$199",
-        priceLabel: "desde $199 / mes",
+        priceCLP: 99990,
+        priceNote: "+ IVA",
         forWho: "Negocio que quiere automatizar todo",
+        tagline: "Para que nada se te escape: chat IA y recepcionista de voz.",
         features: [
           "Hasta 10 páginas",
-          "Chat con IA avanzado",
-          "Recepcionista de voz con IA",
+          "Chat con IA completo",
+          "Recepcionista de voz",
           "Todo lo de Growth, incluido",
+          "Implementación desde 149.990",
         ],
-        ctaLabel: "Agendar diagnóstico gratis",
+        ctaLabel: "Quiero mi diagnóstico gratis",
         highlighted: false,
+        badge: "Atención completa",
       },
     ],
-    note: "La inversión inicial puede ser $0. Vos elegís: pagás solo la cuota mensual o un setup mínimo para arrancar antes.",
+    note: "Precios en pesos chilenos (CLP) más IVA. Puedes cancelar cuando quieras: tu dominio y tu contenido son tuyos.",
   },
 
   testimonials: {
@@ -261,47 +304,53 @@ export const copy: LandingCopy = {
     subtitle: "Lo que todo negocio pregunta antes de empezar.",
     items: [
       {
-        question: "¿Qué incluye la cuota mensual?",
-        answer:
-          "Diseño, hosting, SSL, WhatsApp Business, asistente con IA, mantenimiento, actualizaciones y soporte. Una sola cuota.",
-      },
-      {
         question: "¿Necesito saber de tecnología?",
-        answer: "No. Nosotros armamos y configuramos todo. Vos solo aprobás el contenido.",
+        answer: "No. Nosotros armamos, conectamos y mantenemos todo. Tú apruebas y listo.",
       },
       {
-        question: "¿Puedo usar mi propio dominio?",
-        answer: "Sí. Si ya tenés dominio, lo conectamos. Si no, te ayudamos a conseguirlo.",
-      },
-      {
-        question: "¿La IA responde cualquier cosa?",
+        question: "¿Qué pasa si quiero irme?",
         answer:
-          "No. La entrenamos con tu información real y, cuando no sabe, te pasa la conversación a vos. No inventa.",
+          "Tu dominio y tu contenido son tuyos. Te entregamos todo; solo respetas la permanencia si te regalamos la implementación.",
       },
       {
-        question: "¿Y si ya tengo una web?",
+        question: "¿La IA puede decir algo incorrecto?",
         answer:
-          "La renovamos o te armamos una nueva que sí convierta. Sin perder lo que ya posicionaste.",
+          "Solo responde con la información que tú aprobaste. Si no sabe algo, lo dice y te avisa. Tú defines qué temas no toca.",
       },
       {
-        question: "¿Hay contrato mínimo?",
-        answer: "Trabajamos mes a mes. Si en 30 días no ves resultados, no seguimos.",
+        question: "¿Cuánto tardan en entregarme el sitio?",
+        answer: "Entre 48 y 72 horas desde que nos entregas tus datos completos.",
       },
       {
-        question: "¿Sirve para mi rubro?",
+        question: "¿Funciona con mi WhatsApp actual?",
         answer:
-          "Si tu negocio necesita captar, convertir o atender clientes, sí. Si vendés un catálogo de productos, no es para vos.",
+          "Depende del plan: puedes usar un número compartido o uno propio. Te recomendamos la mejor opción en el diagnóstico.",
+      },
+      {
+        question: "¿Qué pasa con los datos de mis clientes?",
+        answer:
+          "Están aislados y solo se usan para atender a tu negocio. Firmamos un contrato de tratamiento de datos.",
+      },
+      {
+        question: "¿Hay permanencia?",
+        answer:
+          "Solo cuando te regalamos la implementación (6 meses). En otros casos puedes cancelar con aviso.",
+      },
+      {
+        question: "¿Y si no recibo consultas?",
+        answer:
+          "Garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes.",
       },
     ],
   },
 
   cta: {
-    title: "¿Listo para dejar de perder clientes?",
-    subtitle:
-      "Agendá una llamada de 15 minutos. Te mostramos cómo se vería tu negocio con un sitio que atiende solo.",
-    primaryLabel: "Agendar diagnóstico gratis",
+    title: "Descubre cuántos clientes podrías estar perdiendo.",
+    subtitle: "Te respondemos hoy por WhatsApp. Sin compromiso.",
+    primaryLabel: "Quiero mi diagnóstico gratis",
     secondaryLabel: "Escribir por WhatsApp",
-    guarantee: "Sin compromiso. Si no es para vos, te lo decimos.",
+    guarantee:
+      "Tu dominio es tuyo. Tu contenido es tuyo. Si algún día te vas, te llevas todo. Sin letra chica. Y si en 30 días no recibes consultas por tu sitio, no cobramos el segundo mes.",
   },
 
   stickyWhatsApp: {
@@ -339,7 +388,7 @@ export const WHATSAPP_PHONE =
   process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "+56975680702";
 
 /**
- * Booking link for the 15-minute diagnostic call.
+ * Booking link for the diagnostic call.
  * TODO(leonardo): replace with the real scheduling link (Cal.com / Calendly).
  */
 export const bookingUrl =
@@ -350,4 +399,63 @@ export const bookingUrl =
  */
 export function whatsappUrl(message: string, phone: string = WHATSAPP_PHONE): string {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
+/**
+ * Formats an integer CLP amount the Chilean way: `formatCLP(19990) === "$19.990"`.
+ * VAT is never included — plans quote it separately via `priceNote`.
+ */
+const clpFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+export function formatCLP(amount: number): string {
+  return clpFormatter.format(amount);
+}
+
+/**
+ * Prefilled WhatsApp messages per entry point (§10.9). Tokens `[rubro]` and
+ * `$[monto]` are filled by `presetWhatsappUrl` so every CTA opens the same
+ * conversation with the right context.
+ */
+export const PRESET_MESSAGES: {
+  hero: string;
+  demo: string;
+  calculadora: string;
+  starter: string;
+  growth: string;
+  elite: string;
+} = {
+  hero: "Hola, vi AicoreLink y quiero saber cuántos clientes podría estar perdiendo mi negocio de [rubro].",
+  starter: "Hola, me interesa el plan Starter de AicoreLink para mi negocio de [rubro].",
+  growth: "Hola, me interesa el plan Growth de AicoreLink para mi negocio de [rubro].",
+  elite:
+    "Hola, me interesa el plan Elite de AicoreLink (con recepcionista de voz) para mi negocio de [rubro].",
+  calculadora:
+    "Hola, hice el cálculo en AicoreLink y mi negocio podría estar perdiendo $[monto] al mes. Quiero ver cómo recuperarlo.",
+  demo: "Hola, probé la demo de AicoreLink y quiero una igual para mi negocio.",
+};
+
+/**
+ * Resolves a preset message into a wa.me link, filling `[rubro]` and `$[monto]`
+ * when provided. Unknown tokens are left untouched so a missing option degrades
+ * to a still-sendable template instead of a broken link.
+ */
+export function presetWhatsappUrl(
+  context: keyof typeof PRESET_MESSAGES,
+  opts: { rubro?: string; amountCLP?: number } = {},
+): string {
+  let message = PRESET_MESSAGES[context];
+
+  if (opts.rubro) {
+    message = message.replace("[rubro]", opts.rubro);
+  }
+  if (opts.amountCLP !== undefined) {
+    // The template already carries the "$", so swap the whole `$[monto]` token.
+    message = message.replace("$[monto]", formatCLP(opts.amountCLP));
+  }
+
+  return whatsappUrl(message);
 }

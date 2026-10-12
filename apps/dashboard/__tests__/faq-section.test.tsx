@@ -23,7 +23,7 @@ describe("FaqSection", () => {
       screen.getByRole("button", { name: item.question }),
     );
 
-    expect(triggers).toHaveLength(7);
+    expect(triggers).toHaveLength(copy.faq.items.length);
     triggers.forEach((trigger) => {
       expect(trigger).toHaveAttribute("aria-expanded");
     });

@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Plan } from "@/lib/marketing/copy";
+import { formatCLP, type Plan } from "@/lib/marketing/copy";
 
 interface Props {
   plan: Plan;
@@ -30,10 +30,12 @@ export function PricingCard({ plan }: Props) {
         <h3 className="text-lg font-semibold text-navy">{plan.name}</h3>
         <p className="mt-1 text-sm text-slate-500">{plan.forWho}</p>
         <p className="mt-5 flex items-baseline gap-1.5">
-          <span className="text-4xl font-semibold tracking-tight text-navy">{plan.price}</span>
+          <span className="text-4xl font-semibold tracking-tight text-navy">
+            {formatCLP(plan.priceCLP)}
+          </span>
           <span className="text-sm font-medium text-slate-500">/ mes</span>
         </p>
-        <p className="mt-1 text-xs text-slate-400">{plan.priceLabel}</p>
+        <p className="mt-1 text-xs text-slate-400">{plan.priceNote}</p>
       </header>
 
       <ul className="mt-6 flex-1 space-y-3">
