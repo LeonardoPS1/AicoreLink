@@ -101,6 +101,24 @@ export type LandingCopy = {
     disclaimer: string;
     ctaLabel: string;
   };
+  attentionTest: {
+    title: string;
+    subtitle: string;
+    intro: string;
+    yesLabel: string;
+    noLabel: string;
+    resultTitle: string;
+    /** Score template; `{score}` is replaced with the computed 0..100 value. */
+    scoreTemplate: string;
+    gapsTitle: string;
+    allClear: string;
+    /** Stand-in for `[brechas]` when a perfect score leaves no gaps to list. */
+    noGapsBrecha: string;
+    disclaimer: string;
+    ctaLabel: string;
+    /** Suffix appended when the visitor arrives from the calculator with `?monto`. */
+    amountSuffix: string;
+  };
   footer: {
     tagline: string;
     ecosystem: FooterGroup;
@@ -463,6 +481,24 @@ export const copy: LandingCopy = {
     ctaLabel: "Quiero recuperar esos clientes",
   },
 
+  attentionTest: {
+    title: "¿Qué tan bien atiende tu negocio?",
+    subtitle:
+      "Ocho preguntas de sí o no. Al final ves tu puntaje y lo que hoy puedes mejorar.",
+    intro: "Responde con calma: tus respuestas no se guardan ni se envían a nadie.",
+    yesLabel: "Sí",
+    noLabel: "No",
+    resultTitle: "Tu puntaje",
+    scoreTemplate: "{score}/100",
+    gapsTitle: "Lo que hoy dejas pasar:",
+    allClear: "No detectamos brechas: tu atención está bien cubierta.",
+    noGapsBrecha: "nada puntual, quiero mantener el nivel de atención",
+    disclaimer:
+      "Es un diagnóstico, no una nota. Te sirve como punto de partida para mejorar.",
+    ctaLabel: "Quiero que me ayudes a mejorar",
+    amountSuffix: "Mi calculadora estimó cerca de {amount} al mes.",
+  },
+
   footer: {
     tagline: "Sitios web con IA que captan, convierten y atienden por tu negocio.",
     ecosystem: {
@@ -532,6 +568,7 @@ export const PRESET_MESSAGES: {
   starter: string;
   growth: string;
   elite: string;
+  test: string;
 } = {
   hero: "Hola, vi AicoreLink y quiero saber cuántos clientes podría estar perdiendo mi negocio de [rubro].",
   starter: "Hola, me interesa el plan Starter de AicoreLink para mi negocio de [rubro].",
@@ -541,16 +578,23 @@ export const PRESET_MESSAGES: {
   calculadora:
     "Hola, hice el cálculo en AicoreLink y mi negocio podría estar perdiendo $[monto] al mes. Quiero ver cómo recuperarlo.",
   demo: "Hola, probé la demo de AicoreLink y quiero una igual para mi negocio.",
+  test: "Hola, hice el test de atención de AicoreLink y saqué [puntaje]/100. Quiero mejorar: [brechas].",
 };
 
 /**
- * Resolves a preset message into a wa.me link, filling `[rubro]` and `$[monto]`
- * when provided. Unknown tokens are left untouched so a missing option degrades
- * to a still-sendable template instead of a broken link.
+ * Resolves a preset message into a wa.me link, filling `[rubro]`, `$[monto]`,
+ * `[puntaje]` and `[brechas]` when provided. Unknown tokens are left untouched
+ * so a missing option degrades to a still-sendable template instead of a broken
+ * link. The attention test joins its gaps with "; ".
  */
 export function presetWhatsappUrl(
   context: keyof typeof PRESET_MESSAGES,
-  opts: { rubro?: string; amountCLP?: number } = {},
+  opts: {
+    rubro?: string;
+    amountCLP?: number;
+    puntaje?: number;
+    brechas?: string[];
+  } = {},
 ): string {
   let message = PRESET_MESSAGES[context];
 
@@ -560,6 +604,12 @@ export function presetWhatsappUrl(
   if (opts.amountCLP !== undefined) {
     // The template already carries the "$", so swap the whole `$[monto]` token.
     message = message.replace("$[monto]", formatCLP(opts.amountCLP));
+  }
+  if (opts.puntaje !== undefined) {
+    message = message.replace("[puntaje]", String(opts.puntaje));
+  }
+  if (opts.brechas !== undefined) {
+    message = message.replace("[brechas]", opts.brechas.join("; "));
   }
 
   return whatsappUrl(message);
