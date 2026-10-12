@@ -6,6 +6,8 @@
  * Voice rules (§10.1): close, neutral Chilean Spanish, always tuteo, never voseo.
  */
 
+import type { LostRevenueInput } from "@/lib/tools/calculator";
+
 export type NavItem = { label: string; href: string };
 export type PainItem = { icon: string; title: string; description: string };
 export type SolutionColumn = { icon: string; title: string; description: string };
@@ -30,6 +32,21 @@ export type Plan = {
 };
 export type FaqItem = { question: string; answer: string };
 export type FooterGroup = { title: string; links: { label: string; href: string }[] };
+
+/**
+ * Calculator field metadata (§10.4). `name` is keyed to `LostRevenueInput`, so a
+ * renamed input cannot silently drift away from the copy that labels it.
+ */
+export type CalculatorFieldName = keyof LostRevenueInput;
+export type CalculatorField = {
+  name: CalculatorFieldName;
+  label: string;
+  /** What the visitor types: raw count, percent (0–100), CLP, or "x out of 10". */
+  unit: "count" | "percent" | "clp" | "perTen";
+  placeholder: string;
+  hint?: string;
+};
+
 /**
  * Illustrative example card in the `#casos` section. Deliberately not a client
  * quote/metric: it is labelled "Ejemplo" and attributed to a business type.
@@ -75,6 +92,15 @@ export type LandingCopy = {
     guarantee: string;
   };
   stickyWhatsApp: { label: string; message: string };
+  calculator: {
+    title: string;
+    subtitle: string;
+    fields: CalculatorField[];
+    /** Sentence template; `{amount}` is replaced with a formatted CLP value. */
+    resultTemplate: string;
+    disclaimer: string;
+    ctaLabel: string;
+  };
   footer: {
     tagline: string;
     ecosystem: FooterGroup;
@@ -397,6 +423,44 @@ export const copy: LandingCopy = {
   stickyWhatsApp: {
     label: "¿Hablamos? 💬",
     message: "Hola, quiero un sitio web con IA para mi negocio.",
+  },
+
+  calculator: {
+    title: "¿Cuánto te cuesta no responder?",
+    subtitle:
+      "Usa tus propios números y mira una estimación en segundos. No guardamos nada de lo que escribes.",
+    fields: [
+      {
+        name: "messagesPerWeek",
+        label: "¿Cuántos mensajes recibes por semana?",
+        unit: "count",
+        placeholder: "40",
+      },
+      {
+        name: "unansweredPct",
+        label: "¿Qué porcentaje queda sin respuesta a tiempo?",
+        unit: "percent",
+        placeholder: "20",
+        hint: "De 0 a 100.",
+      },
+      {
+        name: "avgTicketCLP",
+        label: "¿Cuánto vale en promedio un cliente nuevo?",
+        unit: "clp",
+        placeholder: "25000",
+        hint: "Monto en pesos.",
+      },
+      {
+        name: "closeRate",
+        label: "¿De cada 10 que preguntan, cuántos terminan comprando?",
+        unit: "perTen",
+        placeholder: "3",
+        hint: "Escribe 3 si compran 3 de cada 10.",
+      },
+    ],
+    resultTemplate: "Hoy podrías estar perdiendo cerca de {amount} al mes.",
+    disclaimer: "Es una estimación con los datos que ingresaste.",
+    ctaLabel: "Quiero recuperar esos clientes",
   },
 
   footer: {
