@@ -101,7 +101,7 @@ export function LeadForm() {
       onSubmit={onSubmit}
       className="rounded-2xl border border-white/10 bg-white p-6 text-left shadow-[0_24px_60px_-32px_rgba(15,23,42,0.65)] sm:p-8"
     >
-      <h3 className="text-lg font-semibold text-navy">Contanos de tu negocio</h3>
+      <h3 className="text-lg font-semibold text-navy">Cuéntanos de tu negocio</h3>
       <p className="mt-1 text-sm text-slate-500">
         Te contactamos en menos de 24 horas. Sin compromiso.
       </p>
@@ -134,7 +134,7 @@ export function LeadForm() {
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            placeholder="+54 9 11 5555 5555"
+            placeholder="+56 9 5555 5555"
             value={values.whatsapp}
             onChange={update("whatsapp")}
             aria-invalid={fieldErrors.whatsapp ? true : undefined}
@@ -153,7 +153,7 @@ export function LeadForm() {
             className={cn(controlClasses, "appearance-none", fieldErrors.rubro && "border-red-400")}
           >
             <option value="" disabled>
-              Elegí una opción
+              Elige una opción
             </option>
             {verticals.map((vertical) => (
               <option key={vertical.id} value={vertical.id}>
@@ -200,7 +200,7 @@ export function LeadForm() {
 
       {status === "error" ? (
         <p role="alert" className="mt-3 text-center text-sm font-medium text-red-600">
-          No pudimos enviar tus datos. Probá de nuevo o escribinos por WhatsApp.
+          No pudimos enviar tus datos. Prueba de nuevo o escríbenos por WhatsApp.
         </p>
       ) : null}
     </form>

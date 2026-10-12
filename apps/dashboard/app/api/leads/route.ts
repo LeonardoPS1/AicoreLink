@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   if (!allowed) {
     return NextResponse.json(
-      { ok: false, error: "Recibimos varios envíos seguidos. Probá de nuevo en unos minutos." },
+      { ok: false, error: "Recibimos varios envíos seguidos. Prueba de nuevo en unos minutos." },
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
     );
   }
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Revisá los datos enviados.",
+        error: "Revisa los datos enviados.",
         fields: parsed.error.flatten().fieldErrors,
       },
       { status: 400 },

@@ -1,3 +1,5 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import {
   copy,
@@ -9,6 +11,37 @@ import {
   bookingUrl,
 } from "@/lib/marketing/copy";
 import { verticals } from "@/lib/marketing/verticals";
+import * as site from "@/lib/marketing/site";
+
+/**
+ * Rioplatense voseo forms. Tuteo equivalents ("estás", "tú", "tu") are valid and
+ * must NOT be blocked.
+ */
+const VOSEO_PATTERN =
+  /\b(vos|sos|tenés|podés|querés|sabés|hacés|decís|venís|elegís|agendás|pagás|necesitás|trabajás|llegás|usás|andá|mirá|probá|fijate|contame|dejame|pedime|identificás|cerrás|manejás|contanos|escribinos|escribí|elegí|decime|mandame|avisame|acordate|olvidate|ponete|quedate|acercate|sumate|animáte|pasá|entrá|llamá|enviá|agendá|revisá|completá|usá|hacé|decí|vení|salí|tené|ingresá|reclamá|aprovechá)\b/i;
+
+/**
+ * Old v1 USD price tags. The real CLP prices ($49.990, $99.990, …) share the
+ * "$49"/"$99"/"$199" prefix, so the lookahead excludes an immediate ".NN".
+ */
+const USD_PRICE_PATTERN = /\$49(?!\.\d)|\$99(?!\.\d)|\$199(?!\.\d)/;
+
+/** Source trees that ship user-visible marketing / form copy. */
+const SCAN_DIRS = [
+  "lib/marketing",
+  "components/marketing",
+  "lib/leads",
+  "app/api/leads",
+];
+
+function collectSourceFiles(dir: string): string[] {
+  const abs = join(process.cwd(), dir);
+  return readdirSync(abs, { withFileTypes: true }).flatMap((entry) => {
+    const rel = join(dir, entry.name);
+    if (entry.isDirectory()) return collectSourceFiles(rel);
+    return /\.(ts|tsx)$/.test(entry.name) ? [rel] : [];
+  });
+}
 
 describe("landing copy (plan §6)", () => {
   it("has brand, nav and header CTA", () => {
@@ -110,16 +143,47 @@ describe("v2 FAQ (§10.8)", () => {
   });
 });
 
+describe("testimonial examples (single source of truth)", () => {
+  it("lives in copy so the section cannot ship stale inline strings", () => {
+    expect(copy.testimonials.examples).toHaveLength(3);
+    for (const example of copy.testimonials.examples) {
+      expect(example.business).toBeTruthy();
+      expect(example.situation).toBeTruthy();
+      expect(example.outcome).toBeTruthy();
+      expect(example.capability).toBeTruthy();
+    }
+  });
+});
+
 describe("voice and currency guardrails", () => {
-  it("never uses Rioplatense voseo in copy or verticals", () => {
-    const blob = JSON.stringify({ copy, verticals });
-    expect(blob).not.toMatch(
-      /\b(vos|sos|tenés|podés|querés|sabés|hacés|decís|venís|elegís|agendás|pagás|necesitás|trabajás|llegás|usás|andá|mirá|probá|fijate|contame|dejame|pedime|identificás|cerrás|manejás)\b/i,
-    );
+  it("never uses Rioplatense voseo in copy, verticals or site metadata", () => {
+    const blob = JSON.stringify({ copy, verticals, site });
+    expect(blob).not.toMatch(VOSEO_PATTERN);
   });
 
   it("no longer carries the old USD prices", () => {
-    expect(JSON.stringify(copy)).not.toMatch(/\$49\b|\$99\b|\$199\b/);
+    expect(JSON.stringify({ copy, verticals, site })).not.toMatch(USD_PRICE_PATTERN);
+  });
+
+  it("matches a genuine old USD price but not the CLP ones", () => {
+    // Guard the guardrail: the lookahead must not neuter the check.
+    expect("Planes desde $49 por mes.").toMatch(USD_PRICE_PATTERN);
+    expect("Precio $99").toMatch(USD_PRICE_PATTERN);
+    expect("Precio $199").toMatch(USD_PRICE_PATTERN);
+    expect("Implementación desde $49.990").not.toMatch(USD_PRICE_PATTERN);
+    expect("Implementación desde $149.990").not.toMatch(USD_PRICE_PATTERN);
+    expect("Planes desde $19.990 + IVA al mes.").not.toMatch(USD_PRICE_PATTERN);
+  });
+
+  it("never uses voseo anywhere in the shipped marketing/form sources", () => {
+    const files = SCAN_DIRS.flatMap(collectSourceFiles);
+    expect(files.length).toBeGreaterThan(0);
+
+    const offenders = files.filter((file) =>
+      VOSEO_PATTERN.test(readFileSync(join(process.cwd(), file), "utf8")),
+    );
+
+    expect(offenders).toEqual([]);
   });
 });
 

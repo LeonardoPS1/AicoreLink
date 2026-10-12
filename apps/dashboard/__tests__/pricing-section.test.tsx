@@ -59,10 +59,12 @@ describe("PricingSection", () => {
     expect(badges[0].getAttribute("data-plan")).toBe("growth");
   });
 
-  it("shows the badge only on the highlighted plan", () => {
+  it("renders each plan badge independent of the highlighted flag", () => {
     render(<PricingSection />);
 
+    // Growth is highlighted ("Más elegido"); Elite is not highlighted but still badged.
     expect(screen.getByText("Más elegido")).toBeInTheDocument();
+    expect(screen.getByText("Atención completa")).toBeInTheDocument();
   });
 
   it("points every plan CTA at the contact section", () => {

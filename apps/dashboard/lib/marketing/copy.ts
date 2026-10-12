@@ -30,6 +30,17 @@ export type Plan = {
 };
 export type FaqItem = { question: string; answer: string };
 export type FooterGroup = { title: string; links: { label: string; href: string }[] };
+/**
+ * Illustrative example card in the `#casos` section. Deliberately not a client
+ * quote/metric: it is labelled "Ejemplo" and attributed to a business type.
+ */
+export type TestimonialExample = {
+  icon: string;
+  business: string;
+  situation: string;
+  outcome: string;
+  capability: string;
+};
 
 export type LandingCopy = {
   brand: { name: string; tagline: string };
@@ -49,7 +60,12 @@ export type LandingCopy = {
   howItWorks: { title: string; subtitle: string; steps: Step[] };
   verticals: { title: string; subtitle: string; note: string; ctaTemplate: string };
   pricing: { title: string; subtitle: string; plans: Plan[]; note: string };
-  testimonials: { title: string; subtitle: string; placeholderNotice: string };
+  testimonials: {
+    title: string;
+    subtitle: string;
+    placeholderNotice: string;
+    examples: TestimonialExample[];
+  };
   faq: { title: string; subtitle: string; items: FaqItem[] };
   cta: {
     title: string;
@@ -215,8 +231,7 @@ export const copy: LandingCopy = {
   pricing: {
     title: "Planes claros. Sin costos escondidos.",
     subtitle: "Todo incluido: diseño, hosting, WhatsApp y el asistente según tu plan.",
-    // Monthly prices are CLP with VAT excluded. Implementation amounts are shown
-    // without the currency symbol: the card headline already establishes CLP.
+    // Monthly prices are CLP with VAT excluded; implementation amounts follow §23.
     plans: [
       {
         id: "semilla",
@@ -263,7 +278,7 @@ export const copy: LandingCopy = {
           "Reseñas automáticas",
           "Notas de voz",
           "Derivación a tu equipo",
-          "Implementación desde 49.990",
+          "Implementación desde $49.990",
         ],
         ctaLabel: "Quiero mi diagnóstico gratis",
         highlighted: true,
@@ -282,7 +297,7 @@ export const copy: LandingCopy = {
           "Chat con IA completo",
           "Recepcionista de voz",
           "Todo lo de Growth, incluido",
-          "Implementación desde 149.990",
+          "Implementación desde $149.990",
         ],
         ctaLabel: "Quiero mi diagnóstico gratis",
         highlighted: false,
@@ -297,6 +312,32 @@ export const copy: LandingCopy = {
     subtitle: "Resultados de negocios de servicios que automatizaron su atención.",
     placeholderNotice:
       "Sección en preparación: los casos se publican solo con autorización del cliente y datos verificados.",
+    examples: [
+      {
+        icon: "💈",
+        business: "Barbería",
+        situation: "El dueño está cortando pelo y no puede mirar el teléfono.",
+        outcome:
+          "El asistente responde, muestra los horarios libres y confirma el turno por WhatsApp.",
+        capability: "Atiende mientras trabajas",
+      },
+      {
+        icon: "🔧",
+        business: "Taller mecánico",
+        situation: "Entran consultas de presupuesto durante toda la jornada.",
+        outcome:
+          "La IA toma los datos del vehículo y el problema, y agenda la revisión en el taller.",
+        capability: "Filtra consultas solo",
+      },
+      {
+        icon: "⚖️",
+        business: "Estudio jurídico",
+        situation: "Llegan consultas que ocupan tiempo sin ser casos reales.",
+        outcome:
+          "El asistente hace las preguntas iniciales, ordena la información y deriva lo urgente.",
+        capability: "Ordena tu agenda",
+      },
+    ],
   },
 
   faq: {

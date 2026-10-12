@@ -46,9 +46,9 @@ describe("LeadForm", () => {
     await user.click(screen.getByRole("button", { name: /Solicitar diagnóstico gratis/ }));
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(await screen.findByText("Contanos tu nombre")).toBeInTheDocument();
-    expect(screen.getByText("Ingresá un número válido")).toBeInTheDocument();
-    expect(screen.getByText("Elegí tu rubro")).toBeInTheDocument();
+    expect(await screen.findByText("Cuéntanos tu nombre")).toBeInTheDocument();
+    expect(screen.getByText("Ingresa un número válido")).toBeInTheDocument();
+    expect(screen.getByText("Elige tu rubro")).toBeInTheDocument();
   });
 
   it("posts the lead and swaps to a success state", async () => {

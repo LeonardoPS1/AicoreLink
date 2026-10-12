@@ -20,8 +20,13 @@ export function PricingCard({ plan }: Props) {
           : "border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
       )}
     >
-      {plan.highlighted && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-teal-dark px-3 py-1 text-xs font-semibold text-white shadow-sm">
+      {plan.badge && (
+        <span
+          className={cn(
+            "absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm",
+            plan.highlighted ? "bg-teal-dark" : "bg-navy",
+          )}
+        >
           {plan.badge}
         </span>
       )}

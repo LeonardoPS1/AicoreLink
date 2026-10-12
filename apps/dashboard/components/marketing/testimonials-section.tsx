@@ -4,41 +4,6 @@ import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { copy } from "@/lib/marketing/copy";
 
-type Example = {
-  icon: string;
-  business: string;
-  situation: string;
-  outcome: string;
-  capability: string;
-};
-
-const EXAMPLES: Example[] = [
-  {
-    icon: "💈",
-    business: "Barbería",
-    situation: "El dueño está cortando pelo y no puede mirar el teléfono.",
-    outcome:
-      "El asistente responde, muestra los horarios libres y confirma el turno por WhatsApp.",
-    capability: "Atiende mientras trabajás",
-  },
-  {
-    icon: "🔧",
-    business: "Taller mecánico",
-    situation: "Entran consultas de presupuesto durante toda la jornada.",
-    outcome:
-      "La IA toma los datos del vehículo y el problema, y agenda la revisión en el taller.",
-    capability: "Filtra consultas solo",
-  },
-  {
-    icon: "⚖️",
-    business: "Estudio jurídico",
-    situation: "Llegan consultas que ocupan tiempo sin ser casos reales.",
-    outcome:
-      "El asistente hace las preguntas iniciales, ordena la información y deriva lo urgente.",
-    capability: "Ordena tu agenda",
-  },
-];
-
 export function TestimonialsSection() {
   return (
     <section id="casos" className="bg-slate-50">
@@ -50,7 +15,7 @@ export function TestimonialsSection() {
         />
 
         <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {EXAMPLES.map((example, index) => (
+          {copy.testimonials.examples.map((example, index) => (
             <Reveal key={example.business} delay={index * 70} className="h-full">
               <article
                 data-example="true"
