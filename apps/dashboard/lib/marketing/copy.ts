@@ -73,6 +73,11 @@ export type LandingCopy = {
     eyebrow: string;
     headline: string;
     subhead: string;
+    askLabel: string;
+    micro: string;
+    chatExampleLabel: string;
+    chips: { id: string; label: string }[];
+    thread: { label: string }[];
     primaryCta: string;
     secondaryCta: string;
     trustLine: string;
