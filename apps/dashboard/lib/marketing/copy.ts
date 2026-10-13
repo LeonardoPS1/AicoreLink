@@ -9,7 +9,15 @@
 import type { LostRevenueInput } from "@/lib/tools/calculator";
 
 export type NavItem = { label: string; href: string };
-export type PainItem = { icon: string; title: string; description: string };
+export type PainItem = {
+  icon: string;
+  title: string;
+  description: string;
+  message: string;
+  time: string;
+  whatHappened: string;
+  withAicoreLink: string;
+};
 export type SolutionColumn = { icon: string; title: string; description: string };
 export type Step = { title: string; description: string };
 export type PlanId = "starter" | "growth" | "elite";
@@ -83,7 +91,14 @@ export type LandingCopy = {
     trustLine: string;
   };
   trustBar: { statement: string; items: string[] };
-  pains: { title: string; items: PainItem[]; closing: string };
+  pains: {
+    title: string;
+    chapter: string;
+    inboxLabel: string;
+    inboxTime: string;
+    items: PainItem[];
+    closing: string;
+  };
   solution: { title: string; subtitle: string; columns: SolutionColumn[] };
   howItWorks: { title: string; subtitle: string; steps: Step[] };
   verticals: { title: string; subtitle: string; ctaTemplate: string };
@@ -250,46 +265,81 @@ export const copy: LandingCopy = {
 
   pains: {
     title: "Cada mensaje sin responder es un cliente que se va.",
+    chapter: "Capítulo 1",
+    inboxLabel: "Bandeja de ejemplo",
+    inboxTime: "Martes 22:14",
     items: [
       {
-        icon: "💬",
-        title: "El cliente que no recibe respuesta en minutos le escribe a tu competencia.",
-        description: "Tu sitio responde en segundos, a cualquier hora.",
+        icon: "C",
+        title: "Responde a tiempo o pierdes la cita.",
+        description: "Una respuesta lenta envía a tu cliente a tu competencia.",
+        message: "Hola, ¿tienen hora para mañana?",
+        time: "22:14. Sin respuesta hace 3 horas",
+        whatHappened: "Le escribió a tu competencia y agendó allá. Tú te enteraste al día siguiente.",
+        withAicoreLink: "Tu sitio responde en segundos y deja la hora agendada.",
       },
       {
-        icon: "🌙",
-        title: "Tu negocio cierra a las 19:00. Tus clientes, no.",
-        description: "Atiende y agenda de noche y en fines de semana.",
+        icon: "M",
+        title: "Tus clientes preguntan fuera de horario.",
+        description: "La atención no termina cuando tú te vas.",
+        message: "¿Atienden el sábado en la tarde?",
+        time: "Domingo 23:40. Leído el lunes",
+        whatHappened: "Cuando por fin lo viste, ya había elegido otro lugar.",
+        withAicoreLink: "Atiende y agenda de noche, fines de semana y feriados.",
       },
       {
-        icon: "🔁",
-        title: "Cada consulta repetida es tiempo que le quitas a tu trabajo.",
-        description: "Responde horarios, precios y ubicación por ti.",
+        icon: "P",
+        title: "Preguntas que repites una y otra vez.",
+        description: "Tu tiempo vale más que responder lo mismo.",
+        message: "¿Cuánto sale? ¿Dónde están? ¿Hasta qué hora abren?",
+        time: "La misma pregunta, otra vez esta semana",
+        whatHappened: "Cada respuesta repetida te saca de lo que realmente sabes hacer.",
+        withAicoreLink: "Responde horarios, valores y ubicación por ti, con tu información.",
       },
       {
-        icon: "🔎",
-        title: "Tienes Instagram, pero cuando buscan en Google no apareces.",
-        description: "Un sitio pensado para que te contacten, no solo para verse bien.",
+        icon: "G",
+        title: "Buscan en Google, no en tu Instagram.",
+        description: "Si no hay acción, hay abandono.",
+        message: "Búsqueda en Google: “barbería cerca de mí”",
+        time: "Resultado: solo tu Instagram, sin horarios ni teléfono",
+        whatHappened: "Quien busca en Google quiere reservar, no recorrer un perfil.",
+        withAicoreLink: "Un sitio hecho para que te contacten, con WhatsApp y horarios a la vista.",
       },
       {
-        icon: "⏰",
-        title: "La hora que no llega es plata que no vuelve.",
-        description: "Recordatorios automáticos con confirmación.",
+        icon: "H",
+        title: "Cada no-show es dinero perdido.",
+        description: "Un hueco vacío no vuelve.",
+        message: "Hora de las 16:00",
+        time: "No llegó y no avisó",
+        whatHappened: "Un hueco de una hora que no se recupera.",
+        withAicoreLink: "Recordatorios automáticos con confirmación o reprogramación.",
       },
       {
-        icon: "⭐",
-        title: "Atiendes bien, pero nadie lo ve en Google.",
-        description: "Pedimos la reseña en el momento justo.",
+        icon: "R",
+        title: "Tu buena atención no se nota en Google.",
+        description: "Las reseñas generan confianza.",
+        message: "Quedé feliz con la atención",
+        time: "Lo dijo en persona, no en Google",
+        whatHappened: "Atiendes bien, pero tu ficha de Google no lo refleja.",
+        withAicoreLink: "Pedimos la reseña por WhatsApp en el momento justo.",
       },
       {
-        icon: "📞",
-        title: "Estás con las manos ocupadas y suena el teléfono.",
-        description: "Una recepcionista de voz atiende, toma el mensaje y te avisa.",
+        icon: "L",
+        title: "No puedes atender el teléfono todo el tiempo.",
+        description: "La voz es otro canal que necesitas cubrir.",
+        message: "Llamada perdida",
+        time: "14:32. Estabas con las manos ocupadas",
+        whatHappened: "Quien llama suele querer resolver ahora. Si nadie contesta, llama al siguiente.",
+        withAicoreLink: "La recepcionista de voz contesta, toma el mensaje y te avisa.",
       },
       {
-        icon: "🗂️",
-        title: "WhatsApp aquí, agenda allá, planilla en otro lado.",
-        description: "Todo en un solo lugar, con un reporte cada mes.",
+        icon: "W",
+        title: "Todo está disperso.",
+        description: "Una cita puede perderse entre 4 lugares.",
+        message: "WhatsApp, Instagram, agenda de papel y una planilla",
+        time: "Cuatro lugares para una sola cita",
+        whatHappened: "Algo se pierde entre medio, y no sabes qué.",
+        withAicoreLink: "Todo en un solo lugar, con un reporte cada mes.",
       },
     ],
     closing:
