@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { Check, X, ExternalLink, FileText, Clock, Plus } from "lucide-react";
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { renderBlocks, type Block } from "@/components/factory/block-renderer";
+import { PageHeader } from "@/components/ui/page-header";
 
 export interface SiteData {
   id: string;
@@ -330,13 +332,24 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
   const statusColor = STATUS_COLORS[site.status] || "neutral";
 
   return (
-    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[25%_50%_25%] lg:gap-6 lg:h-[calc(100vh-120px)]">
+    <div className="space-y-6">
+      <PageHeader
+        title="Revisión del sitio"
+        description={site.name}
+        icon={FileText}
+        actions={
+          <Badge variant={statusColor} className="px-3 py-1">
+            {STATUS_LABELS[site.status] || site.status}
+          </Badge>
+        }
+      />
+      
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[25%_50%_25%] lg:gap-6 lg:h-[calc(100vh-200px)]">
       {/* LEFT PANEL - Site Info */}
       <div className="space-y-4 overflow-y-auto pr-4">
-        <Card className="sticky top-6">
+        <Card className="shadow-sm border-slate-200">
           <h3 className="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
             Información del Sitio
-            <Badge variant={statusColor}>{STATUS_LABELS[site.status] || site.status}</Badge>
           </h3>
           <dl className="space-y-3 text-sm">
             <div>
@@ -370,23 +383,25 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
           </dl>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm border-slate-200">
           <h4 className="font-medium text-navy mb-3">Acciones rápidas</h4>
           <div className="space-y-2">
             <Button
               variant="secondary"
-              className="w-full justify-start"
+              className="w-full justify-start gap-2"
               onClick={() => handleCreateVersion("Actualización manual desde panel de revisión")}
             >
+              <Plus className="h-4 w-4" />
               Crear versión
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-red-600 hover:bg-red-50"
+              className="w-full justify-start gap-2 text-red-600 hover:bg-red-50"
               data-testid="panel-unpublish"
               onClick={handleUnpublish}
               disabled={isLoading || site.status !== "published"}
             >
+              <X className="h-4 w-4" />
               Despublicar
             </Button>
           </div>
@@ -404,7 +419,7 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
             tone="light"
           />
         </div>
-        <div className="flex-1 overflow-auto border border-slate-200 rounded-xl bg-white">
+        <div className="flex-1 overflow-auto border border-slate-200 rounded-xl bg-white shadow-sm">
           {site.pages[activePageIndex] && (
             <div className="max-w-4xl mx-auto px-4 py-8">
               {renderBlocks(site.pages[activePageIndex].content.blocks)}
@@ -416,7 +431,7 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
       {/* RIGHT PANEL - Checklist + Actions + Version History */}
       <div className="space-y-4 overflow-y-auto pl-4">
         {/* Checklist */}
-        <Card className="sticky top-6">
+        <Card className="shadow-sm border-slate-200 sticky top-6">
           <h3 className="text-lg font-semibold text-navy mb-4">Checklist de revisión</h3>
           <p className="text-sm text-slate-500 mb-4">Todos los ítems deben estar ✓ para aprobar</p>
           <div className="space-y-3">
@@ -432,8 +447,13 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
                   disabled
                   className="mt-1 w-5 h-5 rounded border-slate-300 text-brand focus:ring-brand"
                 />
-                <span className="text-sm text-navy group-hover:text-brand">
-                  {checklistResults[item.id] ? "✓" : "☐"} {item.label}
+                <span className="text-sm text-navy group-hover:text-brand flex items-center gap-2">
+                  {checklistResults[item.id] ? (
+                    <Check className="h-4 w-4 text-teal-600" />
+                  ) : (
+                    <X className="h-4 w-4 text-slate-400" />
+                  )}
+                  {item.label}
                 </span>
               </label>
             ))}
@@ -441,17 +461,18 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
         </Card>
 
         {/* Approve/Reject Actions */}
-        <Card className="sticky top-6">
+        <Card className="shadow-sm border-slate-200 sticky top-6">
           <h3 className="text-lg font-semibold text-navy mb-4">Acciones</h3>
           <div className="space-y-3">
             <Button
               variant="primary"
-              className="w-full"
+              className="w-full gap-2"
               size="lg"
               data-testid="panel-approve"
               onClick={handleApprove}
               disabled={!allChecksPassed || isLoading || site.status === "published"}
             >
+              <Check className="h-4 w-4" />
               {site.status === "published"
                 ? "Sitio publicado"
                 : isLoading
@@ -460,12 +481,13 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
             </Button>
             <Button
               variant="secondary"
-              className="w-full"
+              className="w-full gap-2"
               size="lg"
               data-testid="panel-reject"
               onClick={handleReject}
               disabled={isLoading}
             >
+              <X className="h-4 w-4" />
               Rechazar
             </Button>
             {!allChecksPassed && (
@@ -477,10 +499,11 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
         </Card>
 
         {/* Version History */}
-        <Card>
+        <Card className="shadow-sm border-slate-200">
           <h3 className="text-lg font-semibold text-navy mb-4 flex items-center justify-between">
             Historial de versiones
-            <Button variant="ghost" size="sm" onClick={() => handleCreateVersion('Versión manual')}>
+            <Button variant="ghost" size="sm" onClick={() => handleCreateVersion('Versión manual')} className="gap-2">
+              <Plus className="h-4 w-4" />
               Nueva versión
             </Button>
           </h3>
@@ -493,7 +516,8 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
                     <span className="font-mono text-brand font-semibold">v{version.version}</span>
-                    <span className="ml-2 text-sm text-slate-500">
+                    <span className="ml-2 text-sm text-slate-500 flex items-center gap-1 inline-flex">
+                      <Clock className="h-3 w-3" />
                       {new Date(version.createdAt).toLocaleDateString("es-CL", {
                         day: "2-digit",
                         month: "2-digit",
@@ -507,9 +531,10 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-600 hover:bg-red-50"
+                      className="text-red-600 hover:bg-red-50 gap-2"
                       onClick={() => handleRollback(version.version)}
                     >
+                      <X className="h-4 w-4" />
                       Restaurar
                     </Button>
                   )}
@@ -521,9 +546,10 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-xs"
+                      className="h-7 px-2 text-xs gap-1"
                       onClick={() => handleViewDiff(version.version, site.versions[index + 1].version)}
                     >
+                      <ExternalLink className="h-3 w-3" />
                       Ver diff
                     </Button>
                   )}
@@ -537,6 +563,7 @@ export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelPr
             )}
           </div>
         </Card>
+      </div>
       </div>
 
       {/* Diff Modal */}
