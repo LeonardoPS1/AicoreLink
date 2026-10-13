@@ -42,7 +42,7 @@ function dbSite(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   mockTx.site.findMany.mockResolvedValue([dbSite()]);
 });
 
@@ -77,6 +77,21 @@ describe("GET /api/admin/sites", () => {
     await GET(makeRequest("?q=ana"));
     const call = mockTx.site.findMany.mock.calls[0][0];
     expect(call.where.OR).toBeDefined();
+  });
+
+  it("returns unfiltered stats independent of filters", async () => {
+    mockTx.site.findMany
+      .mockResolvedValueOnce([dbSite({ status: "review" })])
+      .mockResolvedValueOnce([
+        dbSite({ status: "review" }),
+        dbSite({ status: "published" }),
+        dbSite({ status: "draft" }),
+        dbSite({ status: "draft" }),
+      ]);
+    const res = await GET(makeRequest("?status=review"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.stats).toEqual({ total: 4, review: 1, published: 1, draft: 2 });
   });
 
   it("returns 500 when the query fails", async () => {

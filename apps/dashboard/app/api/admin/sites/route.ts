@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const tenant = searchParams.get("tenant") || undefined;
     const q = searchParams.get("q")?.trim() || undefined;
 
-    const sites = await asAdmin(async (tx) => {
-      return tx.site.findMany({
+    const { sites, stats } = await asAdmin(async (tx) => {
+      const sites = await tx.site.findMany({
         where: {
           ...(status ? { status } : {}),
           ...(tenant ? { tenantId: tenant } : {}),
@@ -46,6 +46,19 @@ export async function GET(request: NextRequest) {
           template: { select: { planTier: true } },
         },
       });
+
+      const allSites = await tx.site.findMany({
+        select: { status: true },
+      });
+
+      const stats = {
+        total: allSites.length,
+        review: allSites.filter((s: any) => s.status === "review").length,
+        published: allSites.filter((s: any) => s.status === "published").length,
+        draft: allSites.filter((s: any) => s.status === "draft").length,
+      };
+
+      return { sites, stats };
     });
 
     return NextResponse.json({
@@ -63,6 +76,7 @@ export async function GET(request: NextRequest) {
         publishedAt: site.publishedAt ? site.publishedAt.toISOString() : null,
         tenant: site.tenant ? { id: site.tenant.id, name: site.tenant.name } : null,
       })),
+      stats,
     });
   } catch (error) {
     console.error("[admin-sites-list] Error:", error);
