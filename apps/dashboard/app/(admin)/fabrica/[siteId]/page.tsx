@@ -1,74 +1,65 @@
-import { Suspense } from "react";
-import { Metadata } from "next";
-import { withTenant } from "@/lib/tenant-context";
-import { db } from "@/lib/db";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+
 import { SiteReviewPanel, type SiteData } from "./site-review-panel";
 
-export const metadata: Metadata = {
-  title: "Revisión de Sitio - Fábrica",
-  robots: { index: false, follow: false },
-};
+export default function FactorySiteReviewPage() {
+  const params = useParams<{ siteId: string }>();
+  const searchParams = useSearchParams();
+  const siteId = params?.siteId;
+  const tenantId = searchParams.get("tenant") || "demo-tenant";
 
-interface PageProps {
-  params: Promise<{ siteId: string }>;
-}
+  const [site, setSite] = useState<SiteData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-async function getSiteData(siteId: string, tenantId: string): Promise<SiteData | null> {
-  const site = await withTenant(tenantId, async (tx) => {
-    const site = await tx.site.findUnique({
-      where: { id: siteId },
-      include: {
-        businessProfile: true,
-        template: true,
-        pages: {
-          orderBy: { order: "asc" },
-          select: {
-            id: true,
-            path: true,
-            title: true,
-            content: true,
-            meta: true,
-            order: true,
-          },
-        },
-        versions: {
-          orderBy: { version: "desc" },
-          select: {
-            id: true,
-            version: true,
-            changelog: true,
-            createdBy: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-    return site;
-  });
+  const load = useCallback(async () => {
+    if (!siteId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/factory/sites/${siteId}`, {
+        headers: { "x-tenant-id": tenantId },
+      });
+      if (res.status === 404) {
+        setSite(null);
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) throw new Error("No se pudo cargar el sitio");
+      const data = await res.json();
+      setSite(data.site as SiteData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error inesperado");
+    } finally {
+      setLoading(false);
+    }
+  }, [siteId, tenantId]);
 
-  if (!site) return null;
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  // Transform pages to match SiteData interface
-  const pagesWithBlocks = site.pages.map((page) => ({
-    ...page,
-    content: (page.content as { blocks: any[] }) || { blocks: [] },
-    meta: (page.meta as Record<string, any>) || {},
-  }));
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
+        Cargando sitio…
+      </div>
+    );
+  }
 
-  // Convert versions createdAt from Date to string
-  const versionsWithStringDates = site.versions.map((v) => ({
-    ...v,
-    createdAt: v.createdAt.toISOString(),
-  }));
-
-  return { ...site, pages: pagesWithBlocks, versions: versionsWithStringDates } as SiteData;
-}
-
-export default async function FactorySiteReviewPage({ params }: PageProps) {
-  const { siteId } = await params;
-  const tenantId = "demo-tenant"; // In production, get from session
-
-  const site = await getSiteData(siteId, tenantId);
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-navy mb-2">Error</h1>
+          <p className="text-slate-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!site) {
     return (
@@ -81,28 +72,5 @@ export default async function FactorySiteReviewPage({ params }: PageProps) {
     );
   }
 
-  return <SiteReviewPanel site={site} tenantId={tenantId} />;
-}
-
-function SiteReviewPanelSkeleton() {
-  return (
-    <div className="grid grid-cols-[25%_50%_25%] gap-6 h-[calc(100vh-120px)]">
-      {/* Left skeleton */}
-      <div className="space-y-4">
-        <div className="h-32 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="h-24 bg-slate-100 rounded-xl animate-pulse" />
-      </div>
-      {/* Center skeleton */}
-      <div className="space-y-4">
-        <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="h-[calc(100%-100px)] bg-slate-100 rounded-xl animate-pulse" />
-      </div>
-      {/* Right skeleton */}
-      <div className="space-y-4">
-        <div className="h-48 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="h-32 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="h-[calc(100%-300px)] bg-slate-100 rounded-xl animate-pulse" />
-      </div>
-    </div>
-  );
+  return <SiteReviewPanel site={site} tenantId={tenantId} onRefresh={load} />;
 }

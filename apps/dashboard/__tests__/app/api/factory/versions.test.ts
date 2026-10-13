@@ -327,7 +327,7 @@ describe("API /api/factory/sites/[id]/versions/[version]/rollback", () => {
   });
 });
 
-describe("API /api/factory/sites/[id]/versions/[v1]/diff/[v2]", () => {
+describe("API /api/factory/sites/[id]/versions/[version]/diff/[v2]", () => {
   const siteId = "site-123";
   const tenantId = "tenant-123";
 
@@ -347,7 +347,7 @@ describe("API /api/factory/sites/[id]/versions/[v1]/diff/[v2]", () => {
   });
 
   it("returns semantic diff between versions", async () => {
-    const { GET } = await import("@/app/api/factory/sites/[id]/versions/[v1]/diff/[v2]/route");
+    const { GET } = await import("@/app/api/factory/sites/[id]/versions/[version]/diff/[v2]/route");
     
     (diffVersions as any).mockResolvedValue({
       added: [{ pagePath: "/", blockType: "cta", blockIndex: 2 }],
@@ -362,7 +362,7 @@ describe("API /api/factory/sites/[id]/versions/[v1]/diff/[v2]", () => {
       headers: { "x-tenant-id": tenantId },
     }) as any;
 
-    const response = await GET(request, { params: Promise.resolve({ id: siteId, v1: "1", v2: "2" }) });
+    const response = await GET(request, { params: Promise.resolve({ id: siteId, version: "1", v2: "2" }) });
 
     expect(response.status).toBe(200);
     const data = await response.json();
@@ -372,14 +372,14 @@ describe("API /api/factory/sites/[id]/versions/[v1]/diff/[v2]", () => {
   });
 
   it("returns 400 when version numbers invalid", async () => {
-    const { GET } = await import("@/app/api/factory/sites/[id]/versions/[v1]/diff/[v2]/route");
+    const { GET } = await import("@/app/api/factory/sites/[id]/versions/[version]/diff/[v2]/route");
 
     const request = new NextRequest(`http://localhost/api/factory/sites/${siteId}/versions/a/diff/b`, {
       method: "GET",
       headers: { "x-tenant-id": tenantId },
     }) as any;
 
-    const response = await GET(request, { params: Promise.resolve({ id: siteId, v1: "a", v2: "b" }) });
+    const response = await GET(request, { params: Promise.resolve({ id: siteId, version: "a", v2: "b" }) });
 
     expect(response.status).toBe(400);
     const data = await response.json();

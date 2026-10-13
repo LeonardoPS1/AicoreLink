@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,7 @@ export interface SiteData {
 interface SiteReviewPanelProps {
   site: SiteData;
   tenantId: string;
+  onRefresh?: () => void;
 }
 
 const STATUS_COLORS: Record<string, "teal" | "amber" | "brand" | "neutral"> = {
@@ -123,49 +124,98 @@ function hasBasicA11y(site: SiteData): boolean {
   return true; // Simplified
 }
 
-export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
+export function SiteReviewPanel({ site, tenantId, onRefresh }: SiteReviewPanelProps) {
   const [activePageIndex, setActivePageIndex] = useState(0);
-  const [checklistResults, setChecklistResults] = useState<Record<string, boolean>>({});
   const [showDiff, setShowDiff] = useState<{ v1: number; v2: number } | null>(null);
   const [diffResult, setDiffResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const latestVersion = site.versions[0]?.version;
+
+  const refresh = useCallback(() => {
+    if (onRefresh) onRefresh();
+    else window.location.reload();
+  }, [onRefresh]);
 
   const handleTabChange = (path: string) => {
     const index = site.pages.findIndex((p) => p.path === path);
     if (index !== -1) setActivePageIndex(index);
   };
 
-  // Run checklist checks
-  const runChecklist = useCallback(() => {
+  // Checklist results are pure derived state — compute them with useMemo so we
+  // never call setState during render (that caused an infinite re-render loop).
+  const checklistResults = useMemo(() => {
     const results: Record<string, boolean> = {};
     CHECKLIST_ITEMS.forEach((item) => {
       results[item.id] = item.check(site);
     });
-    setChecklistResults(results);
+    return results;
   }, [site]);
-
-  // Initialize checklist
-  runChecklist();
 
   const allChecksPassed = CHECKLIST_ITEMS.every((item) => checklistResults[item.id]);
 
   const handleApprove = async () => {
     if (!allChecksPassed) return;
+    if (latestVersion === undefined) {
+      alert("El sitio todavía no tiene una versión generada.");
+      return;
+    }
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/factory/sites/${site.id}/approve`, {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-tenant-id": tenantId,
+        "x-user-id": "current-user",
+      };
+
+      if (site.status === "review") {
+        const approveResponse = await fetch(`/api/factory/sites/${site.id}/approve`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({}),
+        });
+        if (!approveResponse.ok) {
+          alert("Error al aprobar el sitio");
+          return;
+        }
+      }
+
+      const publishResponse = await fetch(`/api/factory/sites/${site.id}/publish`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ version: latestVersion, target: "subdomain" }),
+      });
+      if (publishResponse.ok) {
+        alert("Sitio aprobado y publicación iniciada. Te avisamos cuando esté live.");
+        refresh();
+      } else {
+        const body = await publishResponse.json().catch(() => ({}));
+        alert(body.error || "Error al publicar el sitio");
+      }
+    } catch {
+      alert("Error de conexión");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!confirm("¿Despublicar este sitio? Dejará de estar disponible.")) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/factory/sites/${site.id}/unpublish`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-tenant-id": tenantId,
           "x-user-id": "current-user",
         },
-        body: JSON.stringify({}),
       });
       if (response.ok) {
-        alert("Sitio aprobado correctamente. Ahora se puede publicar.");
+        alert("Sitio despublicado");
+        refresh();
       } else {
-        alert("Error al aprobar el sitio");
+        alert("Error al despublicar el sitio");
       }
     } catch {
       alert("Error de conexión");
@@ -212,7 +262,7 @@ export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
       });
       if (response.ok) {
         alert("Nueva versión creada");
-        window.location.reload();
+        refresh();
       } else {
         alert("Error al crear versión");
       }
@@ -236,7 +286,7 @@ export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
       });
       if (response.ok) {
         alert("Rollback completado");
-        window.location.reload();
+        refresh();
       } else {
         alert("Error al hacer rollback");
       }
@@ -280,7 +330,7 @@ export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
   const statusColor = STATUS_COLORS[site.status] || "neutral";
 
   return (
-    <div className="grid grid-cols-[25%_50%_25%] gap-6 h-[calc(100vh-120px)]">
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[25%_50%_25%] lg:gap-6 lg:h-[calc(100vh-120px)]">
       {/* LEFT PANEL - Site Info */}
       <div className="space-y-4 overflow-y-auto pr-4">
         <Card className="sticky top-6">
@@ -333,11 +383,9 @@ export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
             <Button
               variant="ghost"
               className="w-full justify-start text-red-600 hover:bg-red-50"
-              onClick={() => {
-                if (confirm("¿Despublicar este sitio?")) {
-                  // TODO: implement unpublish
-                }
-              }}
+              data-testid="panel-unpublish"
+              onClick={handleUnpublish}
+              disabled={isLoading || site.status !== "published"}
             >
               Despublicar
             </Button>
@@ -380,7 +428,7 @@ export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
                 <input
                   type="checkbox"
                   checked={checklistResults[item.id] || false}
-                  onChange={() => runChecklist()}
+                  readOnly
                   disabled
                   className="mt-1 w-5 h-5 rounded border-slate-300 text-brand focus:ring-brand"
                 />
@@ -400,15 +448,21 @@ export function SiteReviewPanel({ site, tenantId }: SiteReviewPanelProps) {
               variant="primary"
               className="w-full"
               size="lg"
+              data-testid="panel-approve"
               onClick={handleApprove}
-              disabled={!allChecksPassed || isLoading}
+              disabled={!allChecksPassed || isLoading || site.status === "published"}
             >
-              {isLoading ? "Procesando..." : "Aprobar y publicar"}
+              {site.status === "published"
+                ? "Sitio publicado"
+                : isLoading
+                  ? "Procesando..."
+                  : "Aprobar y publicar"}
             </Button>
             <Button
               variant="secondary"
               className="w-full"
               size="lg"
+              data-testid="panel-reject"
               onClick={handleReject}
               disabled={isLoading}
             >

@@ -4,16 +4,16 @@ import { db } from "@/lib/db";
 import { diffVersions } from "@/lib/factory/versioning";
 
 /**
- * GET /api/factory/sites/[id]/versions/[v1]/diff/[v2]
+ * GET /api/factory/sites/[id]/versions/[version]/diff/[v2]
  *
  * Returns semantic diff between two versions.
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; v1: string; v2: string }> }
+  { params }: { params: Promise<{ id: string; version: string; v2: string }> }
 ) {
   try {
-    const { id: siteId, v1: v1Str, v2: v2Str } = await params;
+    const { id: siteId, version: v1Str, v2: v2Str } = await params;
 
     // Validate version parameters
     const v1 = parseInt(v1Str, 10);
