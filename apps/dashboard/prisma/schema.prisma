@@ -251,7 +251,7 @@ model SitePage {
 /// Template definition per rubro + plan tier.
 model SiteTemplate {
   id          String   @id @default(uuid())
-  rubro       String   @unique // barberia | taller | profesional
+  rubro       String   // barberia | taller | profesional
   name        String
   planTier    String   // starter | growth | elite
   pageCount   Int      // 3, 5, or 10
@@ -262,6 +262,7 @@ model SiteTemplate {
   sites       Site[]
   pages       SiteTemplatePage[]
 
+  @@unique([rubro, planTier])
   @@map("site_templates")
 }
 

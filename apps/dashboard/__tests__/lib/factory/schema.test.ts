@@ -139,9 +139,9 @@ describe("Factory schema unique constraints", () => {
     expect(hasCompositeUnique(model, ["siteId", "path"])).toBe(true);
   });
 
-  it("SiteTemplate has unique rubro", () => {
+  it("SiteTemplate has composite unique constraint on [rubro, planTier]", () => {
     const model = getModel("SiteTemplate");
-    expect(hasUniqueField(model, "rubro")).toBe(true);
+    expect(hasCompositeUnique(model, ["rubro", "planTier"])).toBe(true);
   });
 
   it("SiteTemplatePage has unique constraint on [templateId, path]", () => {

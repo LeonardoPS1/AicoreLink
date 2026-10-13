@@ -107,6 +107,25 @@ export type BusinessProfileCreateInput = z.infer<typeof BusinessProfileInput>;
 export type BusinessProfileUpdateInput = Partial<BusinessProfileCreateInput>;
 
 /**
+ * Maps tenant plan to template tier.
+ * Tenant plans: semilla, starter, growth, elite
+ * Template tiers: starter, growth, elite
+ */
+function mapPlanToTemplateTier(plan: string): "starter" | "growth" | "elite" {
+  switch (plan) {
+    case "semilla":
+    case "starter":
+      return "starter";
+    case "growth":
+      return "growth";
+    case "elite":
+      return "elite";
+    default:
+      return "starter"; // fallback
+  }
+}
+
+/**
  * Creates a BusinessProfile and a linked Site (draft) for the tenant.
  *
  * @param input - Validated business profile data
@@ -122,13 +141,21 @@ export async function createBusinessProfile(
   const validated = BusinessProfileInput.parse(input);
 
   return withTenant(tenantId, async (tx) => {
-    // Check that a template exists for this rubro
+    // Get tenant to determine plan tier for template selection
+    const tenant = await tx.tenant.findUnique({
+      where: { id: tenantId },
+      select: { plan: true },
+    });
+
+    const templateTier = tenant ? mapPlanToTemplateTier(tenant.plan) : "starter";
+
+    // Check that a template exists for this rubro + plan tier
     const template = await tx.siteTemplate.findUnique({
-      where: { rubro: validated.rubro },
+      where: { rubro_planTier: { rubro: validated.rubro, planTier: templateTier } },
     });
 
     if (!template) {
-      throw new Error(`No template found for rubro: ${validated.rubro}`);
+      throw new Error(`No template found for rubro: ${validated.rubro} with tier: ${templateTier}`);
     }
 
     // Create the business profile

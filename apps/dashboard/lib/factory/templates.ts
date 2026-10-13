@@ -920,9 +920,9 @@ export async function seedTemplates(): Promise<void> {
   console.log("🌱 Seeding site templates...");
 
   for (const template of TEMPLATES) {
-    // Upsert template
+    // Upsert template using composite unique key (rubro + planTier)
     const existingTemplate = await db.siteTemplate.findUnique({
-      where: { rubro: template.rubro },
+      where: { rubro_planTier: { rubro: template.rubro, planTier: template.planTier } },
     });
 
     let templateId: string;

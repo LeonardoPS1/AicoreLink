@@ -42,6 +42,9 @@ import {
 } from "@/lib/factory/business-profile";
 
 const mockTx = {
+  tenant: {
+    findUnique: vi.fn(),
+  },
   businessProfile: {
     create: vi.fn(),
     findUnique: vi.fn(),
@@ -325,22 +328,26 @@ describe("createBusinessProfile", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default tenant mock returns starter plan
+    mockTx.tenant.findUnique.mockResolvedValue({ id: tenantId, plan: "starter" });
   });
 
   it("calls withTenant with correct tenantId", async () => {
     mockTx.businessProfile.create.mockResolvedValue({ id: "bp-1", ...validInput, tenantId });
-    mockTx.siteTemplate.findUnique.mockResolvedValue({ id: "template-1", rubro: "barberia" });
+    mockTx.siteTemplate.findUnique.mockResolvedValue({ id: "template-1", rubro: "barberia", planTier: "starter" });
     mockTx.site.create.mockResolvedValue({ id: "site-1", subdomain: "barberia-el-corte" });
 
     await createBusinessProfile(validInput, tenantId);
 
     expect(withTenant).toHaveBeenCalledWith(tenantId, expect.any(Function));
+    expect(mockTx.tenant.findUnique).toHaveBeenCalledWith({ where: { id: tenantId }, select: { plan: true } });
+    expect(mockTx.siteTemplate.findUnique).toHaveBeenCalledWith({ where: { rubro_planTier: { rubro: "barberia", planTier: "starter" } } });
   });
 
   it("creates BusinessProfile with validated data", async () => {
     const createdProfile = { id: "bp-1", ...validInput, tenantId, images: [], team: [], services: [], faqs: [], hours: {}, social: {} };
     mockTx.businessProfile.create.mockResolvedValue(createdProfile);
-    mockTx.siteTemplate.findUnique.mockResolvedValue({ id: "template-1", rubro: "barberia" });
+    mockTx.siteTemplate.findUnique.mockResolvedValue({ id: "template-1", rubro: "barberia", planTier: "starter" });
     mockTx.site.create.mockResolvedValue({ id: "site-1", subdomain: "barberia-el-corte" });
 
     const result = await createBusinessProfile(validInput, tenantId);
@@ -353,6 +360,7 @@ describe("createBusinessProfile", () => {
         tenantId,
       }),
     });
+    expect(mockTx.siteTemplate.findUnique).toHaveBeenCalledWith({ where: { rubro_planTier: { rubro: "barberia", planTier: "starter" } } });
     expect(result.businessProfile).toEqual(createdProfile);
   });
 
@@ -360,7 +368,7 @@ describe("createBusinessProfile", () => {
     const createdProfile = { id: "bp-1", ...validInput, tenantId, images: [], team: [], services: [], faqs: [], hours: {}, social: {} };
     const createdSite = { id: "site-1", subdomain: "barberia-el-corte", status: "draft" };
     mockTx.businessProfile.create.mockResolvedValue(createdProfile);
-    mockTx.siteTemplate.findUnique.mockResolvedValue({ id: "template-1", rubro: "barberia" });
+    mockTx.siteTemplate.findUnique.mockResolvedValue({ id: "template-1", rubro: "barberia", planTier: "starter" });
     mockTx.site.create.mockResolvedValue(createdSite);
 
     const result = await createBusinessProfile(validInput, tenantId);
@@ -375,6 +383,7 @@ describe("createBusinessProfile", () => {
         status: "draft",
       }),
     });
+    expect(mockTx.siteTemplate.findUnique).toHaveBeenCalledWith({ where: { rubro_planTier: { rubro: "barberia", planTier: "starter" } } });
     expect(result.site).toEqual(createdSite);
   });
 
@@ -384,7 +393,7 @@ describe("createBusinessProfile", () => {
 
   it("throws when rubro has no template", async () => {
     mockTx.siteTemplate.findUnique.mockResolvedValue(null);
-    await expect(createBusinessProfile(validInput, tenantId)).rejects.toThrow("No template found for rubro: barberia");
+    await expect(createBusinessProfile(validInput, tenantId)).rejects.toThrow("No template found for rubro: barberia with tier: starter");
   });
 });
 
