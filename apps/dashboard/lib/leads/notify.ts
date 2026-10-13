@@ -9,6 +9,14 @@ export interface LeadNotification {
   message: string | null;
   userAgent: string | null;
   createdAt: Date;
+  utm?: {
+    source?: string;
+    medium?: string;
+    campaign?: string;
+    content?: string;
+    term?: string;
+  };
+  consent: true;
 }
 
 const TIMEOUT_MS = 5_000;

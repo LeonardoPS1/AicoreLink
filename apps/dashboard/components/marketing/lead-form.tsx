@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import { CheckCircle2, Loader2, Send } from "lucide-react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { CheckCircle2, Loader2, Send, Shield } from "lucide-react";
 
 import { trackFormSubmit } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,22 @@ import { verticals } from "@/lib/marketing/verticals";
 import { cn } from "@/lib/utils";
 
 type Status = "idle" | "submitting" | "success" | "error";
-type FieldErrors = Partial<Record<keyof LeadInput, string>>;
 
-const EMPTY: LeadInput = { nombre: "", negocio: "", whatsapp: "", rubro: "", mensaje: "" };
+// Internal form state allows consent:boolean (unchecked initially), but validated payload requires consent:true
+type FormState = Omit<LeadInput, "consent"> & { consent: boolean };
+type FieldErrors = Partial<Record<keyof FormState, string>>;
 
-const FIELDS: { name: keyof LeadInput; label: string; placeholder: string; autoComplete: string }[] = [
+const EMPTY: FormState = {
+  nombre: "",
+  negocio: "",
+  whatsapp: "",
+  rubro: "",
+  mensaje: "",
+  utm: undefined,
+  consent: false,
+};
+
+const FIELDS: { name: "nombre" | "negocio"; label: string; placeholder: string; autoComplete: string }[] = [
   { name: "nombre", label: "Tu nombre", placeholder: "Juan Pérez", autoComplete: "name" },
   { name: "negocio", label: "Tu negocio", placeholder: "Barbería El Corte", autoComplete: "organization" },
 ];
@@ -28,11 +39,29 @@ const FIELDS: { name: keyof LeadInput; label: string; placeholder: string; autoC
  * API route uses (lib/leads/schema.ts), so client and server agree on the rules.
  */
 export function LeadForm() {
-  const [values, setValues] = useState<LeadInput>(EMPTY);
+  const [values, setValues] = useState<FormState>(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<Status>("idle");
+  const [capturedUtm, setCapturedUtm] = useState<LeadInput["utm"]>(undefined);
 
-  function update(name: keyof LeadInput) {
+  // Capture UTM from URL on mount (once)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const utm = {
+      source: params.get("utm_source") || undefined,
+      medium: params.get("utm_medium") || undefined,
+      campaign: params.get("utm_campaign") || undefined,
+      content: params.get("utm_content") || undefined,
+      term: params.get("utm_term") || undefined,
+    };
+
+    // Only store if at least one UTM param exists
+    if (Object.values(utm).some((v) => v !== undefined)) {
+      setCapturedUtm(utm);
+    }
+  }, []);
+
+  function update(name: keyof FormState) {
     return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
       setValues((prev) => ({ ...prev, [name]: event.target.value }));
 
@@ -46,7 +75,14 @@ export function LeadForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const parsed = leadSchema.safeParse(values);
+    // Merge captured UTM with form values (body wins if form somehow has utm)
+    const payload = {
+      ...values,
+      utm: capturedUtm,
+      consent: values.consent,
+    };
+
+    const parsed = leadSchema.safeParse(payload);
 
     if (!parsed.success) {
       const flattened = parsed.error.flatten().fieldErrors;
@@ -64,7 +100,7 @@ export function LeadForm() {
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(parsed.data),
       });
 
       if (!response.ok) {
@@ -184,7 +220,36 @@ export function LeadForm() {
         </FormField>
       </div>
 
-      <Button type="submit" size="lg" disabled={status === "submitting"} className="mt-6 w-full">
+      {/* Consent checkbox - required */}
+      <div className="mt-4">
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="consent"
+            checked={values.consent}
+            onChange={(e) => setValues((prev) => ({ ...prev, consent: e.target.checked }))}
+            required
+            aria-invalid={fieldErrors.consent ? true : undefined}
+            aria-describedby={fieldErrors.consent ? "consent-error" : undefined}
+            className="mt-1 size-4 border-slate-300 text-brand focus:ring-brand focus:ring-offset-2 rounded"
+          />
+          <label htmlFor="consent" className="text-sm text-slate-600 leading-relaxed">
+            Acepto que AicoreLink trate mis datos para contactarme según la
+            <a href="/legal/privacidad" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">
+              Política de Privacidad
+            </a>
+            .
+          </label>
+        </div>
+      </div>
+
+      {fieldErrors.consent && (
+        <p id="consent-error" role="alert" className="mt-1 text-sm text-red-600" aria-live="polite">
+          {fieldErrors.consent}
+        </p>
+      )}
+
+      <Button type="submit" size="lg" disabled={status === "submitting" || !values.consent} className="mt-6 w-full">
         {status === "submitting" ? (
           <>
             <Loader2 aria-hidden="true" className="size-4 animate-spin" />

@@ -158,10 +158,17 @@ model LandingLead {
   status    String   @default("new")
   source    String   @default("landing")
   userAgent String?  @map("user_agent")
+  utmSource String?  @map("utm_source")
+  utmMedium String?  @map("utm_medium")
+  utmCampaign String? @map("utm_campaign")
+  utmContent String? @map("utm_content")
+  utmTerm   String?  @map("utm_term")
+  consent   Boolean  @default(false) @map("consent")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([createdAt])
   @@index([status])
+  @@index([utmSource])
   @@map("landing_leads")
 }

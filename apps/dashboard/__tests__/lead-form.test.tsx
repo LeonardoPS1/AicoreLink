@@ -10,6 +10,7 @@ const VALID_LEAD = {
   whatsapp: "+54 9 11 5555 5555",
   rubro: "barberia",
   mensaje: "Pierdo consultas por no contestar a tiempo.",
+  consent: true,
 };
 
 afterEach(() => {
@@ -22,9 +23,11 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("Tu WhatsApp"), VALID_LEAD.whatsapp);
   await user.selectOptions(screen.getByLabelText("Tu rubro"), VALID_LEAD.rubro);
   await user.type(screen.getByLabelText("¿Qué te gustaría resolver?"), VALID_LEAD.mensaje);
+  // Check the consent checkbox (required)
+  await user.click(screen.getByLabelText(/Acepto que AicoreLink trate mis datos/i));
 }
 describe("LeadForm", () => {
-  it("renders every field with a real label", () => {
+  it("renders every field with a real label including consent", () => {
     render(<LeadForm />);
 
     expect(screen.getByLabelText("Tu nombre")).toBeInTheDocument();
@@ -32,6 +35,7 @@ describe("LeadForm", () => {
     expect(screen.getByLabelText("Tu WhatsApp")).toBeInTheDocument();
     expect(screen.getByLabelText("Tu rubro")).toBeInTheDocument();
     expect(screen.getByLabelText("¿Qué te gustaría resolver?")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Acepto que AicoreLink trate mis datos/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Solicitar diagnóstico gratis/ }),
     ).toBeInTheDocument();
@@ -43,12 +47,15 @@ describe("LeadForm", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<LeadForm />);
+    // Check consent first (required to enable submit)
+    await user.click(screen.getByLabelText(/Acepto que AicoreLink trate mis datos/i));
     await user.click(screen.getByRole("button", { name: /Solicitar diagnóstico gratis/ }));
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(await screen.findByText("Cuéntanos tu nombre")).toBeInTheDocument();
-    expect(screen.getByText("Ingresa un número válido")).toBeInTheDocument();
-    expect(screen.getByText("Elige tu rubro")).toBeInTheDocument();
+    // Errors are rendered with role="alert" inside FormField
+    expect(await screen.findByText(/Cuéntanos tu nombre/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ingresa un número válido/i)).toBeInTheDocument();
+    expect(screen.getByText(/Elige tu rubro/i)).toBeInTheDocument();
   });
 
   it("posts the lead and swaps to a success state", async () => {
@@ -67,7 +74,10 @@ describe("LeadForm", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/leads");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(String(init.body))).toMatchObject(VALID_LEAD);
+    // utm is optional and not sent when undefined; consent is true
+    const body = JSON.parse(String(init.body));
+    expect(body).toMatchObject(VALID_LEAD);
+    expect(body.consent).toBe(true);
 
     expect(await screen.findByRole("status")).toHaveTextContent("¡Recibimos tus datos!");
     expect(screen.queryByLabelText("Tu nombre")).not.toBeInTheDocument();

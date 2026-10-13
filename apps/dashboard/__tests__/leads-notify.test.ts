@@ -14,6 +14,7 @@ const LEAD: LeadNotification = {
   message: "Pierdo consultas por no contestar a tiempo.",
   userAgent: "vitest",
   createdAt: new Date("2026-10-11T12:00:00.000Z"),
+  consent: true,
 };
 
 function clearEnv() {
