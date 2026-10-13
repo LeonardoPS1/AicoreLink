@@ -140,6 +140,31 @@ export type LandingCopy = {
     retryLabel: string;
     ctaLabel: string;
   };
+  voiceDemo: {
+    /** Page metadata. */
+    pageTitle: string;
+    pageDescription: string;
+    title: string;
+    subtitle: string;
+    /** Fixed Spanish script for the TTS demo (20–40 s). */
+    script: string;
+    /** Optional English script variant. */
+    scriptEn: string;
+    /** Label on the primary action button. */
+    listenLabel: string;
+    /** Loading state label on the button. */
+    loadingLabel: string;
+    /** Heading above the transcription. */
+    transcriptLabel: string;
+    /** AI notice text (R31). */
+    noticeAi: string;
+    /** Recording notice text (R31). */
+    noticeRecording: string;
+    /** CTA label for WhatsApp after the demo. */
+    ctaLabel: string;
+    /** Generic error when TTS/STT fails. */
+    genericError: string;
+  };
   footer: {
     tagline: string;
     ecosystem: FooterGroup;
@@ -539,6 +564,26 @@ export const copy: LandingCopy = {
     genericError: "No pudimos responder ahora. Inténtalo de nuevo.",
     retryLabel: "Reintentar",
     ctaLabel: "Quiero una demo para mi negocio",
+  },
+  voiceDemo: {
+    pageTitle: "Demo de voz con IA | AicoreLink",
+    pageDescription:
+      "Escucha cómo suena la recepcionista de voz de AicoreLink. Generamos audio con ElevenLabs y lo transcribimos con Whisper. Es una demo, sin registro y sin compromiso.",
+    title: "Escucha la recepcionista de voz en acción",
+    subtitle:
+      "Presiona el botón y escucha cómo la IA atiende una llamada. El audio se genera con ElevenLabs y la transcripción es de Whisper. Es una demo: no se guarda tu voz.",
+    script:
+      "Hola, gracias por llamar a AicoreLink. Soy tu recepcionista de voz con inteligencia artificial. Puedo agendar citas, responder preguntas frecuentes y tomar mensajes para tu equipo. ¿En qué te ayudo hoy?",
+    scriptEn:
+      "Hello, thanks for calling AicoreLink. I'm your AI voice receptionist. I can book appointments, answer FAQs, and take messages for your team. How can I help you today?",
+    listenLabel: "Escuchar demo de voz",
+    loadingLabel: "Generando audio…",
+    transcriptLabel: "Transcripción:",
+    noticeAi: "Estás interactuando con una inteligencia artificial. Esta es una demostración.",
+    noticeRecording:
+      "Esta demostración genera audio y transcripción con fines de evaluación. No se almacena tu voz.",
+    ctaLabel: "Quiero recepcionista de voz para mi negocio",
+    genericError: "No pudimos generar la demo de voz. Inténtalo de nuevo.",
   },
 
   footer: {
