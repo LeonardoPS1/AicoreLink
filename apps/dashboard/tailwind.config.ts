@@ -13,6 +13,7 @@ const config: Config = {
         navy: {
           DEFAULT: colors.navy,
           800: colors.navy800,
+          900: "#0B1026",
         },
         brand: {
           DEFAULT: colors.brand,
@@ -26,11 +27,25 @@ const config: Config = {
         amber: {
           DEFAULT: colors.amber,
         },
+        night: colors.night,
+        nightDeep: colors.nightDeep,
+        night2: colors.night2,
+        paper: colors.paper,
+        ink: colors.ink,
+        inkMuted: colors.inkMuted,
+        hairline: colors.hairline,
+        signal: colors.signal,
+        signalDark: colors.signalDark,
+        action: colors.action,
+        actionDark: colors.actionDark,
+        gold: colors.gold,
+        goldDark: colors.goldDark,
+        onDark: colors.onDark,
+        onDarkMuted: colors.onDarkMuted,
       },
       fontFamily: {
-        // `--font-geist-sans` is injected by `geist/font/sans` in the root layout;
-        // the literal fallbacks keep tests and non-font environments readable.
-        sans: ["var(--font-geist-sans)", ...fonts.sans],
+        sans: ["var(--font-figtree)", "Figtree", ...fonts.sans],
+        display: ["var(--font-instrument-serif)", "Instrument Serif", "Georgia", "serif"],
       },
     },
   },

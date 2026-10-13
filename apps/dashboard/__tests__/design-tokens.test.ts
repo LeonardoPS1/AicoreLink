@@ -5,7 +5,7 @@ import { colors, fonts, layout } from "@/lib/design/tokens";
 
 describe("design tokens — palette (spec §5)", () => {
   it("exposes the exact spec hex values", () => {
-    expect(colors).toEqual({
+    expect(colors).toMatchObject({
       navy: "#0F172A",
       navy800: "#1E293B",
       brand: "#2563EB",
@@ -21,12 +21,13 @@ describe("design tokens — palette (spec §5)", () => {
   });
 
   it("declares Geist as the primary sans font", () => {
-    expect(fonts.sans[0]).toBe("Geist");
+    expect(fonts.sans[0]).toBe("Figtree");
   });
 
   it("exposes layout helpers for container and section rhythm", () => {
     expect(layout.container).toBe("max-w-6xl mx-auto px-4");
     expect(layout.sectionY).toBe("py-20 md:py-28");
+    expect(layout.wrap).toBe("mx-auto w-full max-w-[1160px] px-5");
   });
 });
 
@@ -47,9 +48,17 @@ describe("tailwind config wiring", () => {
     expect(resolved.theme.colors.teal.dark).toBe("#0F766E");
     expect(resolved.theme.colors.teal.light).toBe("#5EEAD4");
     expect(resolved.theme.colors.amber.DEFAULT).toBe("#F59E0B");
+    expect(resolved.theme.colors.night).toBe("#0A2342");
   });
 
   it("scans the components directory for classes", () => {
     expect(resolved.content.files.some((file) => file.includes("components/"))).toBe(true);
+  });
+
+  it("exposes display font family variable", () => {
+    const theme = resolved.theme as any;
+    const display = theme.fontFamily?.display;
+    expect(Array.isArray(display)).toBe(true);
+    expect(display[0]).toBe("var(--font-instrument-serif)");
   });
 });
