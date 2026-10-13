@@ -71,9 +71,7 @@ describe("AttentionTest", () => {
     expect(screen.getByText("100/100")).toBeInTheDocument();
     expect(screen.getByText(copy.attentionTest.allClear)).toBeInTheDocument();
 
-    const resultNode = screen
-      .getByText(copy.attentionTest.resultTitle)
-      .closest("[data-track='tools_finish']");
+    const resultNode = screen.getByText(copy.attentionTest.resultTitle).closest("[data-score]");
     expect(resultNode).toHaveAttribute("data-score", "100");
 
     const link = screen.getByRole("link", { name: copy.attentionTest.ctaLabel });

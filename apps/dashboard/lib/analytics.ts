@@ -14,7 +14,14 @@
  * never forwarded here.
  */
 
-export type AnalyticsEventName = "cta_click" | "form_submit" | "whatsapp_click" | "vertical_view";
+export type AnalyticsEventName =
+  | "cta_click"
+  | "form_submit"
+  | "whatsapp_click"
+  | "vertical_view"
+  | "tools_start"
+  | "tools_finish"
+  | "demo_message";
 
 export interface AnalyticsEvent {
   name: AnalyticsEventName;
@@ -79,4 +86,22 @@ export function trackFormSubmit(vertical?: string): void {
 /** Visitor switched to a rubro tab inside #rubros. */
 export function trackVerticalView(verticalId: string): void {
   trackEvent("vertical_view", { label: verticalId });
+}
+
+/** Visitor started interacting with a tool (calculator or attention test). */
+export function trackToolsStart(label: string): void {
+  trackEvent("tools_start", { label });
+}
+
+/** Visitor completed a tool interaction. */
+export function trackToolsFinish(
+  label: string,
+  properties?: Record<string, string | number | boolean>,
+): void {
+  trackEvent("tools_finish", { label, properties });
+}
+
+/** Visitor sent a message in the demo chat. */
+export function trackDemoMessage(context: string): void {
+  trackEvent("demo_message", { label: context });
 }

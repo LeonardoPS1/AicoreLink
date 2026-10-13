@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 import { WhatsAppGlyph } from "@/components/marketing/whatsapp-glyph";
 import { buttonClasses } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   scoreAttention,
   type AttentionAnswers,
 } from "@/lib/tools/attention-test";
+import { trackToolsFinish } from "@/lib/analytics";
 
 interface Props {
   /**
@@ -76,6 +77,14 @@ export function AttentionTest({ initialAmountCLP }: Props) {
   );
   const result = allAnswered ? scoreAttention(answers) : null;
 
+  // Emit tools_finish programmatically when the result appears (R48: tracker treats
+  // data-track as click, but the result appears without a click).
+  useEffect(() => {
+    if (result) {
+      trackToolsFinish("test-atencion", { score: result.score });
+    }
+  }, [result]);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.5)] sm:p-8">
       <p className="text-sm text-slate-500">{copy.attentionTest.intro}</p>
@@ -124,13 +133,7 @@ export function AttentionTest({ initialAmountCLP }: Props) {
 
       <div aria-live="polite" role="status" className="mt-6">
         {result ? (
-          <div
-            // E1.7 wires the real `tools_finish` emission; the attribute carries
-            // the score until then.
-            data-track="tools_finish"
-            data-score={result.score}
-            className="rounded-xl border border-teal/25 bg-teal/5 p-5"
-          >
+          <div data-score={result.score} className="rounded-xl border border-teal/25 bg-teal/5 p-5">
             <p className="text-sm font-medium text-slate-600">{copy.attentionTest.resultTitle}</p>
             <p className="mt-1 text-3xl font-semibold text-navy">
               {copy.attentionTest.scoreTemplate.replace("{score}", String(result.score))}

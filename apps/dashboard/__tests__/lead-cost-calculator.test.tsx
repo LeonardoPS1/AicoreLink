@@ -58,7 +58,7 @@ describe("LeadCostCalculator", () => {
     expect(screen.getByText(copy.calculator.disclaimer)).toBeInTheDocument();
 
     const result = screen.getByText(EXPECTED_RESULT);
-    expect(result).toHaveAttribute("data-track", "tools_finish");
+    // tools_finish is now emitted programmatically via trackToolsFinish helper (R48)
     expect(result).toHaveAttribute("data-monthly-lost", String(EXPECTED_MONTHLY_CLP));
 
     const link = screen.getByRole("link", { name: copy.calculator.ctaLabel });

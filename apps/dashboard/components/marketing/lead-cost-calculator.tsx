@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 import { WhatsAppGlyph } from "@/components/marketing/whatsapp-glyph";
 import { buttonClasses } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   type CalculatorField,
 } from "@/lib/marketing/copy";
 import { computeLostRevenue, type LostRevenueInput } from "@/lib/tools/calculator";
+import { trackToolsFinish } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 type FieldValues = Record<keyof LostRevenueInput, string>;
@@ -77,6 +78,14 @@ export function LeadCostCalculator() {
   const monthlyLostCLP = allFilled ? computeLostRevenue(toLostRevenueInput(values)).monthlyLostCLP : 0;
   const hasResult = allFilled && monthlyLostCLP > 0;
 
+  // Emit tools_finish programmatically when the result appears (R48: tracker treats
+  // data-track as click, but the result appears without a click).
+  useEffect(() => {
+    if (hasResult) {
+      trackToolsFinish("calculadora", { monthlyLost: monthlyLostCLP });
+    }
+  }, [hasResult, monthlyLostCLP]);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.5)] sm:p-8">
       <div className="grid gap-5 sm:grid-cols-2">
@@ -131,9 +140,6 @@ export function LeadCostCalculator() {
         {hasResult ? (
           <div className="rounded-xl border border-teal/25 bg-teal/5 p-5">
             <p
-              // E1.7 wires the real `tools_finish` emission; the attribute carries
-              // the estimate until then.
-              data-track="tools_finish"
               data-monthly-lost={monthlyLostCLP}
               className="text-lg font-semibold text-navy"
             >
