@@ -126,8 +126,8 @@ describe("v2 pricing (§23)", () => {
 });
 
 describe("v2 FAQ (§10.8)", () => {
-  it("answers eight objections in the FAQ", () => {
-    expect(copy.faq.items).toHaveLength(8);
+  it("answers twelve objections in the FAQ", () => {
+    expect(copy.faq.items).toHaveLength(12);
     for (const item of copy.faq.items) {
       expect(item.question).toBeTruthy();
       expect(item.answer).toBeTruthy();
