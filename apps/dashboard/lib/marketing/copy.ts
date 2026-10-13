@@ -867,8 +867,13 @@ Para dudas sobre cookies:
 };
 
 /**
- * WhatsApp destination number (E.164 without the leading +).
- * Número de WhatsApp del negocio (Chile: +56975680702).
+ * WhatsApp destination number (E.164 format, e.g. +569XXXXXXXXX).
+ *
+ * Reads from NEXT_PUBLIC_WHATSAPP_PHONE env var.
+ * The placeholder "+56975680702" is a DEVELOPMENT FALLBACK ONLY.
+ * In production (Dokploy), configure NEXT_PUBLIC_WHATSAPP_PHONE per service
+ * with the REAL business number (same number across all ecosystem sites).
+ * NEVER commit a real number to source control.
  */
 export const WHATSAPP_PHONE =
   process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "+56975680702";
