@@ -537,9 +537,29 @@ export const copy: LandingCopy = {
           "Solo cuando te regalamos la implementación (6 meses). En otros casos puedes cancelar con aviso.",
       },
       {
+        question: "¿Entiende las notas de voz?",
+        answer:
+          "Sí, nuestro asistente transcribe y procesa mensajes de voz para responder adecuadamente. Sin embargo, definimos los temas que no toca para evitar interpretaciones.",
+      },
+      {
+        question: "¿Reemplaza mi caja, comisiones o boletas?",
+        answer:
+          "No. Tu sitio web con IA solo agenda citas, gestiona reservas y solicita reseñas. La emisión de facturas y el manejo de caja sigue siendo tu responsabilidad.",
+      },
+      {
+        question: "¿Puedo probarlo antes de pagar?",
+        answer:
+          "Sí. Ofrecemos una garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes. Puedes cancelar en cualquier momento.",
+      },
+      {
         question: "¿Y si no recibo consultas?",
         answer:
-          "Garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes.",
+          "Garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes. Esta garantía aplica a planes de pago, una vez por cliente.",
+      },
+      {
+        question: "¿Ofrecen garantía satisfecho o reembolsado?",
+        answer:
+          "No reembolsos por cambio de opinión, pero tienes 30 días de garantía: si no recibes consultas por tu sitio en los primeros 30 días, no cobramos el segundo mes. El contenido y dominio siempre son tuyos.",
       },
     ],
   },
@@ -551,6 +571,12 @@ export const copy: LandingCopy = {
     secondaryLabel: "Escribir por WhatsApp",
     guarantee:
       "Tu dominio es tuyo. Tu contenido es tuyo. Si algún día te vas, te llevas todo. Sin letra chica. Y si en 30 días no recibes consultas por tu sitio, no cobramos el segundo mes.",
+    steps: [
+      { label: "Nos cuentas de tu negocio" },
+      { label: "Te mostramos el diagnóstico" },
+      { label: "Sales atendiendo" },
+    ],
+    formTitle: "Quiero mi diagnóstico gratis",
   },
 
   stickyWhatsApp: {
