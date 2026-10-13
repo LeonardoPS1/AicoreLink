@@ -1,0 +1,197 @@
+{
+  "name": "Factory Generate Site",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "factory-generate",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "factory-generate"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Validate and extract payload\nconst payload = items[0].json;\n\nif (!payload.jobId || !payload.siteId || !payload.tenantId) {\n  throw new Error('Invalid payload: missing jobId, siteId, or tenantId');\n}\n\n// Return data for next nodes\nreturn [{\n  json: {\n    jobId: payload.jobId,\n    siteId: payload.siteId,\n    tenantId: payload.tenantId,\n  },\n}];",
+        "options": {}
+      },
+      "id": "validate-payload",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.NEXTAUTH_URL }}/api/factory/sites/{{ $json.siteId }}/generate-internal",
+        "method": "POST",
+        "options": {
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer {{ $env.FACTORY_INTERNAL_API_KEY }}"
+          },
+          "bodyContentType": "json"
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"jobId\": {{ $json.jobId }},\n  \"tenantId\": \"{{ $json.tenantId }}\"\n}"
+      },
+      "id": "call-generator",
+      "name": "Call Generator API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [750, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "functionCode": "// Check if generation succeeded\nconst response = items[0].json;\n\nif (response.success === true) {\n  return [{ json: { ...response, status: 'success' } }];\n} else {\n  throw new Error(response.error || 'Generation failed');\n}",
+        "options": {}
+      },
+      "id": "check-result",
+      "name": "Check Result",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Success: Update site status to review, notify admin\nconst { jobId, siteId, tenantId, draft } = items[0].json;\n\nreturn [{\n  json: {\n    jobId,\n    siteId,\n    tenantId,\n    status: 'completed',\n    message: 'Site draft generated successfully',\n    draft,\n  },\n}];",
+        "options": {}
+      },
+      "id": "on-success",
+      "name": "On Success",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Error: Update site status back to draft, log error\nconst { jobId, siteId, tenantId } = items[0].json;\nconst error = items[0].error || 'Unknown error';\n\nreturn [{\n  json: {\n    jobId,\n    siteId,\n    tenantId,\n    status: 'failed',\n    error,\n    message: `Generation failed: ${error}`,\n  },\n}];",
+        "options": {}
+      },
+      "id": "on-error",
+      "name": "On Error",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.NEXTAUTH_URL }}/api/admin/sites/{{ $json.siteId }}/generation-complete",
+        "method": "POST",
+        "options": {
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer {{ $env.FACTORY_INTERNAL_API_KEY }}"
+          },
+          "bodyContentType": "json"
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"jobId\": {{ $json.jobId }},\n  \"siteId\": \"{{ $json.siteId }}\",\n  \"tenantId\": \"{{ $json.tenantId }}\",\n  \"status\": \"{{ $json.status }}\",\n  \"error\": {{ $json.error ? JSON.stringify($json.error) : 'null' }},\n  \"draft\": {{ $json.draft ? JSON.stringify($json.draft) : 'null' }}\n}"
+      },
+      "id": "notify-admin",
+      "name": "Notify Admin / Update Site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1500, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Call Generator API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Generator API": {
+      "main": [
+        [
+          {
+            "node": "Check Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Result": {
+      "main": [
+        [
+          {
+            "node": "On Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On Success": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin / Update Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Result": {
+      "main": [
+        [
+          {
+            "node": "On Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On Error": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin / Update Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "factory-generate-workflow",
+  "tags": ["factory", "site-generation", "async"]
+}

@@ -1,0 +1,13 @@
+export { HeroBlock } from "./hero";
+export { ServicesBlock } from "./services";
+export { TeamBlock } from "./team";
+export { ContactBlock } from "./contact";
+export { BookingBlock } from "./booking";
+export { GalleryBlock } from "./gallery";
+export { BlogBlock } from "./blog";
+export { FaqBlock } from "./faq";
+export { ReviewsBlock } from "./reviews";
+export { PromosBlock } from "./promos";
+export { CasesBlock } from "./cases";
+export { ResourcesBlock } from "./resources";
+export { CtaBlock } from "./cta";
