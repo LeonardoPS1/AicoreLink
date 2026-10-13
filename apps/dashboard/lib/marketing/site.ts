@@ -19,10 +19,10 @@ export const SITE_URL = (
 export const SITE_TITLE = "Sitios web con IA para negocios locales | AicoreLink";
 
 export const SITE_DESCRIPTION =
-  "Creamos tu página web y le conectamos un asistente con IA que responde por WhatsApp, agenda citas y capta clientes 24/7. Planes desde $49 por mes.";
+  "Creamos tu sitio web con IA que responde por WhatsApp, agenda citas y pide reseñas. Planes desde $19.990 + IVA al mes.";
 
-/** Open Graph locale. */
-export const SITE_LOCALE = "es_AR";
+/** Open Graph locale (neutral Chilean Spanish). */
+export const SITE_LOCALE = "es_CL";
 
 /**
  * Search terms the landing genuinely answers. The vertical names come from

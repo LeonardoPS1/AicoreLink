@@ -32,6 +32,18 @@ describe("SiteFooter", () => {
       expect(anchor.getAttribute("href")).toBe(link.href);
     }
   });
+
+  it("includes three legal links with correct hrefs", () => {
+    render(<SiteFooter />);
+
+    const legalLinks = copy.footer.legalLinks;
+    expect(legalLinks).toHaveLength(3);
+
+    for (const link of legalLinks) {
+      const anchor = screen.getByRole("link", { name: link.label });
+      expect(anchor.getAttribute("href")).toBe(link.href);
+    }
+  });
 });
 
 describe("StickyWhatsApp", () => {

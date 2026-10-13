@@ -1,6 +1,47 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
-import { copy, whatsappUrl, WHATSAPP_PHONE, bookingUrl } from "@/lib/marketing/copy";
+import {
+  copy,
+  formatCLP,
+  whatsappUrl,
+  presetWhatsappUrl,
+  PRESET_MESSAGES,
+  WHATSAPP_PHONE,
+  bookingUrl,
+} from "@/lib/marketing/copy";
 import { verticals } from "@/lib/marketing/verticals";
+import * as site from "@/lib/marketing/site";
+
+/**
+ * Rioplatense voseo forms. Tuteo equivalents ("estás", "tú", "tu") are valid and
+ * must NOT be blocked.
+ */
+const VOSEO_PATTERN =
+  /\b(vos|sos|tenés|podés|querés|sabés|hacés|decís|venís|elegís|agendás|pagás|necesitás|trabajás|llegás|usás|andá|mirá|probá|fijate|contame|dejame|pedime|identificás|cerrás|manejás|contanos|escribinos|escribí|elegí|decime|mandame|avisame|acordate|olvidate|ponete|quedate|acercate|sumate|animáte|pasá|entrá|llamá|enviá|agendá|revisá|completá|usá|hacé|decí|vení|salí|tené|ingresá|reclamá|aprovechá)\b/i;
+
+/**
+ * Old v1 USD price tags. The real CLP prices ($49.990, $99.990, …) share the
+ * "$49"/"$99"/"$199" prefix, so the lookahead excludes an immediate ".NN".
+ */
+const USD_PRICE_PATTERN = /\$49(?!\.\d)|\$99(?!\.\d)|\$199(?!\.\d)/;
+
+/** Source trees that ship user-visible marketing / form copy. */
+const SCAN_DIRS = [
+  "lib/marketing",
+  "components/marketing",
+  "lib/leads",
+  "app/api/leads",
+];
+
+function collectSourceFiles(dir: string): string[] {
+  const abs = join(process.cwd(), dir);
+  return readdirSync(abs, { withFileTypes: true }).flatMap((entry) => {
+    const rel = join(dir, entry.name);
+    if (entry.isDirectory()) return collectSourceFiles(rel);
+    return /\.(ts|tsx)$/.test(entry.name) ? [rel] : [];
+  });
+}
 
 describe("landing copy (plan §6)", () => {
   it("has brand, nav and header CTA", () => {
@@ -18,8 +59,8 @@ describe("landing copy (plan §6)", () => {
     expect(copy.hero.trustLine).toBeTruthy();
   });
 
-  it("enumerates exactly 5 pain points with icon, title and description", () => {
-    expect(copy.pains.items).toHaveLength(5);
+  it("enumerates exactly 8 pain points with icon, title and description", () => {
+    expect(copy.pains.items).toHaveLength(8);
     for (const pain of copy.pains.items) {
       expect(pain.icon).toBeTruthy();
       expect(pain.title).toBeTruthy();
@@ -41,22 +82,134 @@ describe("landing copy (plan §6)", () => {
     expect(copy.howItWorks.steps).toHaveLength(4);
   });
 
-  it("offers three plans with Growth highlighted", () => {
-    expect(copy.pricing.plans.map((plan) => plan.id)).toEqual(["starter", "growth", "elite"]);
-    const highlighted = copy.pricing.plans.filter((plan) => plan.highlighted);
-    expect(highlighted).toHaveLength(1);
-    expect(highlighted[0].id).toBe("growth");
+  it("shows the services-only positioning (no catalog stores)", () => {
+    expect(copy.verticals.note.toLowerCase()).toContain("catálogo");
+  });
+});
+
+describe("v2 pricing (§23)", () => {
+  it("offers four plans in ascending CLP price order", () => {
+    expect(copy.pricing.plans.map((plan) => plan.id)).toEqual([
+      "semilla",
+      "starter",
+      "growth",
+      "elite",
+    ]);
+    expect(copy.pricing.plans.map((plan) => plan.priceCLP)).toEqual([
+      0, 19990, 49990, 99990,
+    ]);
+  });
+
+  it("quotes VAT separately on every paid plan", () => {
     for (const plan of copy.pricing.plans) {
-      expect(plan.features.length).toBeGreaterThanOrEqual(3);
+      if (plan.id === "semilla") {
+        expect(plan.priceNote).not.toContain("IVA");
+      } else {
+        expect(plan.priceNote).toContain("IVA");
+      }
     }
   });
 
-  it("answers seven objections in the FAQ", () => {
-    expect(copy.faq.items).toHaveLength(7);
+  it("marks exactly one best seller and one highlighted plan, both Growth", () => {
+    const bestSellers = copy.pricing.plans.filter((plan) => plan.bestSeller);
+    expect(bestSellers).toHaveLength(1);
+    expect(bestSellers[0].id).toBe("growth");
+
+    const highlighted = copy.pricing.plans.filter((plan) => plan.highlighted);
+    expect(highlighted).toHaveLength(1);
+    expect(highlighted[0].id).toBe("growth");
   });
 
-  it("states the services-only positioning (no catalog stores)", () => {
-    expect(copy.verticals.note.toLowerCase()).toContain("catálogo");
+  it("gives every plan at least three features and a positioning tagline", () => {
+    for (const plan of copy.pricing.plans) {
+      expect(plan.features.length).toBeGreaterThanOrEqual(3);
+      expect(plan.tagline).toBeTruthy();
+    }
+  });
+
+  it("formats CLP amounts the Chilean way", () => {
+    expect(formatCLP(19990)).toBe("$19.990");
+    expect(formatCLP(99990)).toBe("$99.990");
+  });
+});
+
+describe("v2 FAQ (§10.8)", () => {
+  it("answers eight objections in the FAQ", () => {
+    expect(copy.faq.items).toHaveLength(8);
+    for (const item of copy.faq.items) {
+      expect(item.question).toBeTruthy();
+      expect(item.answer).toBeTruthy();
+    }
+  });
+});
+
+describe("testimonial examples (single source of truth)", () => {
+  it("lives in copy so the section cannot ship stale inline strings", () => {
+    expect(copy.testimonials.examples).toHaveLength(3);
+    for (const example of copy.testimonials.examples) {
+      expect(example.business).toBeTruthy();
+      expect(example.situation).toBeTruthy();
+      expect(example.outcome).toBeTruthy();
+      expect(example.capability).toBeTruthy();
+    }
+  });
+});
+
+describe("voice and currency guardrails", () => {
+  it("never uses Rioplatense voseo in copy, verticals or site metadata", () => {
+    const blob = JSON.stringify({ copy, verticals, site });
+    expect(blob).not.toMatch(VOSEO_PATTERN);
+  });
+
+  it("no longer carries the old USD prices", () => {
+    expect(JSON.stringify({ copy, verticals, site })).not.toMatch(USD_PRICE_PATTERN);
+  });
+
+  it("matches a genuine old USD price but not the CLP ones", () => {
+    // Guard the guardrail: the lookahead must not neuter the check.
+    expect("Planes desde $49 por mes.").toMatch(USD_PRICE_PATTERN);
+    expect("Precio $99").toMatch(USD_PRICE_PATTERN);
+    expect("Precio $199").toMatch(USD_PRICE_PATTERN);
+    expect("Implementación desde $49.990").not.toMatch(USD_PRICE_PATTERN);
+    expect("Implementación desde $149.990").not.toMatch(USD_PRICE_PATTERN);
+    expect("Planes desde $19.990 + IVA al mes.").not.toMatch(USD_PRICE_PATTERN);
+  });
+
+  it("never uses voseo anywhere in the shipped marketing/form sources", () => {
+    const files = SCAN_DIRS.flatMap(collectSourceFiles);
+    expect(files.length).toBeGreaterThan(0);
+
+    const offenders = files.filter((file) =>
+      VOSEO_PATTERN.test(readFileSync(join(process.cwd(), file), "utf8")),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe("preset WhatsApp messages (§10.9)", () => {
+  it("defines one preset per entry point", () => {
+    for (const key of [
+      "hero",
+      "demo",
+      "calculadora",
+      "starter",
+      "growth",
+      "elite",
+    ] as const) {
+      expect(PRESET_MESSAGES[key]).toBeTruthy();
+    }
+  });
+
+  it("builds a wa.me link and fills the rubro token", () => {
+    const url = presetWhatsappUrl("hero", { rubro: "Barbería" });
+    expect(url.startsWith("https://wa.me/")).toBe(true);
+    expect(url).toContain(encodeURIComponent("mi negocio de Barbería"));
+  });
+
+  it("fills the estimated amount with CLP formatting", () => {
+    const url = presetWhatsappUrl("calculadora", { amountCLP: 19990 });
+    expect(url).toContain(encodeURIComponent("perdiendo $19.990 al mes"));
   });
 });
 

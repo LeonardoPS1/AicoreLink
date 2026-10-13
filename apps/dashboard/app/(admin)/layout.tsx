@@ -29,6 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/metricas" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
             Métricas
           </Link>
+          <Link href="/embudo" className="rounded px-3 py-2 hover:bg-white/10">
+            Embudo
+          </Link>
           <Link href="/infraestructura" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
             Infraestructura
           </Link>

@@ -17,6 +17,14 @@ const VALID_BODY = {
   whatsapp: "+54 9 11 5555 5555",
   rubro: "barberia",
   mensaje: "Pierdo consultas por no contestar a tiempo.",
+  utm: {
+    source: "google",
+    medium: "cpc",
+    campaign: "verano_2026",
+    content: "anuncio_1",
+    term: "sitio web barberia",
+  },
+  consent: true,
 };
 
 let ip = 0;
@@ -58,6 +66,12 @@ describe("POST /api/leads", () => {
         vertical: "barberia",
         message: "Pierdo consultas por no contestar a tiempo.",
         userAgent: "vitest",
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "verano_2026",
+        utmContent: "anuncio_1",
+        utmTerm: "sitio web barberia",
+        consent: true,
       },
     });
   });
@@ -71,6 +85,14 @@ describe("POST /api/leads", () => {
       name: "Juan Pérez",
       business: "Barbería El Corte",
       vertical: "barberia",
+      utm: {
+        source: "google",
+        medium: "cpc",
+        campaign: "verano_2026",
+        content: "anuncio_1",
+        term: "sitio web barberia",
+      },
+      consent: true,
     });
   });
 
@@ -84,7 +106,7 @@ describe("POST /api/leads", () => {
 
   it("rejects an invalid payload without touching the database", async () => {
     const response = await POST(
-      makeRequest({ nombre: "J", negocio: "", whatsapp: "abc", rubro: "" }),
+      makeRequest({ nombre: "J", negocio: "", whatsapp: "abc", rubro: "", consent: true }),
     );
 
     expect(response.status).toBe(400);

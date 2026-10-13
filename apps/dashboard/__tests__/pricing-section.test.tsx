@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { PricingSection } from "@/components/marketing/pricing-section";
-import { copy } from "@/lib/marketing/copy";
+import { copy, formatCLP } from "@/lib/marketing/copy";
 
 describe("PricingSection", () => {
   it("renders the section title and subtitle from copy", () => {
@@ -20,14 +20,21 @@ describe("PricingSection", () => {
     expect(container.querySelector("section#planes")).not.toBeNull();
   });
 
-  it("renders every plan name and price label in order", () => {
+  it("renders every plan name, CLP price and audience", () => {
     render(<PricingSection />);
 
     for (const plan of copy.pricing.plans) {
       expect(screen.getByText(plan.name)).toBeInTheDocument();
-      expect(screen.getByText(plan.priceLabel)).toBeInTheDocument();
+      expect(screen.getByText(formatCLP(plan.priceCLP))).toBeInTheDocument();
       expect(screen.getByText(plan.forWho)).toBeInTheDocument();
     }
+  });
+
+  it("shows the VAT note on paid plans and 'sin costo' on Semilla", () => {
+    render(<PricingSection />);
+
+    expect(screen.getAllByText("+ IVA")).toHaveLength(3);
+    expect(screen.getByText("sin costo")).toBeInTheDocument();
   });
 
   it("renders the feature list of each plan", () => {
@@ -52,10 +59,12 @@ describe("PricingSection", () => {
     expect(badges[0].getAttribute("data-plan")).toBe("growth");
   });
 
-  it("shows the badge only on the highlighted plan", () => {
+  it("renders each plan badge independent of the highlighted flag", () => {
     render(<PricingSection />);
 
+    // Growth is highlighted ("Más elegido"); Elite is not highlighted but still badged.
     expect(screen.getByText("Más elegido")).toBeInTheDocument();
+    expect(screen.getByText("Atención completa")).toBeInTheDocument();
   });
 
   it("points every plan CTA at the contact section", () => {
@@ -68,7 +77,7 @@ describe("PricingSection", () => {
     }
   });
 
-  it("renders the setup note", () => {
+  it("renders the pricing note", () => {
     render(<PricingSection />);
 
     expect(screen.getByText(copy.pricing.note)).toBeInTheDocument();
