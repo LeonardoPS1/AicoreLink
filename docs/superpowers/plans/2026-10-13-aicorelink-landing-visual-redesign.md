@@ -16,7 +16,7 @@
 - **Scope is exactly six sections:** Hero, Dolores (pain), Planes (pricing), FAQ, CTA, Footer. **Do NOT touch** `app/(marketing)/herramientas/**` nor `components/marketing/{lead-cost-calculator,attention-test,demo-chat,voice-demo}.tsx`.
 - `lib/marketing/copy.ts` is the **single source of truth** for every user-visible string. No marketing sentence may be hardcoded in JSX.
 - All marketing strings are **Chilean Spanish, tuteo** (`tú`), **never voseo**.
-- Prices are **CLP with IVA stated separately** (`+ IVA`) or `sin costo`. Never write a price inline; always via `formatCLP()`.
+- Prices are **CLP with IVA stated separately** (`+ IVA`). Never write a price inline; always via `formatCLP()`.
 - Code, identifiers, comments, filenames, commit messages: **English**. Commit style: conventional commits, **no AI attribution**.
 - **Preserve every existing test invariant** listed below (Task-by-task "Must keep" blocks).
 - **Do not add runtime dependencies.** Fonts are self-hosted with `next/font/local` (no `next/font/google` — the Docker build has no guaranteed network access at build time).
@@ -370,14 +370,14 @@ git commit -m "feat(marketing): redesign dolores as an inbox accordion"
 
 **Interfaces:**
 - Consumes: `WRAP`, `SECTION`, `TONE.white`, `HEAD`, `CHAP` (Task 1).
-- Produces: `copy.pricing` gains `chapter: string` (`"Capítulo 7"`), `billing: { monthlyLabel: string; annualLabel: string; annualTag: string; monthlySuffix: string; annualSuffix: string }` and `comparison: { caption: string; rows: { label: string; values: [string, string, string] }[] }`. `copy.pricing.plans` **stays 4 entries** (`semilla`, `starter`, `growth`, `elite`) with the existing fields.
+- Produces: `copy.pricing` gains `chapter: string` (`"Capítulo 7"`), `billing: { monthlyLabel: string; annualLabel: string; annualTag: string; monthlySuffix: string; annualSuffix: string }` and `comparison: { caption: string; rows: { label: string; values: [string, string, string] }[] }`. `copy.pricing.plans` **stays 3 entries** (`starter`, `growth`, `elite`) with the existing fields (Semilla was removed from the product).
 
 **Must keep (existing assertions in `pricing-section.test.tsx`):**
 - `section#planes`; `h2` = `copy.pricing.title`; every `plan.name`, `plan.forWho`, `plan.features`, `formatCLP(plan.priceCLP)`.
-- `getAllByText("+ IVA")` length **3**; `getByText("sin costo")` present.
+- `getAllByText("+ IVA")` length **3** (every plan quotes VAT separately).
 - Exactly one `[data-highlighted='true']`, and it is `growth`; badges `"Más elegido"` and `"Atención completa"`.
 - Every CTA link (accessible name `plans[0].ctaLabel`) `href="#contacto"`, count === `plans.length`; `copy.pricing.note` present.
-- **e2e:** `#planes article[data-plan]` count === 4; `$0`, `$19.990`, `$49.990`, `$99.990` all present; the highlighted card contains `"Más elegido"`.
+- **e2e:** `#planes article[data-plan]` count === 3; `$19.990`, `$49.990`, `$99.990` all present; the highlighted card contains `"Más elegido"`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -406,19 +406,19 @@ Expected: FAIL (no billing radios / no comparison rows).
 
 - [ ] **Step 3: Extend the copy**
 
-Add `chapter`, `billing` and the 15-row `comparison` matrix (labels + the three plan columns) from the static `table.cmp`. Keep the four plans and their existing `priceNote`/`features`/`ctaLabel` values unchanged; only add `priceNoteAnnualCLP?` if the toggle needs an annual figure (optional — the static uses `plan__eq` text).
+Add `chapter`, `billing` and the 15-row `comparison` matrix (labels + the three plan columns) from the static `table.cmp`. Keep the three plans and their existing `priceNote`/`features`/`ctaLabel` values unchanged; only add `priceNoteAnnualCLP?` if the toggle needs an annual figure (optional — the static uses `plan__eq` text).
 
 - [ ] **Step 4: Rebuild the section**
 
 - `<section id="planes" className={cn(SECTION, TONE.white)}>` with `WRAP`, a `CHAP` eyebrow, the `h2` = `copy.pricing.title`, the subtitle, then `<PricingToggle />`, then the grid.
-- Keep the grid rendering **all four plans** as `<PricingCard>` inside `<Reveal>`; the highlighted card must remain `article[data-plan="growth"][data-highlighted="true"]`.
+- Keep the grid rendering **all three plans** as `<PricingCard>` inside `<Reveal>`; the highlighted card must remain `article[data-plan="growth"][data-highlighted="true"]`.
 - `pricing-card.tsx`: `<article data-plan data-highlighted className="...">` with a serif `h3` (`font-display text-[2.2rem]`), `plan.forWho`, a serif price (`formatCLP` + `/ mes` + `plan.priceNote`), the feature `ul` with `signalDark` checks, and the CTA `<a href="#contacto" data-track="cta_click" data-label={"planes-"+plan.id}>`. Keep the highlighted card visually elevated.
 - `pricing-toggle.tsx`: `"use client"`, a `role="radiogroup"` with two `role="radio"` buttons (`aria-checked`), defaulting to **Mensual**; the annual option shows the `annualTag` badge. Toggling only changes suffix/`plan__eq` text — never unmounts the monthly prices (they stay in the DOM; you may dim them with an `aria-hidden` note but the numeric strings must remain).
 - Below the grid add the comparison `<table>` from `copy.pricing.comparison` with a `<caption>`, then `copy.pricing.note`.
 
 - [ ] **Step 5: Extend the e2e**
 
-In `apps/dashboard/e2e/responsive.spec.ts` (inside the existing pricing test) add: the billing radiogroup exists, `Mensual` is checked by default, and after clicking `Anual` the four `article[data-plan]` are **still present** (count 4). Keep all existing pricing assertions.
+In `apps/dashboard/e2e/responsive.spec.ts` (inside the existing pricing test) add: the billing radiogroup exists, `Mensual` is checked by default, and after clicking `Anual` the three `article[data-plan]` are **still present** (count 3). Keep all existing pricing assertions.
 
 - [ ] **Step 6: Run the tests**
 
@@ -671,12 +671,12 @@ test("redesigned sections render their key chrome", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('#inicio h1')).toHaveCount(1);
   await expect(page.locator('#problema details[name="dolor"]')).toHaveCount(8);
-  await expect(page.locator('#planes article[data-plan]')).toHaveCount(4);
+  await expect(page.locator('#planes article[data-plan]')).toHaveCount(3);
   await expect(page.locator('#preguntas [role="button"]')).toHaveCount(12);
   await expect(page.locator('body')).not.toHaveCSS("overflow-x", "scroll");
 });
 ```
-Create `e2e/redesign.spec.ts` for the billing toggle (click `Anual`, assert 4 plans still present) and the Dolores single-open behaviour (open a second item, assert the first closed) — iterations that are awkward to keep in `responsive.spec.ts`.
+Create `e2e/redesign.spec.ts` for the billing toggle (click `Anual`, assert 3 plans still present) and the Dolores single-open behaviour (open a second item, assert the first closed) — iterations that are awkward to keep in `responsive.spec.ts`.
 
 - [ ] **Step 2: Build and run e2e**
 
@@ -711,7 +711,7 @@ Follow the `finishing-a-development-branch` flow: full gates green → merge `fe
 
 **2. Step scan.** Each step names one action: copy a file, write an assertion, run a command, edit a named file. No step says "handle edge cases" or "add validation".
 
-**3. Type consistency.** `SectionTone`/`TONE`/`WRAP`/`SECTION`/`HEAD`/`CHAP` are defined once in Task 1 and consumed by Tasks 3-7 by those exact names. `copy.pricing.billing.*`, `copy.cta.steps`, `copy.footer.navLinks`, `copy.hero.chips`, `copy.hero.thread`, `copy.pains.*` extra fields are defined where produced and referenced verbatim where consumed. `copy.pricing.plans` stays four entries across Tasks 4 and 9.
+**3. Type consistency.** `SectionTone`/`TONE`/`WRAP`/`SECTION`/`HEAD`/`CHAP` are defined once in Task 1 and consumed by Tasks 3-7 by those exact names. `copy.pricing.billing.*`, `copy.cta.steps`, `copy.footer.navLinks`, `copy.hero.chips`, `copy.hero.thread`, `copy.pains.*` extra fields are defined where produced and referenced verbatim where consumed. `copy.pricing.plans` stays three entries across Tasks 4 and 9.
 
 **4. Review Focus.** Narrow-viewport overflow → Task 2 + the existing no-overflow e2e. Reduced motion → Task 1 Step 7 + Task 2 ticker. Missing font files → Task 1 Steps 4-6 (fallbacks declared in `fonts`). Billing toggle hiding prices → Task 4 Steps 1 and 5. Accordion a11y/heading counts → Task 3 Step 4 and Task 5 Step 4.
 

@@ -1,5 +1,3 @@
-import { Info } from "lucide-react";
-
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { VerticalTabs } from "@/components/marketing/vertical-tabs";
@@ -66,11 +64,6 @@ export function VerticalsSection() {
         <Reveal className="mt-12">
           <VerticalTabs items={items} ariaLabel="Rubros" />
         </Reveal>
-
-        <div className="mt-10 flex items-start gap-3 rounded-xl border border-amber/30 bg-amber/10 px-5 py-4">
-          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber" />
-          <p className="text-sm leading-relaxed text-amber-100">{copy.verticals.note}</p>
-        </div>
       </div>
     </section>
   );

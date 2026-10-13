@@ -82,31 +82,23 @@ describe("landing copy (plan §6)", () => {
     expect(copy.howItWorks.steps).toHaveLength(4);
   });
 
-  it("shows the services-only positioning (no catalog stores)", () => {
-    expect(copy.verticals.note.toLowerCase()).toContain("catálogo");
-  });
 });
 
 describe("v2 pricing (§23)", () => {
-  it("offers four plans in ascending CLP price order", () => {
+  it("offers three plans in ascending CLP price order", () => {
     expect(copy.pricing.plans.map((plan) => plan.id)).toEqual([
-      "semilla",
       "starter",
       "growth",
       "elite",
     ]);
     expect(copy.pricing.plans.map((plan) => plan.priceCLP)).toEqual([
-      0, 19990, 49990, 99990,
+      19990, 49990, 99990,
     ]);
   });
 
-  it("quotes VAT separately on every paid plan", () => {
+  it("quotes VAT separately on every plan", () => {
     for (const plan of copy.pricing.plans) {
-      if (plan.id === "semilla") {
-        expect(plan.priceNote).not.toContain("IVA");
-      } else {
-        expect(plan.priceNote).toContain("IVA");
-      }
+      expect(plan.priceNote).toContain("IVA");
     }
   });
 

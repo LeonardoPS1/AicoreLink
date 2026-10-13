@@ -12,7 +12,7 @@ export type NavItem = { label: string; href: string };
 export type PainItem = { icon: string; title: string; description: string };
 export type SolutionColumn = { icon: string; title: string; description: string };
 export type Step = { title: string; description: string };
-export type PlanId = "semilla" | "starter" | "growth" | "elite";
+export type PlanId = "starter" | "growth" | "elite";
 export type Plan = {
   id: PlanId;
   name: string;
@@ -81,7 +81,7 @@ export type LandingCopy = {
   pains: { title: string; items: PainItem[]; closing: string };
   solution: { title: string; subtitle: string; columns: SolutionColumn[] };
   howItWorks: { title: string; subtitle: string; steps: Step[] };
-  verticals: { title: string; subtitle: string; note: string; ctaTemplate: string };
+  verticals: { title: string; subtitle: string; ctaTemplate: string };
   pricing: { title: string; subtitle: string; plans: Plan[]; note: string };
   testimonials: {
     title: string;
@@ -326,7 +326,6 @@ export const copy: LandingCopy = {
     title: "Hecho para negocios como el tuyo",
     subtitle:
       "Si tu negocio vende servicios, tiempo o consultas (no un catálogo de productos), esto es para ti.",
-    note: "No es para tiendas con catálogo. Es para negocios que necesitan captar, convertir y atender.",
     ctaTemplate: "Quiero esto para mi {singular}",
   },
 
@@ -335,22 +334,6 @@ export const copy: LandingCopy = {
     subtitle: "Todo incluido: diseño, hosting, WhatsApp y el asistente según tu plan.",
     // Monthly prices are CLP with VAT excluded; implementation amounts follow §23.
     plans: [
-      {
-        id: "semilla",
-        name: "Semilla",
-        priceCLP: 0,
-        priceNote: "sin costo",
-        forWho: "Negocio que recién parte",
-        tagline: "Para tener presencia online hoy, sin costo.",
-        features: [
-          "1 página",
-          "Botón de WhatsApp",
-          "Formulario de contacto",
-          'Sello "Hecho con AicoreLink"',
-        ],
-        ctaLabel: "Quiero mi diagnóstico gratis",
-        highlighted: false,
-      },
       {
         id: "starter",
         name: "Starter",
@@ -730,7 +713,7 @@ El servicio **no incluye**: desarrollo a medida fuera del alcance del plan, gest
 ## 3. Planes, precios y facturación
 
 - Precios en **pesos chilenos (CLP)**, **IVA excluido** (se factura aparte).
-- Planes: **Semilla** ($0), **Starter** ($19.990), **Growth** ($49.990), **Elite** ($99.990) mensuales.
+- Planes: **Starter** ($19.990), **Growth** ($49.990), **Elite** ($99.990) mensuales.
 - Facturación **mensual anticipada**. El primer pago se cobra al contratar.
 - La **implementación inicial** puede tener costo aparte (ver detalle de cada plan) o ser gratuita sujeta a **permanencia de 6 meses**.
 - Renovación automática salvo aviso de cancelación con 30 días de antelación.
