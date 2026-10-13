@@ -6,7 +6,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-white/10 bg-navy text-slate-300">
       <div className="mx-auto max-w-6xl px-4 py-14">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-5">
           <div className="md:col-span-2">
             <div className="inline-flex items-center gap-2">
               <span
@@ -64,6 +64,22 @@ export function SiteFooter() {
                   {copy.footer.contact.links[1].label}
                 </a>
               </li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="text-sm font-semibold text-white">Legal</h2>
+            <ul className="mt-4 space-y-3">
+              {copy.footer.legalLinks.map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    className="text-sm text-slate-400 transition-colors duration-150 hover:text-teal-light"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

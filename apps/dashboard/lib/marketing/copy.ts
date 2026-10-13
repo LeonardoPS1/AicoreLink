@@ -32,6 +32,12 @@ export type Plan = {
 };
 export type FaqItem = { question: string; answer: string };
 export type FooterGroup = { title: string; links: { label: string; href: string }[] };
+export type LegalPage = {
+  pageTitle: string;
+  pageDescription: string;
+  content: string;
+};
+export type LegalLinks = { label: string; href: string }[];
 
 /**
  * Calculator field metadata (§10.4). `name` is keyed to `LostRevenueInput`, so a
@@ -170,6 +176,12 @@ export type LandingCopy = {
     ecosystem: FooterGroup;
     contact: FooterGroup;
     legal: string;
+    legalLinks: LegalLinks;
+  };
+  legal: {
+    privacidad: LegalPage;
+    terminos: LegalPage;
+    cookies: LegalPage;
   };
 };
 
@@ -605,6 +617,252 @@ export const copy: LandingCopy = {
       ],
     },
     legal: "© " + new Date().getFullYear() + " AicoreLink. Todos los derechos reservados.",
+    legalLinks: [
+      { label: "Política de privacidad", href: "/legal/privacidad" },
+      { label: "Términos y condiciones", href: "/legal/terminos" },
+      { label: "Política de cookies", href: "/legal/cookies" },
+    ],
+  },
+  legal: {
+    privacidad: {
+      pageTitle: "Política de privacidad | AicoreLink",
+      pageDescription:
+        "Cómo recopilamos, usamos y protegemos tus datos personales. Derechos ARCO y contacto del responsable.",
+      content: `
+## Responsable del tratamiento
+
+AicoreLink (en adelante, "nosotros", "nuestro" o "la empresa"), con domicilio en Chile, es el responsable del tratamiento de tus datos personales. Puedes contactarnos en privacidad@aicorebots.com.
+
+## Qué datos recopilamos
+
+Recopilamos la información que nos proporcionas directamente cuando:
+- Rellenas el formulario de contacto o solicitas un diagnóstico (nombre, email, teléfono, rubro, mensaje).
+- Navegas por nuestro sitio (dirección IP, tipo de navegador, páginas visitadas, tiempo de permanencia) mediante cookies técnicas y analíticas (ver nuestra Política de cookies).
+- Interactúas con el asistente de WhatsApp o la demo de chat (el contenido de tus mensajes se procesa para responderte y no se almacena más tiempo del necesario).
+
+## Finalidad del tratamiento
+
+Tratamos tus datos para:
+1. **Responder a tus consultas** y enviarte la información que solicitas.
+2. **Prestar el servicio** de creación y mantenimiento de tu sitio web con IA, incluyendo la conexión con WhatsApp, agenda y reseñas.
+3. **Enviar comunicaciones comerciales** sobre nuestros planes, novedades y ofertas, siempre que hayas dado tu consentimiento o exista interés legítimo.
+4. **Cumplir obligaciones legales** (facturación, contabilidad, prevención de fraude).
+5. **Mejorar nuestro sitio y servicios** mediante análisis agregados y anonimizados.
+
+## Base legal
+
+- **Ejecución de contrato / medidas precontractuales**: para prestar el servicio y responder consultas.
+- **Consentimiento**: para envío de comunicaciones comerciales y cookies no necesarias.
+- **Interés legítimo**: para analítica de uso, seguridad y prevención de fraude.
+- **Obligación legal**: para facturación y requerimientos de autoridades.
+
+## Derechos ARCO (Acceso, Rectificación, Cancelación, Oposición)
+
+Tienes derecho a:
+- **Acceder** a tus datos personales y obtener copia de los mismos.
+- **Rectificar** datos inexactos o incompletos.
+- **Cancelar / suprimir** tus datos cuando ya no sean necesarios para los fines recogidos.
+- **Oponerte** al tratamiento basado en interés legítimo o a recibir comunicaciones comerciales.
+- **Limitar** el tratamiento en determinados supuestos.
+- **Portabilidad** de tus datos a otro responsable (cuando el tratamiento sea automatizado y basado en consentimiento o contrato).
+
+Para ejercer tus derechos, escribe a **privacidad@aicorebots.com** indicando el derecho que quieres ejercer y adjuntando copia de tu documento de identidad. Responderemos en el plazo legal (máximo 30 días, prorrogables a 60 en casos complejos).
+
+## Conservación
+
+- Datos de contacto y comerciales: mientras dure la relación contractual y, tras su fin, durante los plazos de prescripción legal (máx. 5 años en materia civil/mercantil).
+- Datos de navegación (cookies): según lo indicado en la Política de cookies.
+- Mensajes de WhatsApp / chat: se procesan en tiempo real y no se almacenan en nuestros servidores más allá de lo estrictamente necesario para la respuesta.
+
+## Destinatarios y transferencias
+
+No vendemos tus datos. Solo los compartimos con:
+- Proveedores técnicos que nos ayudan a prestar el servicio (hosting, WhatsApp Business API, IA, analítica), bajo contratos de encargado de tratamiento.
+- Autoridades competentes cuando exista obligación legal.
+
+No realizamos transferencias internacionales de datos fuera de jurisdicciones con nivel de protección adecuado sin garantías apropiadas (cláusulas tipo, decisiones de adecuación).
+
+## Seguridad
+
+Aplicamos medidas técnicas y organizativas apropiadas (cifrado en tránsito y en reposo, acceso por roles, registro de accesos, pruebas de seguridad periódicas) para proteger tus datos contra acceso no autorizado, pérdida, alteración o divulgación.
+
+## Menores de edad
+
+Nuestros servicios no van dirigidos a menores de 18 años. No recopilamos conscientemente datos de menores. Si detectamos que un menor nos ha proporcionado datos, los eliminaremos a la mayor brevedad.
+
+## Cambios en esta política
+
+Podemos actualizar esta política para reflejar cambios legales o en nuestros servicios. La versión vigente siempre estará en esta URL con la fecha de última actualización. Te notificaremos los cambios significativos por email o mediante aviso en el sitio.
+
+**Última actualización:** ${new Date().toLocaleDateString("es-CL", { year: "numeric", month: "long", day: "numeric" })}.
+
+## Contacto
+
+Para cualquier duda sobre esta política o el tratamiento de tus datos:
+- Email: **privacidad@aicorebots.com**
+- Asunto: "Derechos ARCO / Privacidad"
+      `.trim(),
+    },
+    terminos: {
+      pageTitle: "Términos y condiciones | AicoreLink",
+      pageDescription:
+        "Condiciones del servicio de creación y mantenimiento de sitios web con IA. Obligaciones, cancelación, propiedad intelectual y jurisdicción chilena.",
+      content: `
+## 1. Objeto y aceptación
+
+Estos Términos y Condiciones (en adelante, "Términos") regulan la contratación y uso del servicio **AicoreLink** — creación, hosting y mantenimiento de sitios web con inteligencia artificial para negocios de servicios, incluyendo asistencia por WhatsApp, agenda de citas, reseñas automáticas y, según el plan, recepcionista de voz.
+
+Al contratar cualquiera de nuestros planes, aceptas íntegramente estos Términos. Si no estás de acuerdo, no contrates el servicio.
+
+## 2. Descripción del servicio
+
+AicoreLink entrega:
+- **Diseño y publicación** de un sitio web adaptado a tu rubro (número de páginas según plan).
+- **Hosting** en nuestra infraestructura (dominio incluido o trae el tuyo).
+- **Asistente con IA** que responde por WhatsApp, toma datos y agenda citas (alcance según plan).
+- **Solicitud automática de reseñas** Google tras cada cita/servicio (planes Growth y Elite).
+- **Recepcionista de voz con IA** (plan Elite).
+- **Reporte mensual** de consultas, citas y reseñas.
+- **Soporte técnico** por canal definido en cada plan.
+
+El servicio **no incluye**: desarrollo a medida fuera del alcance del plan, gestión de campañas publicitarias, SEO avanzado continuado, ni garantía de volumen de clientes.
+
+## 3. Planes, precios y facturación
+
+- Precios en **pesos chilenos (CLP)**, **IVA excluido** (se factura aparte).
+- Planes: **Semilla** ($0), **Starter** ($19.990), **Growth** ($49.990), **Elite** ($99.990) mensuales.
+- Facturación **mensual anticipada**. El primer pago se cobra al contratar.
+- La **implementación inicial** puede tener costo aparte (ver detalle de cada plan) o ser gratuita sujeta a **permanencia de 6 meses**.
+- Renovación automática salvo aviso de cancelación con 30 días de antelación.
+
+## 4. Obligaciones del cliente
+
+- Proporcionar información veraz, completa y actualizada (servicios, precios, horarios, ubicación, logo, textos).
+- Responder en tiempo razonable a nuestras solicitudes de validación o contenido.
+- Usar el servicio de buena fe, sin actividades ilícitas, spam, suplantación, ingeniería inversa ni sobrecarga intencional.
+- Mantener las credenciales de acceso (WhatsApp, panel) seguras y notificar cualquier uso no autorizado.
+- Cumplir la normativa aplicable a tu actividad (consumo, salud, datos, publicidad).
+
+## 5. Obligaciones de AicoreLink
+
+- Entregar el sitio funcional en **48–72 horas** tras recibir tu información completa.
+- Mantener la infraestructura operativa (SLA 99.5% uptime mensual, excluyendo mantenimiento programado).
+- Resguardar la confidencialidad de tus datos y los de tus clientes (ver Política de privacidad).
+- Notificar con antelación razonable cualquier cambio sustancial en el servicio o precios.
+
+## 6. Propiedad intelectual
+
+- **Tu contenido** (textos, imágenes, marca, datos de clientes) es y sigue siendo **tuyo**. Nos concedes licencia no exclusiva, mundial y gratuita para usarlo exclusivamente para prestarte el servicio.
+- **Nuestra tecnología** (código, IA, diseños base, componentes, marca AicoreLink) es de nuestra propiedad o licenciada. No adquieres derechos sobre ella más allá de la licencia de uso del servicio.
+- El sitio entregado usa nuestros componentes y plantillas propietarias. Si cancelas, te entregamos tu contenido y dominio; la estructura técnica y el diseño base no son transferibles como código fuente.
+
+## 7. Cancelación y devoluciones
+
+- Puedes **cancelar en cualquier momento** desde tu panel o avisándonos por email con 30 días de antelación.
+- Si la implementación fue **gratuita con permanencia de 6 meses**, la cancelación anticipada implica abonar el costo de implementación correspondiente a tu plan (Starter: $49.990; Growth: $49.990; Elite: $149.990).
+- **Sin permanencia**: cancelas y el servicio sigue activo hasta el final del período ya pagado. No hay reembolsos por meses parciales.
+- **Garantía 30 días**: si en los primeros 30 días no recibes ninguna consulta por tu sitio, no cobramos el segundo mes (aplica a planes de pago, una vez por cliente).
+
+## 8. Limitación de responsabilidad
+
+- El asistente de IA **puede cometer errores**. Solo responde con la información que tú aprobaste. Tú eres responsable de revisar y validar las respuestas críticas (precios, horarios, disponibilidad).
+- No garantizamos volumen de clientes, citas ni reseñas. El servicio es una herramienta; el resultado depende de tu mercado, oferta y atención.
+- Responsabilidad máxima agregada: **el importe pagado en los últimos 12 meses**. No respondemos por daño emergente, lucro cesante ni pérdida de datos ajena a nuestra negligencia grave.
+
+## 9. Suspensión y terminación por nuestra parte
+
+Podemos suspender o terminar el servicio si:
+- Incumples gravemente estos Términos (impago, uso ilícito, abuso de recursos).
+- Recibimos orden judicial o administrativa que lo exija.
+- El servicio deja de ser viable técnicamente (te avisaremos con 60 días y te facilitaremos la migración).
+
+## 10. Jurisdicción y ley aplicable
+
+Estos Términos se rigen por la **ley de la República de Chile**. Cualquier controversia se someterá a los **tribunales de justicia de Santiago, Chile**, renunciando a cualquier otro fuero.
+
+## 11. Cambios en los Términos
+
+Podemos modificar estos Términos notificándote con **30 días de antelación** (email y aviso en el panel). Si no estás de acuerdo, puedes cancelar antes de que entren en vigor. El uso continuado implica aceptación.
+
+## 12. Contacto
+
+Para dudas sobre estos Términos:
+- Email: **legal@aicorebots.com**
+- Asunto: "Términos y condiciones"
+
+**Versión vigente:** ${new Date().toLocaleDateString("es-CL", { year: "numeric", month: "long", day: "numeric" })}.
+      `.trim(),
+    },
+    cookies: {
+      pageTitle: "Política de cookies | AicoreLink",
+      pageDescription:
+        "Qué cookies usamos, para qué sirven (necesarias, analíticas, marketing) y cómo puedes gestionarlas o revocar tu consentimiento.",
+      content: `
+## Qué son las cookies
+
+Las cookies son pequeños archivos de texto que los sitios web guardan en tu navegador para recordar información sobre tu visita: preferencias, sesión, estadísticas de uso, etc. Algunas son imprescindibles para que el sitio funcione; otras nos ayudan a entender cómo lo usas o a mostrarte contenido relevante.
+
+## Tipos de cookies que utilizamos
+
+### 1. Cookies necesarias (siempre activas)
+Permiten la navegación básica y el acceso a áreas seguras. Sin ellas, el sitio no funciona correctamente.
+- **Sesión / autenticación**: mantienen tu sesión si accedes al panel de cliente.
+- **Seguridad**: protegen contra CSRF y abuso de formularios.
+- **Consentimiento**: recuerdan tu elección sobre cookies (la cookie \`aicorelink-cookie-consent\`).
+
+**No requieren consentimiento** y no se pueden desactivar desde este aviso.
+
+### 2. Cookies analíticas (opcionales)
+Nos ayudan a entender cómo interactúas con el sitio (páginas vistas, tiempo, origen del tráfico) para mejorarlo. Usamos herramientas propias y/o de terceros (p. ej. Plausible, GA4) con IP anonimizada.
+- Solo se activan **tras tu consentimiento explícito**.
+- Puedes rechazarlas sin que el sitio deje de funcionar.
+
+### 3. Cookies de marketing / personalización (opcionales)
+Permiten mostrarte contenido u ofertas relevantes según tu navegación y medir la eficacia de campañas.
+- Solo se activan **tras tu consentimiento explícito**.
+- Incluyen píxeles de redes sociales (Meta, LinkedIn) si los habilitamos en el futuro.
+
+## Cómo gestionar tus preferencias
+
+- **Banner de cookies**: al entrar por primera vez, verás un banner en la parte inferior con botones "Aceptar todo" y "Rechazar no necesarias". Tu elección queda guardada en \`localStorage\` (clave \`aicorelink-cookie-consent\`) durante 12 meses.
+- **Cambiar de opinión**: borra la clave \`aicorelink-cookie-consent\` en las herramientas de desarrollador de tu navegador (F12 → Application → Local Storage) o usa la opción "Borrar datos de navegación" de tu navegador para este sitio. Al recargar, volverá a aparecer el banner.
+- **Controles del navegador**: todos los navegadores permiten bloquear o eliminar cookies desde su configuración. Ten en cuenta que bloquear las necesarias romperá funcionalidades del sitio.
+
+## Terceros y transferencias
+
+Las cookies analíticas y de marketing pueden implicar transferencia de datos a proveedores fuera de Chile (EE. UU., UE). Cuando eso ocurra, exigimos garantías adecuadas (cláusulas contractuales tipo, decisiones de adecuación) y anonimizamos la IP siempre que la herramienta lo permita.
+
+## Cookies concretas (lista orientativa)
+
+| Nombre | Tipo | Finalidad | Duración | Proveedor |
+|--------|------|-----------|----------|-----------|
+| \`aicorelink-cookie-consent\` | Necesaria | Guarda tu preferencia de consentimiento | 12 meses | Propia |
+| \`next-auth.session-token\` | Necesaria | Sesión del panel de cliente | Sesión / 30 días | Propia (NextAuth) |
+| \`_ga / _ga_*\` | Analítica | Google Analytics (si se habilita) | 13 meses | Google |
+| \`plausible_session\` | Analítica | Plausible Analytics (si se habilita) | Sesión | Plausible |
+
+> La lista exacta puede variar según la configuración activa. La versión completa y actualizada está disponible a petición en privacidad@aicorebots.com.
+
+## Tus derechos
+
+Como usuario, tienes derecho a:
+- Saber qué cookies se usan y para qué.
+- Retirar tu consentimiento en cualquier momento (las necesarias siguen activas).
+- Solicitar la eliminación de tus datos de analítica/marketing (ver Política de privacidad, derechos ARCO).
+
+## Cambios en esta política
+
+Actualizaremos esta política cuando cambiemos las cookies que usemos o la normativa lo exija. La fecha de última actualización figura al final.
+
+**Última actualización:** ${new Date().toLocaleDateString("es-CL", { year: "numeric", month: "long", day: "numeric" })}.
+
+## Contacto
+
+Para dudas sobre cookies:
+- Email: **privacidad@aicorebots.com**
+- Asunto: "Política de cookies"
+      `.trim(),
+    },
   },
 };
 

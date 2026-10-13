@@ -1,4 +1,5 @@
 import { AnalyticsTracker } from "@/components/marketing/analytics-tracker";
+import { CookieNotice } from "@/components/marketing/cookie-notice";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { StickyWhatsApp } from "@/components/marketing/sticky-whatsapp";
@@ -15,6 +16,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       </main>
       <SiteFooter />
       <StickyWhatsApp />
+      <CookieNotice />
       <AnalyticsTracker />
     </div>
   );
