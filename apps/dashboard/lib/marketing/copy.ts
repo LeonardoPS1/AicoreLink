@@ -119,6 +119,24 @@ export type LandingCopy = {
     /** Suffix appended when the visitor arrives from the calculator with `?monto`. */
     amountSuffix: string;
   };
+  demoChat: {
+    title: string;
+    subtitle: string;
+    /** Heading of the rubro chip row. */
+    rubroLabel: string;
+    /** Label of the visible "this is an AI / this is a demo" notice. */
+    notice: string;
+    inputLabel: string;
+    inputPlaceholder: string;
+    sendLabel: string;
+    thinkingLabel: string;
+    suggestionsLabel: string;
+    /** Shown when the API rate-limits the visitor (HTTP 429). */
+    rateLimited: string;
+    genericError: string;
+    retryLabel: string;
+    ctaLabel: string;
+  };
   footer: {
     tagline: string;
     ecosystem: FooterGroup;
@@ -497,6 +515,24 @@ export const copy: LandingCopy = {
       "Es un diagnóstico, no una nota. Te sirve como punto de partida para mejorar.",
     ctaLabel: "Quiero que me ayudes a mejorar",
     amountSuffix: "Mi calculadora estimó cerca de {amount} al mes.",
+  },
+
+  demoChat: {
+    title: "Mira cómo respondería tu negocio",
+    subtitle:
+      "Elige un rubro, escribe un mensaje real y mira la respuesta de la IA. Es una demo: aquí no hay un negocio de verdad detrás.",
+    rubroLabel: "Elige un rubro",
+    notice:
+      "Es una demo con IA sobre un negocio de ejemplo. No es un negocio real y la IA responde solo con la información de este demo.",
+    inputLabel: "Escribe tu mensaje",
+    inputPlaceholder: "Escribe tu mensaje…",
+    sendLabel: "Enviar",
+    thinkingLabel: "Escribiendo…",
+    suggestionsLabel: "Puedes probar con:",
+    rateLimited: "Estás enviando muy rápido. Prueba en unos segundos.",
+    genericError: "No pudimos responder ahora. Inténtalo de nuevo.",
+    retryLabel: "Reintentar",
+    ctaLabel: "Quiero una demo para mi negocio",
   },
 
   footer: {
