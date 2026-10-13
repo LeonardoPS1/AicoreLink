@@ -178,7 +178,7 @@ model LandingLead {
 /// Business profile for a tenant's site — contains all the business-specific content.
 model BusinessProfile {
   id          String   @id @default(uuid())
-  tenantId    String   @map("tenant_id")
+  tenantId    String   @unique @map("tenant_id")
   rubro       String   // barberia | taller | profesional | clinica | inmobiliaria | domicilio
   name        String
   slug        String   @unique @map("slug")
