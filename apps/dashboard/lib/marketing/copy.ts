@@ -107,6 +107,9 @@ export type LandingCopy = {
     disclaimer: string;
     ctaLabel: string;
   };
+  ticker: {
+    items: string[];
+  };
   attentionTest: {
     title: string;
     subtitle: string;
@@ -203,10 +206,26 @@ export const copy: LandingCopy = {
   },
 
   hero: {
-    eyebrow: "Sitios web con IA para negocios que viven de sus clientes",
-    headline: "Tu negocio atiende y capta clientes 24/7. Aunque tú estés trabajando.",
+    eyebrow: "Sitios web con IA para negocios que viven de atender clientes",
+    headline: "Tu negocio atendiendo, aunque estés ocupado.",
     subhead:
       "Creamos tu sitio web con IA que responde por WhatsApp, agenda citas y pide reseñas. Listo en días, sin que tengas que saber de tecnología.",
+    askLabel: "Mira cómo atendería tu negocio:",
+    micro: "Respondemos hoy. Sin compromiso y sin letra chica.",
+    chatExampleLabel: "Negocio de ejemplo",
+    chips: [
+      { id: "barberia", label: "Barbería" },
+      { id: "taller", label: "Taller mecánico" },
+      { id: "abogados", label: "Abogados" },
+      { id: "inmobiliaria", label: "Inmobiliaria" },
+      { id: "clinica", label: "Clínica pequeña" },
+    ],
+    thread: [
+      { label: "Escribe" },
+      { label: "Responde" },
+      { label: "Agenda" },
+      { label: "Pide reseña" },
+    ],
     primaryCta: "Quiero mi diagnóstico gratis",
     secondaryCta: "Ver cómo funciona",
     trustLine:
@@ -538,6 +557,21 @@ export const copy: LandingCopy = {
       "Es un diagnóstico, no una nota. Te sirve como punto de partida para mejorar.",
     ctaLabel: "Quiero que me ayudes a mejorar",
     amountSuffix: "Mi calculadora estimó cerca de {amount} al mes.",
+  },
+
+  ticker: {
+    items: [
+      "Barberías y peluquerías",
+      "Talleres mecánicos",
+      "Estudios jurídicos",
+      "Corredoras de propiedades",
+      "Clínicas y centros de salud",
+      "Dentistas",
+      "Kinesiólogos",
+      "Psicólogos",
+      "Centros de estética",
+      "Contadores y asesores",
+    ],
   },
 
   demoChat: {

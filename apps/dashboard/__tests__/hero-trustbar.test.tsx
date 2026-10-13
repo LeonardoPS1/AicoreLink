@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { HeroSection } from "@/components/marketing/hero-section";
@@ -37,6 +37,31 @@ describe("HeroSection", () => {
     const { container } = render(<HeroSection />);
 
     expect(container.querySelector('div[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it("renders the headline as one h1 with the accent phrase styled", () => {
+    render(<HeroSection />);
+
+    const h1 = screen.getByRole("heading", { level: 1 });
+
+    expect(h1).toHaveTextContent(copy.hero.headline);
+    expect(within(h1).getByText(/aunque estés ocupado\./).className).toContain("italic");
+  });
+
+  it("renders a chip per hero rubro", () => {
+    render(<HeroSection />);
+
+    const chips = screen.getAllByRole("button").filter((button) => button.className.includes("chip"));
+
+    expect(chips).toHaveLength(copy.hero.chips.length);
+  });
+
+  it("renders the four-step thread from copy", () => {
+    render(<HeroSection />);
+
+    copy.hero.thread.forEach((step) => {
+      expect(screen.getByText(step.label)).toBeInTheDocument();
+    });
   });
 });
 
