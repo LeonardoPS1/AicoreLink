@@ -1,6 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+
 import { Providers } from "@/app/providers";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 // Aplica a TODAS las páginas dentro de (admin)/*: nunca pre-renderizar en
 // build time, porque consultan datos por tenant en cada request. Además,
@@ -16,33 +17,8 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      <aside className="w-full shrink-0 bg-slate-900 p-6 text-white lg:w-60">
-        <p className="mb-8 text-xs text-teal">Panel de Administración</p>
-        <nav className="flex flex-col gap-2 text-sm">
-          <Link href="/" className="rounded px-3 py-2 hover:bg-white/10">
-            Menú principal
-          </Link>
-          <Link href="/tenants" className="rounded px-3 py-2 hover:bg-white/10">
-            Tenants
-          </Link>
-          <Link href="/fabrica" className="rounded px-3 py-2 hover:bg-white/10">
-            Fábrica
-          </Link>
-          <Link href="/metricas" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
-            Métricas
-          </Link>
-          <Link href="/embudo" className="rounded px-3 py-2 hover:bg-white/10">
-            Embudo
-          </Link>
-          <Link href="/infraestructura" className="rounded px-3 py-2 hover:bg-white/10 opacity-50">
-            Infraestructura
-          </Link>
-        </nav>
-      </aside>
-      <main className="flex-1 bg-slate-50 p-4 lg:p-8">
-        <Providers>{children}</Providers>
-      </main>
-    </div>
+    <Providers>
+      <AdminShell>{children}</AdminShell>
+    </Providers>
   );
 }
