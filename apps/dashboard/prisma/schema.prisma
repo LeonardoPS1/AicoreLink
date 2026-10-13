@@ -16,10 +16,12 @@ model Tenant {
   status    String   @default("activo")
   createdAt DateTime @default(now()) @map("created_at")
 
-  users       TenantUser[]
-  channels    TenantChannel[]
-  usage       TenantUsage[]
-  credentials ChannelCredential[]
+  users            TenantUser[]
+  channels         TenantChannel[]
+  usage            TenantUsage[]
+  credentials      ChannelCredential[]
+  businessProfiles BusinessProfile[]
+  sites            Site[]
 
   @@map("tenants")
 }
@@ -171,4 +173,144 @@ model LandingLead {
   @@index([status])
   @@index([utmSource])
   @@map("landing_leads")
+}
+
+/// Business profile for a tenant's site — contains all the business-specific content.
+model BusinessProfile {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  rubro       String   // barberia | taller | profesional | clinica | inmobiliaria | domicilio
+  name        String
+  slug        String   @unique @map("slug")
+  phone       String?
+  email       String?
+  address     String?
+  description String?  @db.Text
+  logoUrl     String?  @map("logo_url")
+  images      String[] @default([]) @map("images")
+  hours       Json     @default("{}") // { lunes: {open, close}, ... }
+  team        Json     @default("[]") // [{name, role, bio, photoUrl}]
+  services    Json     @default("[]") // [{name, description, priceCLP?, durationMin}]
+  faqs        Json     @default("[]") // [{question, answer}]
+  social      Json     @default("{}") // {instagram, facebook, tiktok, web}
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  site        Site?
+
+  @@map("business_profiles")
+}
+
+/// A generated site for a tenant, linked to a template and optionally a business profile.
+model Site {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  businessProfileId String?  @unique @map("business_profile_id")
+  templateId        String   @map("template_id")
+  name              String
+  subdomain         String   @unique @map("subdomain") // e.g., "peluqueria-maria"
+  customDomain      String?  @unique @map("custom_domain")
+  status            String   @default("draft") // draft | generating | review | approved | published | unpublished
+  currentVersionId  String?  @map("current_version_id")
+  publishedAt       DateTime? @map("published_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id])
+  template          SiteTemplate @relation(fields: [templateId], references: [id])
+  pages             SitePage[]
+  versions          SiteVersion[]
+  publishLogs       PublishLog[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("sites")
+}
+
+/// A page within a site, with portable JSON content (blocks).
+model SitePage {
+  id              String   @id @default(uuid())
+  siteId          String   @map("site_id")
+  templatePageId  String?  @map("template_page_id")
+  path            String   // e.g., "/", "/servicios", "/equipo", "/contacto", "/reservar"
+  title           String
+  content         Json     // { blocks: [...] } — portable content (not HTML)
+  meta            Json     @default("{}") // {title, description, ogImage, noindex}
+  order           Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, path])
+  @@map("site_pages")
+}
+
+/// Template definition per rubro + plan tier.
+model SiteTemplate {
+  id          String   @id @default(uuid())
+  rubro       String   @unique // barberia | taller | profesional
+  name        String
+  planTier    String   // starter | growth | elite
+  pageCount   Int      // 3, 5, or 10
+  structure   Json     // [{path, title, blocksTemplate, requiredVariables}]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sites       Site[]
+  pages       SiteTemplatePage[]
+
+  @@map("site_templates")
+}
+
+/// Page template within a SiteTemplate, with placeholder blocks.
+model SiteTemplatePage {
+  id                 String   @id @default(uuid())
+  templateId         String   @map("template_id")
+  path               String
+  title              String
+  blocksTemplate     Json     // template with {{variable}} placeholders
+  requiredVariables  String[] @map("required_variables")
+  order              Int      @default(0)
+
+  template           SiteTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, path])
+  @@map("site_template_pages")
+}
+
+/// Version snapshot of a site's pages.
+model SiteVersion {
+  id        String   @id @default(uuid())
+  siteId    String   @map("site_id")
+  version   Int
+  pages     Json     // full snapshot of pages at this version
+  changelog String?  @map("changelog")
+  createdBy String   @map("created_by") // userId
+  createdAt DateTime @default(now()) @map("created_at")
+
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, version])
+  @@map("site_versions")
+}
+
+/// Audit log for publish/unpublish/rollback/domain change actions.
+model PublishLog {
+  id        String   @id @default(uuid())
+  siteId    String   @map("site_id")
+  version   Int
+  action    String   // publish | unpublish | rollback | domain_change
+  target    String   // subdomain or custom domain
+  status    String   // success | failed | pending
+  error     String?  @db.Text
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+  @@map("publish_logs")
 }
