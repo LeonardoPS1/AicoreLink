@@ -78,7 +78,7 @@ describe("demo knowledge (plan §5.2)", () => {
 
     expect(config.preferLocalAi).toBe(true);
     expect(config.tone).toBe("amable");
-    expect(config.maxTokensResponse).toBeLessThanOrEqual(220);
+    expect(config.maxTokensResponse).toBe(220);
     expect(config.knowledgeBase).toBe(DEMO_BUSINESSES.peluqueria.knowledgeBase);
   });
 

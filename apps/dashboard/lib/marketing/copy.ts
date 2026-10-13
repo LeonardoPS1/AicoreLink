@@ -120,6 +120,9 @@ export type LandingCopy = {
     amountSuffix: string;
   };
   demoChat: {
+    /** Page metadata (mirrors the other tool pages, keeping copy in one place). */
+    pageTitle: string;
+    pageDescription: string;
     title: string;
     subtitle: string;
     /** Heading of the rubro chip row. */
@@ -518,6 +521,9 @@ export const copy: LandingCopy = {
   },
 
   demoChat: {
+    pageTitle: "Prueba la IA en vivo | AicoreLink",
+    pageDescription:
+      "Elige un rubro, escribe un mensaje real y mira cómo responde la IA de AicoreLink. Es una demo de un negocio de ejemplo, sin registro y sin compromiso.",
     title: "Mira cómo respondería tu negocio",
     subtitle:
       "Elige un rubro, escribe un mensaje real y mira la respuesta de la IA. Es una demo: aquí no hay un negocio de verdad detrás.",
@@ -613,7 +619,7 @@ export const PRESET_MESSAGES: {
     "Hola, me interesa el plan Elite de AicoreLink (con recepcionista de voz) para mi negocio de [rubro].",
   calculadora:
     "Hola, hice el cálculo en AicoreLink y mi negocio podría estar perdiendo $[monto] al mes. Quiero ver cómo recuperarlo.",
-  demo: "Hola, probé la demo de AicoreLink y quiero una igual para mi negocio.",
+  demo: "Hola, probé la demo de AicoreLink (rubro: [rubro]) y quiero una igual para mi negocio.",
   test: "Hola, hice el test de atención de AicoreLink y saqué [puntaje]/100. Quiero mejorar: [brechas].",
 };
 

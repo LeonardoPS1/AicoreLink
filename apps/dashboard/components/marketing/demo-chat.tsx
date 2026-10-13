@@ -34,6 +34,25 @@ function greetingFor(rubro: DemoRubro): ChatMessage[] {
 }
 
 /**
+ * History for the model: the turns already rendered, oldest to newest, capped at
+ * the last 8 (ruling R21). On a retry the pending message is already rendered as a
+ * user turn, so an identical trailing turn is dropped to avoid sending it twice.
+ */
+function historyFor(
+  pending: string,
+  rendered: ChatMessage[],
+): Array<{ role: ChatRole; content: string }> {
+  const turns = [...rendered];
+  const last = turns[turns.length - 1];
+
+  if (last && last.role === "user" && last.text === pending) {
+    turns.pop();
+  }
+
+  return turns.slice(-8).map((turn) => ({ role: turn.role, content: turn.text }));
+}
+
+/**
  * Public live chat demo. The visitor picks one of four demo businesses, sends a
  * message and a real local model answers grounded only in that business's
  * knowledge base. The heavy lifting (knowledge, guardrails, rate limit) lives in
@@ -90,7 +109,12 @@ export function DemoChat() {
       const response = await fetch("/api/demos", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ rubro, message: trimmed, sessionId: sessionId() }),
+        body: JSON.stringify({
+          rubro,
+          message: trimmed,
+          sessionId: sessionId(),
+          history: historyFor(trimmed, messages),
+        }),
         signal: controller.signal,
       });
 
@@ -259,7 +283,7 @@ export function DemoChat() {
       </form>
 
       <a
-        href={presetWhatsappUrl("demo", { rubro })}
+        href={presetWhatsappUrl("demo", { rubro: DEMO_BUSINESSES[rubro].label })}
         data-label="demo"
         target="_blank"
         rel="noopener noreferrer"

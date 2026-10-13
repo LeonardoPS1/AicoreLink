@@ -5,9 +5,8 @@ import { DemoChat } from "@/components/marketing/demo-chat";
 import { Reveal } from "@/components/ui/reveal";
 import { copy } from "@/lib/marketing/copy";
 
-const PAGE_TITLE = "Prueba la IA en vivo | AicoreLink";
-const PAGE_DESCRIPTION =
-  "Elige un rubro, escribe un mensaje real y mira cómo responde la IA de AicoreLink. Es una demo de un negocio de ejemplo, sin registro y sin compromiso.";
+const PAGE_TITLE = copy.demoChat.pageTitle;
+const PAGE_DESCRIPTION = copy.demoChat.pageDescription;
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,

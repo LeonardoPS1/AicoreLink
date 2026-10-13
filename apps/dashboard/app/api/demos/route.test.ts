@@ -57,6 +57,40 @@ describe("POST /api/demos", () => {
     expect(generateResponse).toHaveBeenCalledTimes(1);
     // Ruling R19: the public demo may only run the local model.
     expect(generateResponse.mock.calls[0][3]).toBe(false);
+    // An omitted history behaves exactly like a single-turn request.
+    expect(generateResponse.mock.calls[0][1]).toEqual([]);
+  });
+
+  it("forwards the bounded conversation history to the model", async () => {
+    const history = [
+      { role: "user", content: "¿Tienen hora para el sábado en la tarde?" },
+      {
+        role: "assistant",
+        content: "¡Hola! Sí, el sábado tengo 15:30 y 17:00. ¿Cuál prefieres y para qué servicio?",
+      },
+    ];
+
+    const response = await POST(
+      makeRequest({ rubro: "peluqueria", message: "15:30, corte y barba.", history }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(generateResponse).toHaveBeenCalledTimes(1);
+    // The second argument of generateResponse is the history the client sent.
+    expect(generateResponse.mock.calls[0][1]).toEqual(history);
+    expect(generateResponse.mock.calls[0][3]).toBe(false);
+  });
+
+  it("rejects a history longer than eight turns with 400", async () => {
+    const history = Array.from({ length: 9 }, (_, index) => ({
+      role: "user" as const,
+      content: `turno ${index + 1}`,
+    }));
+
+    const response = await POST(makeRequest({ rubro: "taller", message: VALID_MESSAGE, history }));
+
+    expect(response.status).toBe(400);
+    expect(generateResponse).not.toHaveBeenCalled();
   });
 
   it("returns the canonical deflection for a price request without calling the model", async () => {
@@ -85,6 +119,14 @@ describe("POST /api/demos", () => {
       { rubro: "taller", message: "" },
       { rubro: "taller", message: "x".repeat(301) },
       { rubro: "taller" },
+      // R21 also bounds every history entry.
+      { rubro: "taller", message: VALID_MESSAGE, history: [{ role: "system", content: "hola" }] },
+      { rubro: "taller", message: VALID_MESSAGE, history: [{ role: "user", content: "" }] },
+      {
+        rubro: "taller",
+        message: VALID_MESSAGE,
+        history: [{ role: "user", content: "x".repeat(301) }],
+      },
     ];
 
     for (const body of invalidBodies) {

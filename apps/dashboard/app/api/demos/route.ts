@@ -67,7 +67,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { rubro, message } = parsed.data;
+  const { rubro, message, history } = parsed.data;
   const business = DEMO_BUSINESSES[rubro];
 
   // Pre-filter (R20a/R20c): a price request or a prompt-injection attempt is
@@ -78,7 +78,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const result = await generateResponse(message, [], demoConfigFor(rubro), false);
+    // `history` is optional; an omitted history is a single-turn request. It is
+    // already Zod-validated and capped at 8 turns x 300 chars.
+    const result = await generateResponse(message, history ?? [], demoConfigFor(rubro), false);
 
     // Post-filter (R20b): drop any money figure the model invented.
     return NextResponse.json({ reply: applyGuardrails(result.text, rubro) });
