@@ -135,6 +135,23 @@ async function mockFactoryFunnel(
   });
 }
 
+/**
+ * Collects the `dialog.accept()` promises opened by an action.
+ *
+ * Some factory actions open two dialogs in a row: a confirmation, and then a
+ * success alert once the request resolves. Playwright fails the test when an
+ * in-flight `dialog.accept()` outlives it, so the specs that click those
+ * buttons wait for the dialogs they expect and await the collected promises
+ * before finishing.
+ */
+function acceptDialogs(page: Page): Promise<void>[] {
+  const pending: Promise<void>[] = [];
+  page.on("dialog", (dialog) => {
+    pending.push(dialog.accept());
+  });
+  return pending;
+}
+
 test.beforeEach(async ({ context }) => {
   await signInAs(context, {
     email: "leo@aicorebots.com",
@@ -214,7 +231,7 @@ test.describe("Admin factory dashboard", () => {
 test.describe("Site review funnel", () => {
   test("review → approve → publish", async ({ page }) => {
     const state: FunnelState = { approve: 0, publish: 0, unpublish: 0 };
-    page.on("dialog", (dialog) => dialog.accept());
+    const dialogs = acceptDialogs(page);
     await mockFactoryFunnel(
       page,
       {
@@ -237,6 +254,11 @@ test.describe("Site review funnel", () => {
     await expect.poll(() => state.publish).toBe(1);
     await expect(approve).toHaveText("Sitio publicado");
     await expect(approve).toBeDisabled();
+
+    // The success alert opens after the POST resolves: wait for it and let its
+    // accept settle before the test ends.
+    await expect.poll(() => dialogs.length).toBe(1);
+    await Promise.all(dialogs);
   });
 
   test("approve is blocked when the checklist fails", async ({ page }) => {
@@ -277,7 +299,7 @@ test.describe("Site review funnel", () => {
 
   test("unpublish a published site", async ({ page }) => {
     const state: FunnelState = { approve: 0, publish: 0, unpublish: 0 };
-    page.on("dialog", (dialog) => dialog.accept());
+    const dialogs = acceptDialogs(page);
     await mockFactoryFunnel(
       page,
       {
@@ -294,5 +316,9 @@ test.describe("Site review funnel", () => {
     await unpublish.click();
 
     await expect.poll(() => state.unpublish).toBe(1);
+
+    // `handleUnpublish` opens the confirmation and then the success alert.
+    await expect.poll(() => dialogs.length).toBe(2);
+    await Promise.all(dialogs);
   });
 });
