@@ -179,8 +179,8 @@ ALTER TABLE "site_versions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "publish_logs" ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for factory models
-CREATE POLICY business_profiles_tenant ON "business_profiles" USING ("tenant_id" = current_setting('app.current_tenant')::uuid);
-CREATE POLICY sites_tenant ON "sites" USING ("tenant_id" = current_setting('app.current_tenant')::uuid);
-CREATE POLICY site_pages_tenant ON "site_pages" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant')::uuid));
-CREATE POLICY site_versions_tenant ON "site_versions" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant')::uuid));
-CREATE POLICY publish_logs_tenant ON "publish_logs" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant')::uuid));
+CREATE POLICY tenant_isolation ON "business_profiles" USING ("tenant_id" = current_setting('app.current_tenant'::text, true));
+CREATE POLICY tenant_isolation ON "sites" USING ("tenant_id" = current_setting('app.current_tenant'::text, true));
+CREATE POLICY tenant_isolation ON "site_pages" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant'::text, true)));
+CREATE POLICY tenant_isolation ON "site_versions" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant'::text, true)));
+CREATE POLICY tenant_isolation ON "publish_logs" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant'::text, true)));
