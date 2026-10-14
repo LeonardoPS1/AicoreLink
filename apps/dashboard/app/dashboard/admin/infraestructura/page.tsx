@@ -107,7 +107,7 @@ export default async function InfraestructuraPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-500 text-xs">
-                  {w.lastCheck ? new Date(w.lastCheck).toLocaleString("es-AR") : "—"}
+                  {w.lastCheck ? new Date(w.lastCheck).toLocaleString("es-CL") : "—"}
                 </td>
                 <td className="px-4 py-3 text-slate-500 text-xs">
                   {w.error || (w.details ? JSON.stringify(w.details).slice(0, 80) : "OK")}
@@ -137,7 +137,7 @@ export default async function InfraestructuraPage() {
               errors.map((e) => (
                 <tr key={e.id} className="border-t border-slate-100">
                   <td className="px-4 py-3 text-xs">
-                    {new Date(e.createdAt).toLocaleString("es-AR")}
+                    {new Date(e.createdAt).toLocaleString("es-CL")}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">{e.tenantId || "global"}</td>
                   <td className="px-4 py-3 font-mono text-xs">{e.actorId || "system"}</td>

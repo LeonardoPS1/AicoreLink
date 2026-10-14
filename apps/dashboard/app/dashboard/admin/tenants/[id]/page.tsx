@@ -44,7 +44,10 @@ export default async function TenantDetailPage({ params }: { params: { id: strin
               className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4"
             >
               <div>
-                <p className="font-medium capitalize">{channel}{enabled ? "Activo" : "Desactivado"}</p>
+                <p className="font-medium capitalize">{channel.replace("_", " ")}</p>
+                <p className={`text-xs ${enabled ? "text-teal" : "text-slate-400"}`}>
+                  {enabled ? "Activo" : "Desactivado"}
+                </p>
               </div>
               <button
                 type="submit"

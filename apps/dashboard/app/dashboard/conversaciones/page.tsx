@@ -155,7 +155,7 @@ export default function ConversacionesPage() {
                             </p>
                           )}
                           <p className="text-xs text-slate-400 mt-1">
-                            {new Date(conv.createdAt).toLocaleDateString("es-AR", {
+                            {new Date(conv.createdAt).toLocaleDateString("es-CL", {
                               day: "2-digit",
                               month: "2-digit",
                               hour: "2-digit",
@@ -234,7 +234,7 @@ export default function ConversacionesPage() {
                           <p className="text-sm">{msg.content}</p>
                           <div className="flex items-center justify-end gap-2 mt-1">
                             <span className="text-xs opacity-70">
-                              {new Date(msg.createdAt).toLocaleTimeString("es-AR", {
+                              {new Date(msg.createdAt).toLocaleTimeString("es-CL", {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
@@ -253,8 +253,8 @@ export default function ConversacionesPage() {
 
               <div className="p-4 border-t border-slate-200 bg-slate-50">
                 <p className="text-sm text-slate-500 text-center">
-                  Respuesta automatica via IA. Para responder manualmente, usa la app de WhatsApp
-                  Business o contacta al paciente por telefono.
+                  Respuesta automática vía IA. Para responder manualmente, usa la app de WhatsApp
+                  Business o contacta al cliente por teléfono.
                 </p>
               </div>
             </div>
