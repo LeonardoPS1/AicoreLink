@@ -78,6 +78,16 @@ export function CtaSection() {
             <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-teal-light" />
             {copy.cta.guarantee}
           </p>
+
+          {/* Three-step next-list */}
+          <div className="mt-8 grid grid-cols-3 gap-2">
+            {copy.cta.steps.map((step, i) => (
+              <div key={i} className="flex flex-col items-center py-2 border rounded text-sm text-slate-300">
+                <span className="font-medium text-slate-600">{i + 1}</span>
+                <span>{step.label}</span>
+              </div>
+            ))}
+          </div>
         </Reveal>
 
         <Reveal delay={90}>

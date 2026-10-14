@@ -44,7 +44,9 @@ describe("MarketingLayout footer + sticky WhatsApp integration", () => {
     // Brand column (col-span-2) - tagline present
     expect(container.querySelector(`[id="${copy.brand.name}"]`)).toBeNull(); // no id, just text
     expect(screen.getByText(copy.footer.tagline)).toBeInTheDocument();
-    expect(screen.getByText(copy.brand.name)).toBeInTheDocument();
+    // Brand name appears in the brand column - may also appear in nav column
+    const brandNameCount = screen.getAllByText(copy.brand.name).length;
+    expect(brandNameCount).toBeGreaterThanOrEqual(1);
 
     // Ecosystem column
     expect(screen.getByText(copy.footer.ecosystem.title)).toBeInTheDocument();
@@ -71,6 +73,15 @@ describe("MarketingLayout footer + sticky WhatsApp integration", () => {
       name: copy.footer.contact.links[1].label,
     });
     expect(bookingLink.getAttribute("href")).toBe("#contacto");
+
+    // **NEW: Navigation column with AicoreLink navLinks**
+    const navTitleCount = screen.getAllByText(copy.footer.navTitle).length;
+    expect(navTitleCount).toBeGreaterThanOrEqual(1);
+    for (const link of copy.footer.navLinks) {
+      const anchor = screen.getByRole("link", { name: link.label });
+      expect(anchor).toBeInTheDocument();
+      expect(anchor.getAttribute("href")).toBe(link.href);
+    }
 
     // Legal column
     expect(screen.getByText("Legal")).toBeInTheDocument();

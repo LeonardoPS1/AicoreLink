@@ -9,10 +9,18 @@
 import type { LostRevenueInput } from "@/lib/tools/calculator";
 
 export type NavItem = { label: string; href: string };
-export type PainItem = { icon: string; title: string; description: string };
+export type PainItem = {
+  icon: string;
+  title: string;
+  description: string;
+  message: string;
+  time: string;
+  whatHappened: string;
+  withAicoreLink: string;
+};
 export type SolutionColumn = { icon: string; title: string; description: string };
 export type Step = { title: string; description: string };
-export type PlanId = "semilla" | "starter" | "growth" | "elite";
+export type PlanId = "starter" | "growth" | "elite";
 export type Plan = {
   id: PlanId;
   name: string;
@@ -73,15 +81,55 @@ export type LandingCopy = {
     eyebrow: string;
     headline: string;
     subhead: string;
+    askLabel: string;
+    micro: string;
+    chatExampleLabel: string;
+    chips: { id: string; label: string }[];
+    thread: { label: string }[];
     primaryCta: string;
     secondaryCta: string;
     trustLine: string;
   };
   trustBar: { statement: string; items: string[] };
-  pains: { title: string; items: PainItem[]; closing: string };
+  pains: {
+    title: "¿Sientes que tu negocio está perdiendo oportunidades?",
+    chapter: "Aquí te explico los dolores más comunes de los servicios locales y cómo AicoreLink los resuelve.",
+    inboxLabel: "Tus mensajes recientes",
+    inboxTime: "hace 2 h",
+    items: [
+      {
+        icon: "📱",
+        title: "No contestar el teléfono",
+        description: "Cada llamada perdida es un cliente que elige la competencia.",
+        message: "Hola, ¿tienen hora para hoy?",
+        time: "14:30",
+        whatHappened: "El cliente colgó por falta de respuesta inmediata.",
+        withAicoreLink: "Con nuestro recepcionista de voz, nunca más pierdes una llamada.",
+      },
+      {
+        icon: "💬",
+        title: "Respuestas lentas en WhatsApp",
+        description: "Los clientes esperan respuestas en minutos, no en horas.",
+        message: "Hola, consulta sobre precios para mi consultorio.",
+        time: "15:15",
+        whatHappened: "El cliente esperó 20 minutos y se fue.",
+        withAicoreLink: "Automatizamos respuestas por WhatsApp en segundos.",
+      },
+      {
+        icon: "📅",
+        title: "Dificultad para agendar",
+        description: "Los calendarios complejos hacen perder tiempo en coordinación.",
+        message: "Quiero agendar una consulta.",
+        time: "16:45",
+        whatHappened: "No había disponibilidad en el sistema del consultorio.",
+        withAicoreLink: "Integramos un calendario inteligente 24/7.",
+      },
+    ],
+    closing: "No dejes que los problemas cotidianos frenen el crecimiento de tu negocio. Con AicoreLink, tienes la tecnología para atender, convertir y fidelizar como nunca antes.",
+  };
   solution: { title: string; subtitle: string; columns: SolutionColumn[] };
   howItWorks: { title: string; subtitle: string; steps: Step[] };
-  verticals: { title: string; subtitle: string; note: string; ctaTemplate: string };
+  verticals: { title: string; subtitle: string; ctaTemplate: string };
   pricing: { title: string; subtitle: string; plans: Plan[]; note: string };
   testimonials: {
     title: string;
@@ -106,6 +154,9 @@ export type LandingCopy = {
     resultTemplate: string;
     disclaimer: string;
     ctaLabel: string;
+  };
+  ticker: {
+    items: string[];
   };
   attentionTest: {
     title: string;
@@ -203,10 +254,26 @@ export const copy: LandingCopy = {
   },
 
   hero: {
-    eyebrow: "Sitios web con IA para negocios que viven de sus clientes",
-    headline: "Tu negocio atiende y capta clientes 24/7. Aunque tú estés trabajando.",
+    eyebrow: "Sitios web con IA para negocios que viven de atender clientes",
+    headline: "Tu negocio atendiendo, aunque estés ocupado.",
     subhead:
       "Creamos tu sitio web con IA que responde por WhatsApp, agenda citas y pide reseñas. Listo en días, sin que tengas que saber de tecnología.",
+    askLabel: "Mira cómo atendería tu negocio:",
+    micro: "Respondemos hoy. Sin compromiso y sin letra chica.",
+    chatExampleLabel: "Negocio de ejemplo",
+    chips: [
+      { id: "barberia", label: "Barbería" },
+      { id: "taller", label: "Taller mecánico" },
+      { id: "abogados", label: "Abogados" },
+      { id: "inmobiliaria", label: "Inmobiliaria" },
+      { id: "clinica", label: "Clínica pequeña" },
+    ],
+    thread: [
+      { label: "Escribe" },
+      { label: "Responde" },
+      { label: "Agenda" },
+      { label: "Pide reseña" },
+    ],
     primaryCta: "Quiero mi diagnóstico gratis",
     secondaryCta: "Ver cómo funciona",
     trustLine:
@@ -226,46 +293,81 @@ export const copy: LandingCopy = {
 
   pains: {
     title: "Cada mensaje sin responder es un cliente que se va.",
+    chapter: "Capítulo 1",
+    inboxLabel: "Bandeja de ejemplo",
+    inboxTime: "Martes 22:14",
     items: [
       {
-        icon: "💬",
-        title: "El cliente que no recibe respuesta en minutos le escribe a tu competencia.",
-        description: "Tu sitio responde en segundos, a cualquier hora.",
+        icon: "C",
+        title: "Responde a tiempo o pierdes la cita.",
+        description: "Una respuesta lenta envía a tu cliente a tu competencia.",
+        message: "Hola, ¿tienen hora para mañana?",
+        time: "22:14. Sin respuesta hace 3 horas",
+        whatHappened: "Le escribió a tu competencia y agendó allá. Tú te enteraste al día siguiente.",
+        withAicoreLink: "Tu sitio responde en segundos y deja la hora agendada.",
       },
       {
-        icon: "🌙",
-        title: "Tu negocio cierra a las 19:00. Tus clientes, no.",
-        description: "Atiende y agenda de noche y en fines de semana.",
+        icon: "M",
+        title: "Tus clientes preguntan fuera de horario.",
+        description: "La atención no termina cuando tú te vas.",
+        message: "¿Atienden el sábado en la tarde?",
+        time: "Domingo 23:40. Leído el lunes",
+        whatHappened: "Cuando por fin lo viste, ya había elegido otro lugar.",
+        withAicoreLink: "Atiende y agenda de noche, fines de semana y feriados.",
       },
       {
-        icon: "🔁",
-        title: "Cada consulta repetida es tiempo que le quitas a tu trabajo.",
-        description: "Responde horarios, precios y ubicación por ti.",
+        icon: "P",
+        title: "Preguntas que repites una y otra vez.",
+        description: "Tu tiempo vale más que responder lo mismo.",
+        message: "¿Cuánto sale? ¿Dónde están? ¿Hasta qué hora abren?",
+        time: "La misma pregunta, otra vez esta semana",
+        whatHappened: "Cada respuesta repetida te saca de lo que realmente sabes hacer.",
+        withAicoreLink: "Responde horarios, valores y ubicación por ti, con tu información.",
       },
       {
-        icon: "🔎",
-        title: "Tienes Instagram, pero cuando buscan en Google no apareces.",
-        description: "Un sitio pensado para que te contacten, no solo para verse bien.",
+        icon: "G",
+        title: "Buscan en Google, no en tu Instagram.",
+        description: "Si no hay acción, hay abandono.",
+        message: "Búsqueda en Google: “barbería cerca de mí”",
+        time: "Resultado: solo tu Instagram, sin horarios ni teléfono",
+        whatHappened: "Quien busca en Google quiere reservar, no recorrer un perfil.",
+        withAicoreLink: "Un sitio hecho para que te contacten, con WhatsApp y horarios a la vista.",
       },
       {
-        icon: "⏰",
-        title: "La hora que no llega es plata que no vuelve.",
-        description: "Recordatorios automáticos con confirmación.",
+        icon: "H",
+        title: "Cada no-show es dinero perdido.",
+        description: "Un hueco vacío no vuelve.",
+        message: "Hora de las 16:00",
+        time: "No llegó y no avisó",
+        whatHappened: "Un hueco de una hora que no se recupera.",
+        withAicoreLink: "Recordatorios automáticos con confirmación o reprogramación.",
       },
       {
-        icon: "⭐",
-        title: "Atiendes bien, pero nadie lo ve en Google.",
-        description: "Pedimos la reseña en el momento justo.",
+        icon: "R",
+        title: "Tu buena atención no se nota en Google.",
+        description: "Las reseñas generan confianza.",
+        message: "Quedé feliz con la atención",
+        time: "Lo dijo en persona, no en Google",
+        whatHappened: "Atiendes bien, pero tu ficha de Google no lo refleja.",
+        withAicoreLink: "Pedimos la reseña por WhatsApp en el momento justo.",
       },
       {
-        icon: "📞",
-        title: "Estás con las manos ocupadas y suena el teléfono.",
-        description: "Una recepcionista de voz atiende, toma el mensaje y te avisa.",
+        icon: "L",
+        title: "No puedes atender el teléfono todo el tiempo.",
+        description: "La voz es otro canal que necesitas cubrir.",
+        message: "Llamada perdida",
+        time: "14:32. Estabas con las manos ocupadas",
+        whatHappened: "Quien llama suele querer resolver ahora. Si nadie contesta, llama al siguiente.",
+        withAicoreLink: "La recepcionista de voz contesta, toma el mensaje y te avisa.",
       },
       {
-        icon: "🗂️",
-        title: "WhatsApp aquí, agenda allá, planilla en otro lado.",
-        description: "Todo en un solo lugar, con un reporte cada mes.",
+        icon: "W",
+        title: "Todo está disperso.",
+        description: "Una cita puede perderse entre 4 lugares.",
+        message: "WhatsApp, Instagram, agenda de papel y una planilla",
+        time: "Cuatro lugares para una sola cita",
+        whatHappened: "Algo se pierde entre medio, y no sabes qué.",
+        withAicoreLink: "Todo en un solo lugar, con un reporte cada mes.",
       },
     ],
     closing:
@@ -326,7 +428,6 @@ export const copy: LandingCopy = {
     title: "Hecho para negocios como el tuyo",
     subtitle:
       "Si tu negocio vende servicios, tiempo o consultas (no un catálogo de productos), esto es para ti.",
-    note: "No es para tiendas con catálogo. Es para negocios que necesitan captar, convertir y atender.",
     ctaTemplate: "Quiero esto para mi {singular}",
   },
 
@@ -335,22 +436,6 @@ export const copy: LandingCopy = {
     subtitle: "Todo incluido: diseño, hosting, WhatsApp y el asistente según tu plan.",
     // Monthly prices are CLP with VAT excluded; implementation amounts follow §23.
     plans: [
-      {
-        id: "semilla",
-        name: "Semilla",
-        priceCLP: 0,
-        priceNote: "sin costo",
-        forWho: "Negocio que recién parte",
-        tagline: "Para tener presencia online hoy, sin costo.",
-        features: [
-          "1 página",
-          "Botón de WhatsApp",
-          "Formulario de contacto",
-          'Sello "Hecho con AicoreLink"',
-        ],
-        ctaLabel: "Quiero mi diagnóstico gratis",
-        highlighted: false,
-      },
       {
         id: "starter",
         name: "Starter",
@@ -480,9 +565,29 @@ export const copy: LandingCopy = {
           "Solo cuando te regalamos la implementación (6 meses). En otros casos puedes cancelar con aviso.",
       },
       {
+        question: "¿Entiende las notas de voz?",
+        answer:
+          "Sí, nuestro asistente transcribe y procesa mensajes de voz para responder adecuadamente. Sin embargo, definimos los temas que no toca para evitar interpretaciones.",
+      },
+      {
+        question: "¿Reemplaza mi caja, comisiones o boletas?",
+        answer:
+          "No. Tu sitio web con IA solo agenda citas, gestiona reservas y solicita reseñas. La emisión de facturas y el manejo de caja sigue siendo tu responsabilidad.",
+      },
+      {
+        question: "¿Puedo probarlo antes de pagar?",
+        answer:
+          "Sí. Ofrecemos una garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes. Puedes cancelar en cualquier momento.",
+      },
+      {
         question: "¿Y si no recibo consultas?",
         answer:
-          "Garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes.",
+          "Garantía de 30 días: si no recibes consultas por tu sitio, no cobramos el segundo mes. Esta garantía aplica a planes de pago, una vez por cliente.",
+      },
+      {
+        question: "¿Ofrecen garantía satisfecho o reembolsado?",
+        answer:
+          "No reembolsos por cambio de opinión, pero tienes 30 días de garantía: si no recibes consultas por tu sitio en los primeros 30 días, no cobramos el segundo mes. El contenido y dominio siempre son tuyos.",
       },
     ],
   },
@@ -494,6 +599,12 @@ export const copy: LandingCopy = {
     secondaryLabel: "Escribir por WhatsApp",
     guarantee:
       "Tu dominio es tuyo. Tu contenido es tuyo. Si algún día te vas, te llevas todo. Sin letra chica. Y si en 30 días no recibes consultas por tu sitio, no cobramos el segundo mes.",
+    steps: [
+      { label: "Nos cuentas de tu negocio" },
+      { label: "Te mostramos el diagnóstico" },
+      { label: "Sales atendiendo" },
+    ],
+    formTitle: "Quiero mi diagnóstico gratis",
   },
 
   stickyWhatsApp: {
@@ -557,6 +668,21 @@ export const copy: LandingCopy = {
     amountSuffix: "Mi calculadora estimó cerca de {amount} al mes.",
   },
 
+  ticker: {
+    items: [
+      "Barberías y peluquerías",
+      "Talleres mecánicos",
+      "Estudios jurídicos",
+      "Corredoras de propiedades",
+      "Clínicas y centros de salud",
+      "Dentistas",
+      "Kinesiólogos",
+      "Psicólogos",
+      "Centros de estética",
+      "Contadores y asesores",
+    ],
+  },
+
   demoChat: {
     pageTitle: "Prueba la IA en vivo | AicoreLink",
     pageDescription:
@@ -612,7 +738,7 @@ export const copy: LandingCopy = {
     contact: {
       title: "Contacto",
       links: [
-        { label: "hablar por WhatsApp", href: "#contacto" },
+        { label: "hablar por WhatsApp", href: "#contacto", "data-label": "footer" },
         { label: "agendar diagnóstico", href: "#contacto" },
       ],
     },
@@ -621,6 +747,13 @@ export const copy: LandingCopy = {
       { label: "Política de privacidad", href: "/legal/privacidad" },
       { label: "Términos y condiciones", href: "/legal/terminos" },
       { label: "Política de cookies", href: "/legal/cookies" },
+    ],
+    navTitle: "AicoreLink",
+    navLinks: [
+      { label: "#dolores", href: "#problema" },
+      { label: "#calculadora", href: "#herramientas/calculadora" },
+      { label: "#planes", href: "#planes" },
+      { label: "#preguntas", href: "#preguntas" },
     ],
   },
   legal: {
@@ -730,7 +863,7 @@ El servicio **no incluye**: desarrollo a medida fuera del alcance del plan, gest
 ## 3. Planes, precios y facturación
 
 - Precios en **pesos chilenos (CLP)**, **IVA excluido** (se factura aparte).
-- Planes: **Semilla** ($0), **Starter** ($19.990), **Growth** ($49.990), **Elite** ($99.990) mensuales.
+- Planes: **Starter** ($19.990), **Growth** ($49.990), **Elite** ($99.990) mensuales.
 - Facturación **mensual anticipada**. El primer pago se cobra al contratar.
 - La **implementación inicial** puede tener costo aparte (ver detalle de cada plan) o ser gratuita sujeta a **permanencia de 6 meses**.
 - Renovación automática salvo aviso de cancelación con 30 días de antelación.

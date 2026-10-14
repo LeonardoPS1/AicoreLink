@@ -55,4 +55,9 @@ describe("CtaSection", () => {
       await screen.findByRole("button", { name: /Solicitar diagnóstico gratis/ }),
     ).toBeInTheDocument();
   });
+
+  it("lists the three next steps", () => {
+    render(<CtaSection />);
+    copy.cta.steps.forEach((step) => expect(screen.getByText(step.label)).toBeInTheDocument());
+  });
 });

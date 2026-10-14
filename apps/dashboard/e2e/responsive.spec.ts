@@ -73,9 +73,9 @@ test("pricing cards are legible and complete", async ({ page }) => {
   await page.locator("#planes").scrollIntoViewIfNeeded();
 
   const plans = page.locator("#planes article[data-plan]");
-  await expect(plans).toHaveCount(4);
+  await expect(plans).toHaveCount(3);
 
-  for (const price of ["$0", "$19.990", "$49.990", "$99.990"]) {
+  for (const price of ["$19.990", "$49.990", "$99.990"]) {
     await expect(page.locator("#planes").getByText(price, { exact: true }).first()).toBeVisible();
   }
 

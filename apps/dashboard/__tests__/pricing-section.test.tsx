@@ -30,11 +30,10 @@ describe("PricingSection", () => {
     }
   });
 
-  it("shows the VAT note on paid plans and 'sin costo' on Semilla", () => {
+  it("shows the VAT note on every plan", () => {
     render(<PricingSection />);
 
     expect(screen.getAllByText("+ IVA")).toHaveLength(3);
-    expect(screen.getByText("sin costo")).toBeInTheDocument();
   });
 
   it("renders the feature list of each plan", () => {

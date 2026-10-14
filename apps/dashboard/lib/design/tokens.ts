@@ -21,15 +21,32 @@ export const colors = {
   slate200: "#E2E8F0",
   slate600: "#475569",
   amber: "#F59E0B",
+  night: "#0A2342",
+  nightDeep: "#061529",
+  night2: "#123560",
+  paper: "#F3F6FA",
+  ink: "#12233D",
+  inkMuted: "#44566F",
+  hairline: "#D5DDE8",
+  signal: "#22D3EE",
+  signalDark: "#08758A",
+  action: "#2F6BFF",
+  actionDark: "#1D4FD1",
+  gold: "#F5A524",
+  goldDark: "#C27803",
+  onDark: "#E6EEFB",
+  onDarkMuted: "#A9BFDC",
 } as const;
 
 export const fonts = {
-  sans: ["Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+  sans: ["Figtree", "ui-sans-serif", "system-ui", "sans-serif"],
+  display: ["Instrument Serif", "Georgia", "serif"],
 } as const;
 
 export const layout = {
   container: "max-w-6xl mx-auto px-4",
   sectionY: "py-20 md:py-28",
+  wrap: "mx-auto w-full max-w-[1160px] px-5",
 } as const;
 
 export type ColorToken = keyof typeof colors;

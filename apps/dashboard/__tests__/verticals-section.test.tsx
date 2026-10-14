@@ -31,10 +31,4 @@ describe("VerticalsSection", () => {
     expect(screen.getByText(third.pain)).toBeVisible();
     expect(screen.getByText(first.pain)).not.toBeVisible();
   });
-
-  it("calls out that catalog stores are out of scope", () => {
-    render(<VerticalsSection />);
-
-    expect(screen.getByText(copy.verticals.note)).toBeInTheDocument();
-  });
 });

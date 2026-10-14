@@ -22,10 +22,30 @@ export function SiteFooter() {
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
               {copy.footer.tagline}
             </p>
+            {/* Navigation column under brand */}
+            <div className="mt-6">
+              <h2 className="text-sm font-semibold text-white">
+                {copy.footer.navTitle}
+              </h2>
+              <ul className="mt-4 space-y-3">
+                {copy.footer.navLinks.map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      className="text-sm text-slate-400 transition-colors duration-150 hover:text-teal-light"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-white">{copy.footer.ecosystem.title}</h2>
+            <h2 className="text-sm font-semibold text-white">
+              {copy.footer.ecosystem.title}
+            </h2>
             <ul className="mt-4 space-y-3">
               {copy.footer.ecosystem.links.map((link) => (
                 <li key={link.href}>
@@ -43,7 +63,9 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-white">{copy.footer.contact.title}</h2>
+            <h2 className="text-sm font-semibold text-white">
+              {copy.footer.contact.title}
+            </h2>
             <ul className="mt-4 space-y-3">
               <li>
                 <a

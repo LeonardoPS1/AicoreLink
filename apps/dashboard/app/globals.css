@@ -40,7 +40,82 @@
   }
 }
 
+@layer components {
+  /* Rubro selector chips used by the marketing hero. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(230, 238, 251, 0.16);
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: theme("colors.onDarkMuted");
+    transition:
+      border-color 200ms var(--ease-out-strong),
+      background-color 200ms var(--ease-out-strong),
+      color 200ms var(--ease-out-strong);
+  }
+
+  .chip[aria-pressed="true"] {
+    border-color: transparent;
+    background-color: theme("colors.signal");
+    color: theme("colors.nightDeep");
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .chip:hover {
+      border-color: rgba(230, 238, 251, 0.4);
+      color: theme("colors.onDark");
+    }
+  }
+
+  /* Infinite rubro marquee shown under the hero. */
+  .ticker {
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid rgba(230, 238, 251, 0.1);
+    padding-block: 0.875rem;
+  }
+
+  .ticker__track {
+    display: flex;
+    width: max-content;
+    animation: ticker-scroll 46s linear infinite;
+  }
+
+  .ticker:hover .ticker__track {
+    animation-play-state: paused;
+  }
+
+  .ticker__set {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin: 0;
+    padding: 0 2rem 0 0;
+    list-style: none;
+  }
+
+  .ticker__set li {
+    white-space: nowrap;
+    font-size: 0.875rem;
+    color: theme("colors.onDarkMuted");
+  }
+}
+
 @layer utilities {
+  @keyframes ticker-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
   @keyframes fade-up {
     from {
       opacity: 0;

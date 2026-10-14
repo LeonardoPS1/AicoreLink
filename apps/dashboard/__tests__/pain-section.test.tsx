@@ -27,4 +27,19 @@ describe("PainSection", () => {
 
     expect(screen.getByText(copy.pains.closing)).toBeInTheDocument();
   });
+
+  it("renders each pain as a native single-open details item", () => {
+    const { container } = render(<PainSection />);
+    const items = container.querySelectorAll('details[name="dolor"]');
+    expect(items.length).toBe(copy.pains.items.length);
+    items.forEach((el) => expect(el.querySelector("summary h3")?.textContent).toBeTruthy());
+  });
+
+  it("shows both the diagnosis and the AicoreLink outcome for every pain", () => {
+    render(<PainSection />);
+    copy.pains.items.forEach((item) => {
+      expect(screen.getByText(item.whatHappened)).toBeInTheDocument();
+      expect(screen.getByText(item.withAicoreLink)).toBeInTheDocument();
+    });
+  });
 });
