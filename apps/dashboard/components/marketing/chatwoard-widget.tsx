@@ -80,11 +80,10 @@ export function ChatwoardWidget() {
 
   return (
     <div className={cn(
-      "fixed bottom-4 right-4 z-40",
-      visible ? "show" : "hidden",
-      transition: "opacity 0.3s ease",
+      "fixed bottom-4 right-4 z-40 transition-opacity duration-300",
+      visible ? "opacity-100" : "hidden",
     )}>
-      <div onClick={setVisible} className={cn(
+      <div onClick={() => setVisible(v => !v)} className={cn(
         "cursor-pointer",
         visible ? "bg-[#25D366] text-white shadow-2xl" : "bg-gray-200 text-gray-800",
       )}>
@@ -149,8 +148,10 @@ export function ChatwoardWidget() {
 /**
  * Obtiene el mensaje inicial basado en el paso actual
  */
-function getInitialMessage(): string {
-  switch ("greeting") {
+function getInitialMessage(
+  step: "greeting" | "diagnosis" | "results" | "finished" = "greeting",
+): string {
+  switch (step) {
     case "greeting":
       return "Hola! 👊 Estamos para ayudarte a crear un sitio web con IA para tu negocio. ¿Qué tipo de negocio tienes?";
     case "diagnosis":

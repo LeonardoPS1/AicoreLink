@@ -83,7 +83,8 @@ async function persistMessage(
   });
 }
 
-import { processWhatsAppMessage, INITIAL_WHATSAPP_STATE, type WhatsAppConversationStep } from "@/lib/whatsapp/conversation-handler";
+import { processWhatsAppMessage, INITIAL_WHATSAPP_STATE } from "@/lib/whatsapp/conversation-handler";
+import type { WhatsAppConversationStep, WhatsAppConversationState } from "@/lib/whatsapp/conversation-steps";
 
 const conversationStates: Record<string, WhatsAppConversationState> = {};
 

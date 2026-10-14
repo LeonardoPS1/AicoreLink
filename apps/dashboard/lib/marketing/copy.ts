@@ -92,40 +92,20 @@ export type LandingCopy = {
   };
   trustBar: { statement: string; items: string[] };
   pains: {
-    title: "¿Sientes que tu negocio está perdiendo oportunidades?",
-    chapter: "Aquí te explico los dolores más comunes de los servicios locales y cómo AicoreLink los resuelve.",
-    inboxLabel: "Tus mensajes recientes",
-    inboxTime: "hace 2 h",
-    items: [
-      {
-        icon: "📱",
-        title: "No contestar el teléfono",
-        description: "Cada llamada perdida es un cliente que elige la competencia.",
-        message: "Hola, ¿tienen hora para hoy?",
-        time: "14:30",
-        whatHappened: "El cliente colgó por falta de respuesta inmediata.",
-        withAicoreLink: "Con nuestro recepcionista de voz, nunca más pierdes una llamada.",
-      },
-      {
-        icon: "💬",
-        title: "Respuestas lentas en WhatsApp",
-        description: "Los clientes esperan respuestas en minutos, no en horas.",
-        message: "Hola, consulta sobre precios para mi consultorio.",
-        time: "15:15",
-        whatHappened: "El cliente esperó 20 minutos y se fue.",
-        withAicoreLink: "Automatizamos respuestas por WhatsApp en segundos.",
-      },
-      {
-        icon: "📅",
-        title: "Dificultad para agendar",
-        description: "Los calendarios complejos hacen perder tiempo en coordinación.",
-        message: "Quiero agendar una consulta.",
-        time: "16:45",
-        whatHappened: "No había disponibilidad en el sistema del consultorio.",
-        withAicoreLink: "Integramos un calendario inteligente 24/7.",
-      },
-    ],
-    closing: "No dejes que los problemas cotidianos frenen el crecimiento de tu negocio. Con AicoreLink, tienes la tecnología para atender, convertir y fidelizar como nunca antes.",
+    title: string;
+    chapter: string;
+    inboxLabel: string;
+    inboxTime: string;
+    items: {
+      icon: string;
+      title: string;
+      description: string;
+      message: string;
+      time: string;
+      whatHappened: string;
+      withAicoreLink: string;
+    }[];
+    closing: string;
   };
   solution: { title: string; subtitle: string; columns: SolutionColumn[] };
   howItWorks: { title: string; subtitle: string; steps: Step[] };
@@ -148,12 +128,6 @@ export type LandingCopy = {
     formTitle: string;
   };
   stickyWhatsApp: { label: string; message: string };
-export type WhatsAppState = {
-  step: "greeting" | "diagnosis" | "results" | "finished";
-  businessInfo: { name: string; category: string; } | null;
-  conversationId: string | null;
-  waitingForUser: boolean;
-};
   calculator: {
     title: string;
     subtitle: string;
@@ -234,6 +208,8 @@ export type WhatsAppState = {
     tagline: string;
     ecosystem: FooterGroup;
     contact: FooterGroup;
+    navTitle: string;
+    navLinks: { label: string; href: string }[];
     legal: string;
     legalLinks: LegalLinks;
   };
@@ -746,7 +722,7 @@ export const copy: LandingCopy = {
     contact: {
       title: "Contacto",
       links: [
-        { label: "hablar por WhatsApp", href: "#contacto", "data-label": "footer" },
+        { label: "hablar por WhatsApp", href: "#contacto" },
         { label: "agendar diagnóstico", href: "#contacto" },
       ],
     },

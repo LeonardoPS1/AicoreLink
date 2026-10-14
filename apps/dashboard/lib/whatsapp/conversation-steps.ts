@@ -15,6 +15,7 @@ export type WhatsAppConversationState = {
   readyToSchedule: boolean;
   conversationId: string;
   turnCount: number;
+  waitingForUser?: boolean;
 };
 
 export const WHATSAPP_CONVERSATION_PROMPTS = {
