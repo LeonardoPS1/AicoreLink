@@ -30,10 +30,15 @@ model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String?  @map("password_hash")
+  // Rol interno de Aicore (dev_aicore | operador | soporte). Es global, no por
+  // tenant: es lo que decide el panel, y tenant_id no alcanza para un rol
+  // cross-tenant. Un usuario comun lo tiene en null y su rol sale de TenantUser.
+  staffRole    String?  @map("staff_role")
   createdAt    DateTime @default(now()) @map("created_at")
 
   tenantLinks TenantUser[]
 
+  @@index([staffRole])
   @@map("users")
 }
 
@@ -41,7 +46,7 @@ model TenantUser {
   id       String @id @default(uuid())
   tenantId String @map("tenant_id")
   userId   String @map("user_id")
-  role     String @default("cliente") // cliente | admin_clinica | dev_aicore
+  role     String @default("cliente") // rol del usuario dentro del tenant: cliente | operador
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [userId], references: [id])

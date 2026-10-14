@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   try {
-    requireRole(session?.user as any, ["cliente", "admin_clinica", "dev_aicore"]);
+    requireRole(session?.user as any, ["cliente", "operador", "dev_aicore"]);
   } catch {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
