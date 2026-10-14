@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "./db";
+import { adminDb } from "./db-admin";
 
 /**
  * TODA consulta que sirva al panel CLIENTE debe pasar por este helper.
@@ -31,11 +32,19 @@ export async function withTenant<T>(
 }
 
 /**
- * Uso reservado para el panel ADMIN (rol dev_aicore), que necesita ver
- * datos de todos los tenants. Requiere que la conexion de base de datos
- * use un rol con BYPASSRLS (ver prisma/rls.sql). Usar con criterio: nunca
- * exponer este helper a una ruta que sirva al panel cliente.
+ * Uso reservado para el panel de AICORE (roles staff), que necesita ver datos
+ * de todos los tenants.
+ *
+ * Corre sobre una SEGUNDA conexion (`lib/db-admin.ts`, env `DATABASE_URL_ADMIN`)
+ * cuyo rol tiene BYPASSRLS. El rol principal de la app NO tiene bypass a
+ * proposito, para que RLS siga siendo la ultima linea de defensa del panel
+ * cliente. Si `DATABASE_URL_ADMIN` no esta configurada, esto falla con un error
+ * explicito: nunca cae en silencio a la conexion con RLS, porque esa conexion
+ * devolveria cero filas sin avisar.
+ *
+ * Usar con criterio: nunca exponer este helper a una ruta o pagina que sirva al
+ * panel cliente.
  */
 export async function asAdmin<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-  return db.$transaction(async (tx) => fn(tx));
+  return adminDb().$transaction(async (tx) => fn(tx));
 }
