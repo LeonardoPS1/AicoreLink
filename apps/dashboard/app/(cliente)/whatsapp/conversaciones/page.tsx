@@ -32,22 +32,6 @@ export default function ConversacionesPage() {
   const [filter, setFilter] = useState<"all" | "abierta" | "escalada" | "cerrada">("all");
   const [search, setSearch] = useState("");
 
-  async function loadConversations() {
-    try {
-      const params = new URLSearchParams();
-      if (filter !== "all") params.set("status", filter);
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/tenants/conversations?${params.toString()}`);
-      if (!res.ok) throw new Error("Error al cargar conversaciones");
-      const data = await res.json();
-      setConversations(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function loadMessages(conversationId: string) {
     setMessagesLoading(true);
     try {
@@ -68,6 +52,22 @@ export default function ConversacionesPage() {
   }
 
   useEffect(() => {
+    async function loadConversations() {
+      try {
+        const params = new URLSearchParams();
+        if (filter !== "all") params.set("status", filter);
+        if (search) params.set("search", search);
+        const res = await fetch(`/api/tenants/conversations?${params.toString()}`);
+        if (!res.ok) throw new Error("Error al cargar conversaciones");
+        const data = await res.json();
+        setConversations(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadConversations();
   }, [filter, search]);
 

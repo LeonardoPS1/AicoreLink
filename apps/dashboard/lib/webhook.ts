@@ -106,4 +106,6 @@ export function webhookValidator(
   };
 }
 
-export default { verifyWebhookSigning, generateWebhookSignature, webhookValidator };
+const webhookApi = { verifyWebhookSigning, generateWebhookSignature, webhookValidator };
+
+export default webhookApi;

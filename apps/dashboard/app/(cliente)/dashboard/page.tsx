@@ -55,49 +55,6 @@ export default function DashboardPage() {
     costEstimate: 0,
   });
 
-  async function loadConversations() {
-    try {
-      const params = new URLSearchParams();
-      if (filter !== "all") params.set("status", filter);
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/tenants/conversations?${params.toString()}`);
-      if (!res.ok) throw new Error("Error al cargar conversaciones");
-      const data = await res.json();
-      setConversations(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadChannels() {
-    try {
-      const res = await fetch("/api/tenants/channels");
-      if (!res.ok) throw new Error("Error al cargar canales");
-      const data = await res.json();
-      setChannels(data as ChannelStatus[]);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function loadMetrics() {
-    try {
-      const res = await fetch("/api/tenants/metrics");
-      if (!res.ok) throw new Error("Error al cargar métricas");
-      const data = await res.json();
-      setMetrics(data as {
-        messagesIn: number;
-        messagesOut: number;
-        tokensUsed: number;
-        costEstimate: number;
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async function handleSelect(conversation: Conversation) {
     // Mark messages as read by loading the full conversation
     await loadMessages(conversation.id);
@@ -105,6 +62,49 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
+    async function loadConversations() {
+      try {
+        const params = new URLSearchParams();
+        if (filter !== "all") params.set("status", filter);
+        if (search) params.set("search", search);
+        const res = await fetch(`/api/tenants/conversations?${params.toString()}`);
+        if (!res.ok) throw new Error("Error al cargar conversaciones");
+        const data = await res.json();
+        setConversations(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function loadChannels() {
+      try {
+        const res = await fetch("/api/tenants/channels");
+        if (!res.ok) throw new Error("Error al cargar canales");
+        const data = await res.json();
+        setChannels(data as ChannelStatus[]);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function loadMetrics() {
+      try {
+        const res = await fetch("/api/tenants/metrics");
+        if (!res.ok) throw new Error("Error al cargar métricas");
+        const data = await res.json();
+        setMetrics(data as {
+          messagesIn: number;
+          messagesOut: number;
+          tokensUsed: number;
+          costEstimate: number;
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     loadConversations();
     loadChannels();
     loadMetrics();

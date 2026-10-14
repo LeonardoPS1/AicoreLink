@@ -28,6 +28,7 @@ export function ReviewsBlock({ content }: { content: Record<string, any> }) {
                 <p className="text-slate-600 mb-4">{review.comment || "Excelente servicio, muy recomendado."}</p>
                 <div className="flex items-center gap-3">
                   {review.avatar && (
+                    // eslint-disable-next-line @next/next/no-img-element -- dynamic AI-generated URLs; no remotePatterns allowlist configured
                     <img src={review.avatar} alt={review.author || "Cliente"} className="w-10 h-10 rounded-full object-cover" />
                   )}
                   <div>

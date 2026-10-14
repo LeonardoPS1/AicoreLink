@@ -15,6 +15,7 @@ export function BlogBlock({ content }: { content: Record<string, any> }) {
               <article key={index} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {post.image && (
                   <div className="aspect-video bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- dynamic AI-generated asset URL; no remotePatterns allowlist by design */}
                     <img src={post.image} alt={post.title || `Post ${index + 1}`} className="w-full h-full object-cover" />
                   </div>
                 )}

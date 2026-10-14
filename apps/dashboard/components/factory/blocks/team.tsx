@@ -17,6 +17,7 @@ export function TeamBlock({ content }: { content: Record<string, any> }) {
             >
               {member.photoUrl && (
                 <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- dynamic AI-generated URLs; no remotePatterns allowlist configured */}
                   <img
                     src={member.photoUrl}
                     alt={member.name || `Miembro ${index + 1}`}

@@ -157,4 +157,6 @@ export function generateQRURL(secret: string, accountName: string, issuerName: s
   return `otpauth://totp/${label}?secret=${encodedSecret}&issuer=${issuerName}`;
 }
 
-export default { generateSecret, generateTOTP, verifyTOTP, generateQRURL };
+const totp = { generateSecret, generateTOTP, verifyTOTP, generateQRURL };
+
+export default totp;
