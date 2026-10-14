@@ -148,6 +148,12 @@ export type LandingCopy = {
     formTitle: string;
   };
   stickyWhatsApp: { label: string; message: string };
+export type WhatsAppState = {
+  step: "greeting" | "diagnosis" | "results" | "finished";
+  businessInfo: { name: string; category: string; } | null;
+  conversationId: string | null;
+  waitingForUser: boolean;
+};
   calculator: {
     title: string;
     subtitle: string;
