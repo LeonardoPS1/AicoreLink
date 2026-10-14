@@ -10,13 +10,13 @@ async function toggleChannel(tenantId: string, channel: Channel, enabled: boolea
   const actorId = (session?.user as any)?.id ?? "admin-desconocido";
 
   await setFeature(tenantId, channel, enabled, actorId);
-  revalidatePath(`/tenants/${tenantId}`);
+  revalidatePath(`/dashboard/admin/tenants/${tenantId}`);
 }
 
-export default async function TenantDetailPage({ params }: { params: { tenantId: string } }) {
+export default async function TenantDetailPage({ params }: { params: { id: string } }) {
   const tenant = await asAdmin((tx) =>
     tx.tenant.findUnique({
-      where: { id: params.tenantId },
+      where: { id: params.id },
       include: { channels: true },
     })
   );

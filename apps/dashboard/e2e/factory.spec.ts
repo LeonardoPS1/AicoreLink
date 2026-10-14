@@ -1,13 +1,19 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
+import { signInAs } from "./session";
+
 /**
  * Factory admin dashboard + full publish funnel (E2.7)
  *
- * Covers: `/fabrica` listing with filters + bulk approve, and the review
- * funnel at `/fabrica/[siteId]` → checklist → approve → publish → unpublish.
+ * Covers: `/dashboard/admin/fabrica` listing with filters + bulk approve, and
+ * the review funnel at `/dashboard/admin/fabrica/[siteId]` → checklist →
+ * approve → publish → unpublish.
  *
  * The admin pages are client components that fetch from the factory APIs, so
  * every network dependency is mocked with `page.route` — no DB required.
+ *
+ * The internal area is gated on the server, which `page.route` cannot mock, so
+ * every test starts from an already signed in staff session.
  *
  * Runs in all 3 viewports defined in playwright.config.ts:
  * mobile-375 (375x669), tablet-768 (768x1024), desktop-1440 (1440x900).
@@ -129,6 +135,14 @@ async function mockFactoryFunnel(
   });
 }
 
+test.beforeEach(async ({ context }) => {
+  await signInAs(context, {
+    email: "leo@aicorebots.com",
+    role: "dev_aicore",
+    isStaff: true,
+  });
+});
+
 test.describe("Admin factory dashboard", () => {
   test("lists sites in the table", async ({ page }) => {
     await mockAdminSites(page, [
@@ -143,7 +157,7 @@ test.describe("Admin factory dashboard", () => {
       }),
     ]);
 
-    await page.goto("/fabrica");
+    await page.goto("/dashboard/admin/fabrica");
 
     await expect(
       page.getByRole("heading", { name: "Fábrica de sitios" }),
@@ -158,7 +172,7 @@ test.describe("Admin factory dashboard", () => {
     const searches: string[] = [];
     await mockAdminSites(page, [siteListItem()], (search) => searches.push(search));
 
-    await page.goto("/fabrica");
+    await page.goto("/dashboard/admin/fabrica");
     await expect(page.getByTestId("fabrica-row")).toHaveCount(1);
 
     await page.getByTestId("filter-status").selectOption("review");
@@ -185,7 +199,7 @@ test.describe("Admin factory dashboard", () => {
       return route.fulfill({ status: 404, body: "{}" });
     });
 
-    await page.goto("/fabrica");
+    await page.goto("/dashboard/admin/fabrica");
     await expect(page.getByTestId("fabrica-row")).toHaveCount(1);
 
     // Select the row (review status ⇒ checkbox enabled), then bulk approve.
@@ -210,7 +224,7 @@ test.describe("Site review funnel", () => {
       state,
     );
 
-    await page.goto(`/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
+    await page.goto(`/dashboard/admin/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
 
     await expect(page.getByText("Información del Sitio")).toBeVisible();
     await expect(page.getByText("Checklist de revisión")).toBeVisible();
@@ -253,7 +267,7 @@ test.describe("Site review funnel", () => {
       state,
     );
 
-    await page.goto(`/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
+    await page.goto(`/dashboard/admin/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
 
     await expect(page.getByTestId("panel-approve")).toBeDisabled();
     await expect(
@@ -273,7 +287,7 @@ test.describe("Site review funnel", () => {
       state,
     );
 
-    await page.goto(`/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
+    await page.goto(`/dashboard/admin/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
 
     const unpublish = page.getByTestId("panel-unpublish");
     await expect(unpublish).toBeEnabled();

@@ -6,7 +6,7 @@ import { asAdmin } from "@/lib/tenant-context";
  *
  * Cross-tenant listing of factory sites for the admin dashboard.
  * Query params: status, rubro, tenant, q (search by name/subdomain).
- * Auth: admin session guard is enforced by the (admin) layout in production.
+ * Auth: admin session guard is enforced by the /dashboard/admin layout in production.
  */
 export async function GET(request: NextRequest) {
   try {
