@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signOut } from "next-auth/react";
 
 interface TenantWhatsAppConfig {
   tone: "formal" | "amable" | "empatico";
@@ -136,15 +135,7 @@ export default function WhatsappPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-navy">WhatsApp</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 text-sm font-medium transition-colors"
-        >
-          Cerrar sesión
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold text-navy">WhatsApp</h1>
 
       {message && (
         <div

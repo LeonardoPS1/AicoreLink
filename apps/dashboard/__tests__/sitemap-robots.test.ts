@@ -11,15 +11,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 
-const PROTECTED_PATHS = [
-  "/api/",
-  "/login",
-  "/dashboard",
-  "/whatsapp",
-  "/tenants",
-  "/metricas",
-  "/infraestructura",
-];
+const PROTECTED_PATHS = ["/api/", "/login", "/dashboard"];
 
 describe("sitemap", () => {
   it("lists the landing page only", () => {
