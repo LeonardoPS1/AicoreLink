@@ -83,13 +83,13 @@ describe("robots", () => {
 
 describe("panel layouts", () => {
   it("keep the admin panel out of search results", async () => {
-    const { metadata } = await import("@/app/(admin)/layout");
+    const { metadata } = await import("@/app/dashboard/admin/layout");
 
     expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 
   it("keep the client panel out of search results", async () => {
-    const { metadata } = await import("@/app/(cliente)/layout");
+    const { metadata } = await import("@/app/dashboard/layout");
 
     expect(metadata.robots).toEqual({ index: false, follow: false });
   });
