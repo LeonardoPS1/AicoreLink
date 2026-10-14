@@ -144,6 +144,8 @@ export type LandingCopy = {
     primaryLabel: string;
     secondaryLabel: string;
     guarantee: string;
+    steps: { label: string }[];
+    formTitle: string;
   };
   stickyWhatsApp: { label: string; message: string };
   calculator: {
