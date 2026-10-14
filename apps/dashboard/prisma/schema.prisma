@@ -43,10 +43,11 @@ model User {
 }
 
 model TenantUser {
-  id       String @id @default(uuid())
-  tenantId String @map("tenant_id")
-  userId   String @map("user_id")
-  role     String @default("cliente") // rol del usuario dentro del tenant: cliente | operador
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  role      String   @default("cliente") // rol del usuario dentro del tenant: cliente | operador
+  createdAt DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
