@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 
@@ -77,6 +78,18 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className={cn(
+              "hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 sm:block",
+              solid
+                ? "text-slate-600 hover:bg-slate-100 hover:text-navy"
+                : "text-slate-200 hover:bg-white/10 hover:text-white",
+            )}
+          >
+            {copy.header.loginLabel}
+          </Link>
+
           <a
             href="#contacto"
             data-track="cta_click"
@@ -134,6 +147,13 @@ export function SiteHeader() {
           >
             {copy.header.ctaLabel}
           </a>
+
+          <Link
+            href="/login"
+            className="mt-2 block w-full rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            {copy.header.loginLabel}
+          </Link>
         </nav>
       </div>
     </header>

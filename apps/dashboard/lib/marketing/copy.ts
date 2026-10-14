@@ -76,7 +76,7 @@ export type TestimonialExample = {
 export type LandingCopy = {
   brand: { name: string; tagline: string };
   nav: NavItem[];
-  header: { ctaLabel: string };
+  header: { ctaLabel: string; loginLabel: string };
   hero: {
     eyebrow: string;
     headline: string;
@@ -235,6 +235,7 @@ export const copy: LandingCopy = {
 
   header: {
     ctaLabel: "Hablar con nosotros",
+    loginLabel: "Ingresar al panel",
   },
 
   hero: {
