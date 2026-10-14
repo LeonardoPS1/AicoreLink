@@ -1,152 +1,4 @@
 -- CreateTable
-CREATE TABLE "tenants" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "plan" TEXT NOT NULL DEFAULT 'basico',
-    "status" TEXT NOT NULL DEFAULT 'activo',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "tenants_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "password_hash" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "tenant_users" (
-    "id" TEXT NOT NULL,
-    "tenant_id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "role" TEXT NOT NULL DEFAULT 'cliente',
-
-    CONSTRAINT "tenant_users_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "tenant_channels" (
-    "id" TEXT NOT NULL,
-    "tenant_id" TEXT NOT NULL,
-    "channel" TEXT NOT NULL,
-    "enabled" BOOLEAN NOT NULL DEFAULT false,
-    "config" JSONB NOT NULL DEFAULT '{}',
-    "descripcion" TEXT,
-    "activated_at" TIMESTAMP(3),
-
-    CONSTRAINT "tenant_channels_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "channel_credentials" (
-    "id" TEXT NOT NULL,
-    "tenant_id" TEXT NOT NULL,
-    "channel" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "external_id" TEXT,
-    "encrypted_secret" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "channel_credentials_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "tenant_usage" (
-    "id" TEXT NOT NULL,
-    "tenant_id" TEXT NOT NULL,
-    "channel" TEXT NOT NULL,
-    "period" TIMESTAMP(3) NOT NULL,
-    "messages_in" INTEGER NOT NULL DEFAULT 0,
-    "messages_out" INTEGER NOT NULL DEFAULT 0,
-    "tokens_used" INTEGER NOT NULL DEFAULT 0,
-    "cost_estimate" DECIMAL(65,30) NOT NULL DEFAULT 0,
-
-    CONSTRAINT "tenant_usage_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "audit_log" (
-    "id" TEXT NOT NULL,
-    "tenant_id" TEXT,
-    "actor_id" TEXT,
-    "action" TEXT NOT NULL,
-    "meta" JSONB NOT NULL DEFAULT '{}',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "audit_log_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "cost_rates" (
-    "id" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "unit" TEXT NOT NULL,
-    "rate" DECIMAL(65,30) NOT NULL,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "cost_rates_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "conversations" (
-    "id" TEXT NOT NULL,
-    "tenant_id" TEXT NOT NULL,
-    "channel" TEXT NOT NULL DEFAULT 'whatsapp_text',
-    "contact_ref" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'abierta',
-    "escalado" BOOLEAN NOT NULL DEFAULT false,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "conversations_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "messages" (
-    "id" TEXT NOT NULL,
-    "conversation_id" TEXT NOT NULL,
-    "tenant_id" TEXT NOT NULL,
-    "direction" TEXT NOT NULL,
-    "content" TEXT NOT NULL,
-    "ai_generated" BOOLEAN NOT NULL DEFAULT false,
-    "tokens_used" INTEGER,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "media_type" TEXT DEFAULT 'text',
-    "audio_url" TEXT,
-    "transcript" TEXT,
-
-    CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "landing_leads" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "business" TEXT NOT NULL,
-    "whatsapp" TEXT NOT NULL,
-    "vertical" TEXT NOT NULL,
-    "message" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'new',
-    "source" TEXT NOT NULL DEFAULT 'landing',
-    "user_agent" TEXT,
-    "utm_source" TEXT,
-    "utm_medium" TEXT,
-    "utm_campaign" TEXT,
-    "utm_content" TEXT,
-    "utm_term" TEXT,
-    "consent" BOOLEAN NOT NULL DEFAULT false,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "landing_leads_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "business_profiles" (
     "id" TEXT NOT NULL,
     "tenant_id" TEXT NOT NULL,
@@ -260,28 +112,7 @@ CREATE TABLE "publish_logs" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "tenants_slug_key" ON "tenants"("slug");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "tenant_users_tenant_id_user_id_key" ON "tenant_users"("tenant_id", "user_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "tenant_channels_tenant_id_channel_key" ON "tenant_channels"("tenant_id", "channel");
-
--- CreateIndex
-CREATE UNIQUE INDEX "tenant_usage_tenant_id_channel_period_key" ON "tenant_usage"("tenant_id", "channel", "period");
-
--- CreateIndex
-CREATE INDEX "landing_leads_created_at_idx" ON "landing_leads"("created_at");
-
--- CreateIndex
-CREATE INDEX "landing_leads_status_idx" ON "landing_leads"("status");
-
--- CreateIndex
-CREATE INDEX "landing_leads_utm_source_idx" ON "landing_leads"("utm_source");
+CREATE UNIQUE INDEX "business_profiles_tenant_id_key" ON "business_profiles"("tenant_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "business_profiles_slug_key" ON "business_profiles"("slug");
@@ -305,7 +136,7 @@ CREATE INDEX "sites_status_idx" ON "sites"("status");
 CREATE UNIQUE INDEX "site_pages_site_id_path_key" ON "site_pages"("site_id", "path");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "site_templates_rubro_key" ON "site_templates"("rubro");
+CREATE UNIQUE INDEX "site_templates_rubro_planTier_key" ON "site_templates"("rubro", "planTier");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "site_template_pages_template_id_path_key" ON "site_template_pages"("template_id", "path");
@@ -315,24 +146,6 @@ CREATE UNIQUE INDEX "site_versions_site_id_version_key" ON "site_versions"("site
 
 -- CreateIndex
 CREATE INDEX "publish_logs_site_id_idx" ON "publish_logs"("site_id");
-
--- AddForeignKey
-ALTER TABLE "tenant_users" ADD CONSTRAINT "tenant_users_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "tenant_users" ADD CONSTRAINT "tenant_users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "tenant_channels" ADD CONSTRAINT "tenant_channels_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "channel_credentials" ADD CONSTRAINT "channel_credentials_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "tenant_usage" ADD CONSTRAINT "tenant_usage_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "business_profiles" ADD CONSTRAINT "business_profiles_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -371,4 +184,3 @@ CREATE POLICY sites_tenant ON "sites" USING ("tenant_id" = current_setting('app.
 CREATE POLICY site_pages_tenant ON "site_pages" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant')::uuid));
 CREATE POLICY site_versions_tenant ON "site_versions" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant')::uuid));
 CREATE POLICY publish_logs_tenant ON "publish_logs" USING ("site_id" IN (SELECT "id" FROM "sites" WHERE "tenant_id" = current_setting('app.current_tenant')::uuid));
-
