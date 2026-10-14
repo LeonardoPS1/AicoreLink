@@ -83,6 +83,10 @@ async function persistMessage(
   });
 }
 
+import { processWhatsAppMessage, INITIAL_WHATSAPP_STATE, type WhatsAppConversationStep } from "@/lib/whatsapp/conversation-handler";
+
+const conversationStates: Record<string, WhatsAppConversationState> = {};
+
 async function processTextMessage(
   tenantId: string,
   phoneNumberId: string,
@@ -96,36 +100,48 @@ async function processTextMessage(
     return;
   }
 
-  // Step 1: Clasificar intención usando Ollama local primero
-  let classification = await ollamaClassifyIntent(textBody, [], undefined);
+  // Step 1: Obtener o inicializar estado de conversación
+  let state = conversationStates[from];
+  if (!state) {
+    state = {
+      ...INITIAL_WHATSAPP_STATE,
+      conversationId: from,
+    };
+    conversationStates[from] = state;
+  }
 
-  // Step 2: Si la confianza es baja, hacer fallback a OpenRouter
-  if (classification.confidence < 0.6) {
-    try {
-      classification = await openRouterClassifyIntent(textBody, []);
-    } catch (error) {
-      console.error("[webhook] OpenRouter fallback failed:", error);
-      // Mantener clasificación de Ollama aunque sea baja
+  // Step 2: Procesar mensaje con handler de conversación paso a paso
+  const result = await processWhatsAppMessage(textBody, state.step, [], state.businessInfo);
+
+  // Step 3: Actualizar estado de conversación
+  state.step = result.nextStep;
+  state.turnCount = (state.turnCount ?? 0) + 1;
+  state.waitingForUser = !result.completed && !result.shouldEscalate;
+  
+  // Guardar info de negocio si viene en el primer mensaje (greeting)
+  if (state.step === "diagnosis" && !state.businessInfo) {
+    // Extraer nombre del negocio del mensaje inicial - simplificado
+    const nameMatch = textBody.match(/([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+)/);
+    if (nameMatch) {
+      state.businessInfo = {
+        name: nameMatch[1].trim(),
+        category: "por definir", // Se completará después
+        description: "",
+      };
     }
   }
 
-  // Step 3: Determinar si requiere escalado por palabras clave
-  const hasEscalationKeyword = escalationKeywords.some((kw) =>
-    textBody.toLowerCase().includes(kw.toLowerCase())
-  );
-  const escalated = hasEscalationKeyword || classification.intent === "reclamo";
-
-  // Step 4: Persistir conversación y mensaje con clasificación
+  // Persistir conversación y mensaje
   const conversationId = await db.conversation.upsert({
-    where: { id: `temp_${tenantId}_${msgId}` },
+    where: { id: `whatsapp_${tenantId}_${from}` },
     update: {},
     create: {
-      id: `temp_${tenantId}_${msgId}`,
+      id: `whatsapp_${tenantId}_${from}`,
       tenantId,
       channel: "whatsapp_text",
       contactRef: from,
       status: "abierta",
-      escalado: escalated,
+      escalado: result.shouldEscalate,
     },
   });
 
@@ -141,8 +157,29 @@ async function processTextMessage(
     },
   });
 
-  // Step 5: Enviar a n8n con los datos de clasificación
-  if (N8N_WEBHOOK_URL) {
+  // Step 4: Enviar respuesta apropiada basada en el paso de conversación
+  let responseToUser = result.response;
+  let shouldSendToN8n = false;
+
+  // Si la conversación finalizó o requiere escalado, enviar a n8n
+  if (result.completed || result.shouldEscalate || state.step === "finished") {
+    shouldSendToN8n = true;
+  }
+
+  // Si la conversación avanzó de paso, también enviar a n8n para tracking
+  const stepTransitions: Record<WhatsAppConversationStep, WhatsAppConversationStep> = {
+    greeting: "diagnosis",
+    diagnosis: "results",
+    results: "finished",
+    finished: "finished",
+  };
+  
+  if (stepTransitions[state.step] && state.step !== "finished") {
+    shouldSendToN8n = true;
+  }
+
+  // Enviar a n8n si es necesario
+  if (shouldSendToN8n && N8N_WEBHOOK_URL) {
     try {
       await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
@@ -155,15 +192,21 @@ async function processTextMessage(
           messageId: msgId,
           timestamp: parseInt(timestamp, 10) * 1000,
           mediaType: "text",
-          intent: classification.intent,
-          confidence: classification.confidence,
-          escalated,
+          conversationStep: state.step,
+          conversationCompleted: result.completed,
+          shouldEscalate: result.shouldEscalate,
+          response: result.response,
+          turnCount: state.turnCount,
         }),
       });
     } catch (error) {
       console.error("[webhook] Failed to trigger n8n:", error);
     }
   }
+
+  // Retornar respuesta (en producción esto se enviaría directamente por Twilio webhook reply)
+  // Por ahora solo loggeamos lo que responderíamos
+  console.log(`[webhook] Response for ${from} at step ${state.step}:`, result.response.substring(0, 100));
 }
 
 async function processAudioMessage(
