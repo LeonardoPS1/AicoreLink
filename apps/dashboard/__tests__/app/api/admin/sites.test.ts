@@ -1,14 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockTx } = vi.hoisted(() => ({
-  mockTx: { site: { findMany: vi.fn() } },
+const h = vi.hoisted(() => ({
+  tx: { site: { findMany: vi.fn() } },
+  asAdmin: vi.fn(),
+  getServerSession: vi.fn(),
 }));
 
 vi.mock("@/lib/tenant-context", () => ({
-  asAdmin: vi.fn(async (fn: (tx: any) => unknown) => fn(mockTx)),
+  asAdmin: h.asAdmin,
 }));
 
 vi.mock("@/lib/db", () => ({ db: {} }));
+
+/**
+ * The session guard is the ONLY thing between this cross-tenant listing and the
+ * public internet: middleware.ts is a pass-through and a Next.js layout wraps
+ * pages, not route handlers, so neither one protects this endpoint.
+ */
+vi.mock("next-auth", () => ({ getServerSession: h.getServerSession }));
+vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 
 import { GET } from "@/app/api/admin/sites/route";
 
@@ -22,6 +32,10 @@ class MockNextRequest {
 
 function makeRequest(query = "") {
   return new MockNextRequest("http://localhost/api/admin/sites" + query) as any;
+}
+
+function session(role: string) {
+  return { user: { id: "u1", role } };
 }
 
 function dbSite(overrides: Record<string, unknown> = {}) {
@@ -42,8 +56,46 @@ function dbSite(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  vi.resetAllMocks();
-  mockTx.site.findMany.mockResolvedValue([dbSite()]);
+  vi.clearAllMocks();
+  h.asAdmin.mockImplementation(async (fn: (tx: any) => unknown) => fn(h.tx));
+  h.tx.site.findMany.mockResolvedValue([dbSite()]);
+  h.getServerSession.mockResolvedValue(session("dev_aicore"));
+});
+
+describe("GET /api/admin/sites authorization", () => {
+  it("rejects an anonymous caller and never opens the cross-tenant connection", async () => {
+    h.getServerSession.mockResolvedValue(null);
+
+    const res = await GET(makeRequest());
+
+    expect(res.status).toBe(403);
+    expect(h.asAdmin).not.toHaveBeenCalled();
+  });
+
+  it("rejects a client session", async () => {
+    h.getServerSession.mockResolvedValue(session("cliente"));
+
+    const res = await GET(makeRequest());
+
+    expect(res.status).toBe(403);
+    expect(h.asAdmin).not.toHaveBeenCalled();
+  });
+
+  it.each(["operador", "soporte"])("rejects the %s staff role for now", async (role) => {
+    h.getServerSession.mockResolvedValue(session(role));
+
+    const res = await GET(makeRequest());
+
+    expect(res.status).toBe(403);
+    expect(h.asAdmin).not.toHaveBeenCalled();
+  });
+
+  it("serves the list once the session is dev_aicore", async () => {
+    const res = await GET(makeRequest());
+
+    expect(res.status).toBe(200);
+    expect(h.asAdmin).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("GET /api/admin/sites", () => {
@@ -63,7 +115,7 @@ describe("GET /api/admin/sites", () => {
 
   it("applies status and rubro filters to the query", async () => {
     await GET(makeRequest("?status=review&rubro=clinica"));
-    expect(mockTx.site.findMany).toHaveBeenCalledWith(
+    expect(h.tx.site.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           status: "review",
@@ -75,12 +127,12 @@ describe("GET /api/admin/sites", () => {
 
   it("builds a case-insensitive search filter", async () => {
     await GET(makeRequest("?q=ana"));
-    const call = mockTx.site.findMany.mock.calls[0][0];
+    const call = h.tx.site.findMany.mock.calls[0][0];
     expect(call.where.OR).toBeDefined();
   });
 
   it("returns unfiltered stats independent of filters", async () => {
-    mockTx.site.findMany
+    h.tx.site.findMany
       .mockResolvedValueOnce([dbSite({ status: "review" })])
       .mockResolvedValueOnce([
         dbSite({ status: "review" }),
@@ -95,7 +147,7 @@ describe("GET /api/admin/sites", () => {
   });
 
   it("returns 500 when the query fails", async () => {
-    mockTx.site.findMany.mockRejectedValue(new Error("boom"));
+    h.tx.site.findMany.mockRejectedValue(new Error("boom"));
     const res = await GET(makeRequest());
     expect(res.status).toBe(500);
   });

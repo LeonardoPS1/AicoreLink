@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { requireRole } from "@/lib/rbac";
 import { asAdmin } from "@/lib/tenant-context";
 
 /**
@@ -6,9 +9,21 @@ import { asAdmin } from "@/lib/tenant-context";
  *
  * Cross-tenant listing of factory sites for the admin dashboard.
  * Query params: status, rubro, tenant, q (search by name/subdomain).
- * Auth: admin session guard is enforced by the /dashboard/admin layout in production.
+ *
+ * Auth: enforced HERE, inside the handler. A Next.js layout wraps pages, not
+ * route handlers, and middleware.ts is a pass-through, so relying on the
+ * /dashboard/admin layout left this endpoint public: an anonymous GET returned
+ * the cross-tenant list through the BYPASSRLS connection. Same guard shape as
+ * /api/tenants.
  */
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  try {
+    requireRole(session?.user as any, ["dev_aicore"]);
+  } catch {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || undefined;
