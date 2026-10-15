@@ -2,7 +2,7 @@
  * Environment canonicalisation.
  *
  * The app reads its configuration from unprefixed names (`DATABASE_URL`,
- * `DATABASE_URL_ADMIN`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`). The Dokploy
+ * `NEXTAUTH_SECRET`, `NEXTAUTH_URL`). The Dokploy
  * application stores the same values under the `AICORELINK_` prefix, and a
  * Dokploy deploy rewrites the service spec from what it stores: anything added
  * by hand with `docker service update --env-add` disappears.
@@ -25,7 +25,6 @@ export interface EnvAlias {
 
 export const ENV_ALIASES: readonly EnvAlias[] = [
   { canonical: "DATABASE_URL", legacy: "AICORELINK_DATABASE_URL" },
-  { canonical: "DATABASE_URL_ADMIN", legacy: "AICORELINK_DATABASE_URL_ADMIN" },
   { canonical: "NEXTAUTH_SECRET", legacy: "AICORELINK_NEXTAUTH_SECRET" },
   { canonical: "NEXTAUTH_URL", legacy: "AICORELINK_NEXTAUTH_URL" },
 ];
@@ -73,11 +72,6 @@ export function applyEnvAliases(env: EnvSource = process.env): string[] {
 /** The main connection URL, or undefined when neither name carries it. */
 export function databaseUrl(env: EnvSource = process.env): string | undefined {
   return resolveEnv("DATABASE_URL", env);
-}
-
-/** The BYPASSRLS cross-tenant connection URL, or undefined when neither name carries it. */
-export function adminDatabaseUrl(env: EnvSource = process.env): string | undefined {
-  return resolveEnv("DATABASE_URL_ADMIN", env);
 }
 
 /** The NextAuth session secret, or undefined when neither name carries it. */

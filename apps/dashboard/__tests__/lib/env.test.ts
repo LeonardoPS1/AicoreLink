@@ -75,8 +75,11 @@ describe("ENV_ALIASES", () => {
   it("covers every variable a Dokploy deploy can wipe", () => {
     const canonicalNames = ENV_ALIASES.map((alias) => alias.canonical);
     expect(canonicalNames).toEqual(
-      expect.arrayContaining(["DATABASE_URL", "DATABASE_URL_ADMIN", "NEXTAUTH_SECRET", "NEXTAUTH_URL"]),
+      expect.arrayContaining(["DATABASE_URL", "NEXTAUTH_SECRET", "NEXTAUTH_URL"]),
     );
+    // The staff panel escalates the role on the main connection now, so a
+    // dropped DATABASE_URL_ADMIN can no longer take it down.
+    expect(canonicalNames).not.toContain("DATABASE_URL_ADMIN");
   });
 
   it("maps each canonical name to its AICORELINK_-prefixed counterpart", () => {

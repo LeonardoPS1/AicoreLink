@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "./db";
-import { adminDb } from "./db-admin";
+import { escalateToAdminRole } from "./db-admin";
 
 /**
  * TODA consulta que sirva al panel CLIENTE debe pasar por este helper.
@@ -35,16 +35,23 @@ export async function withTenant<T>(
  * Uso reservado para el panel de AICORE (roles staff), que necesita ver datos
  * de todos los tenants.
  *
- * Corre sobre una SEGUNDA conexion (`lib/db-admin.ts`, env `DATABASE_URL_ADMIN`)
- * cuyo rol tiene BYPASSRLS. El rol principal de la app NO tiene bypass a
- * proposito, para que RLS siga siendo la ultima linea de defensa del panel
- * cliente. Si `DATABASE_URL_ADMIN` no esta configurada, esto falla con un error
- * explicito: nunca cae en silencio a la conexion con RLS, porque esa conexion
- * devolveria cero filas sin avisar.
+ * Escala la MISMA conexion de la app dentro de la transaccion: el rol principal
+ * (`aicorelink_app`) no tiene BYPASSRLS a proposito, para que RLS siga siendo la
+ * ultima linea de defensa del panel cliente, y la escalada a `aicorelink_admin`
+ * (rol con BYPASSRLS del que la app es miembro, ver `prisma/rls.sql`) dura lo que
+ * dura la transaccion. Al terminar, la conexion vuelve al pool como
+ * `aicorelink_app` y RLS queda activo otra vez.
+ *
+ * No usa una segunda conexion a proposito: un deploy de Dokploy reescribe el
+ * spec del service desde lo que Dokploy guarda, borraba el DSN admin y dejaba al
+ * panel de Aicore sin conexion cross-tenant.
  *
  * Usar con criterio: nunca exponer este helper a una ruta o pagina que sirva al
  * panel cliente.
  */
 export async function asAdmin<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-  return adminDb().$transaction(async (tx) => fn(tx));
+  return db.$transaction(async (tx) => {
+    await escalateToAdminRole(tx);
+    return fn(tx);
+  });
 }

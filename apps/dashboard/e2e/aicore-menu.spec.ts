@@ -12,8 +12,8 @@ import { signInAs } from "./session";
  * Aicore blocks.
  *
  * A staff session reads the database, so the server must be started with
- * `DATABASE_URL` and `DATABASE_URL_ADMIN` pointing at a database that has the
- * Prisma schema applied (see the run notes in the plan). The client session
+ * `DATABASE_URL` pointing at a database that has the Prisma schema applied and
+ * the `aicorelink_admin` role created (see `prisma/rls.sql`). The client session
  * reads no tenant data.
  *
  * Runs in the 3 viewports defined in playwright.config.ts.

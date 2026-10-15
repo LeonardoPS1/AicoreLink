@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * dropped the unprefixed names the code reads, so the app booted without a
  * database URL and every auth route answered 500.
  *
- * These tests exercise the real consumer modules (lib/db, lib/db-admin,
- * lib/auth) with `@prisma/client` stubbed, so no database or network is touched.
+ * These tests exercise the real consumer modules (lib/db, lib/auth) with
+ * `@prisma/client` stubbed, so no database or network is touched.
  */
 
 const captured = vi.hoisted(() => [] as Array<{ datasources?: { db?: { url?: string } } }>);
@@ -22,11 +22,9 @@ vi.mock("@prisma/client", () => ({
 
 const KEYS = [
   "DATABASE_URL",
-  "DATABASE_URL_ADMIN",
   "NEXTAUTH_SECRET",
   "NEXTAUTH_URL",
   "AICORELINK_DATABASE_URL",
-  "AICORELINK_DATABASE_URL_ADMIN",
   "AICORELINK_NEXTAUTH_SECRET",
   "AICORELINK_NEXTAUTH_URL",
 ] as const;
@@ -38,7 +36,6 @@ function clearEnv() {
   for (const key of KEYS) delete process.env[key];
   captured.length = 0;
   delete (globalThis as { prisma?: unknown }).prisma;
-  delete (globalThis as { prismaAdmin?: unknown }).prismaAdmin;
   vi.resetModules();
 }
 
@@ -72,24 +69,6 @@ describe("environment aliases in the consumer modules", () => {
 
   it("still refuses to boot when neither name is configured", async () => {
     await expect(import("@/lib/db")).rejects.toThrowError(/DATABASE_URL is not set/);
-  });
-
-  it("lets adminDb() read the prefixed name when DATABASE_URL_ADMIN is missing", async () => {
-    process.env.DATABASE_URL = "postgresql://canonical:pw@localhost:5432/db";
-    process.env.AICORELINK_DATABASE_URL_ADMIN = "postgresql://admin:pw@localhost:5432/db";
-
-    const { adminDb } = await import("@/lib/db-admin");
-
-    expect(() => adminDb()).not.toThrow();
-    expect(captured.at(-1)?.datasources?.db?.url).toBe("postgresql://admin:pw@localhost:5432/db");
-  });
-
-  it("keeps failing loudly when neither admin name is configured", async () => {
-    process.env.DATABASE_URL = "postgresql://canonical:pw@localhost:5432/db";
-
-    const { adminDb } = await import("@/lib/db-admin");
-
-    expect(() => adminDb()).toThrowError(/DATABASE_URL_ADMIN/);
   });
 
   it("falls back to AICORELINK_NEXTAUTH_SECRET for the session secret", async () => {

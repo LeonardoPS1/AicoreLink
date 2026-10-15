@@ -1,55 +1,51 @@
-import { PrismaClient } from "@prisma/client";
-import { adminDatabaseUrl } from "./env";
+import type { Prisma } from "@prisma/client";
 
 /**
- * Second Prisma client for cross-tenant reads of the Aicore panel.
+ * Cross-tenant reads of the Aicore panel (staff screens only).
  *
- * It is bound to `DATABASE_URL_ADMIN`, the connection of a dedicated role with
- * `BYPASSRLS` (see `prisma/rls.sql`). The main app role (`aicorelink_app`) keeps
- * RLS enforced on purpose, so the client panel keeps Row Level Security as its
- * last line of defence and a bug in a client-facing query cannot leak another
- * tenant's rows.
+ * The app role `aicorelink_app` has Row Level Security enforced on purpose: the
+ * client panel keeps RLS as its last line of defence, so a bug in a client-facing
+ * query cannot leak another tenant's rows. The staff panel still needs to see
+ * every tenant, so it escalates the connection it ALREADY has, inside its own
+ * transaction.
  *
- * Lazy on purpose: the missing-env error must fire when a staff screen actually
- * reads, not while a client-facing module is being imported. This function
- * NEVER falls back to `DATABASE_URL`: reading through the RLS connection with a
- * staff role returns zero rows with no error, which is exactly the silent
- * failure this module exists to prevent.
+ * `set_config('role', ..., true)` is the parameterised form of `SET LOCAL ROLE`,
+ * so the name reaches Postgres as a bind value and never as SQL text. The role
+ * is `aicorelink_admin`, a `BYPASSRLS` role that `aicorelink_app` is a member of
+ * (see `prisma/rls.sql`). `is_local = true` makes the switch die with the
+ * transaction: the connection goes back to the pool as `aicorelink_app`, with RLS
+ * on again. Verified against production on the same backend pid (4 rows inside
+ * the transaction, 0 rows after COMMIT).
  *
- * The URL and the password are never logged nor interpolated into the error.
+ * This replaced a second PrismaClient bound to `DATABASE_URL_ADMIN`: a Dokploy
+ * deploy rewrites the service spec from the values Dokploy stores, dropped that
+ * hand-added variable, and left the staff panel without an admin connection.
+ * Nothing here reads an extra DSN, so a deploy can no longer break the panel.
  */
 
-const globalForAdminPrisma = globalThis as unknown as { prismaAdmin?: PrismaClient };
+/** The `BYPASSRLS` role the staff panel escalates to. */
+export const ADMIN_DB_ROLE = "aicorelink_admin";
 
-let adminClient: PrismaClient | null = null;
+const SAFE_ROLE_NAME = /^[a-z_][a-z0-9_]*$/;
 
-export function adminDb(): PrismaClient {
-  const url = adminDatabaseUrl();
+/** A role name is only ever a plain lowercase identifier. */
+export function isSafeRoleName(role: string): boolean {
+  return SAFE_ROLE_NAME.test(role);
+}
 
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL_ADMIN no está configurada: las lecturas cross-tenant del panel de Aicore requieren un rol con BYPASSRLS (ver prisma/rls.sql)."
-    );
+/**
+ * Switches the CURRENT transaction to the cross-tenant role.
+ *
+ * The change is transaction-local: it disappears on COMMIT and on ROLLBACK, so a
+ * pooled connection is never returned still holding `BYPASSRLS`.
+ */
+export async function escalateToAdminRole(
+  tx: Prisma.TransactionClient,
+  role: string = ADMIN_DB_ROLE
+): Promise<void> {
+  if (!isSafeRoleName(role)) {
+    throw new Error("escalateToAdminRole() recibio un nombre de rol invalido");
   }
 
-  if (adminClient) return adminClient;
-
-  // Reuses the hot-reload singleton in development so `next dev` does not open
-  // a new pool on every reload.
-  const existing = globalForAdminPrisma.prismaAdmin;
-  if (existing) {
-    adminClient = existing;
-    return adminClient;
-  }
-
-  adminClient = new PrismaClient({
-    datasources: { db: { url } },
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
-
-  if (process.env.NODE_ENV !== "production") {
-    globalForAdminPrisma.prismaAdmin = adminClient;
-  }
-
-  return adminClient;
+  await tx.$executeRawUnsafe(`SELECT set_config('role', $1, true)`, role);
 }
