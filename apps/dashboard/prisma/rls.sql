@@ -37,3 +37,26 @@ CREATE POLICY tenant_isolation ON messages
 -- CREATE ROLE app_user LOGIN PASSWORD 'cambia-esto';
 -- CREATE ROLE app_admin LOGIN PASSWORD 'cambia-esto' BYPASSRLS;
 -- GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user, app_admin;
+
+-- ---------------------------------------------------------------------------
+-- Rol real de produccion para el panel de Aicore (F1)
+-- ---------------------------------------------------------------------------
+-- Las lecturas cross-tenant del panel de Aicore necesitan un rol que evada RLS.
+-- El rol de la app (aicorelink_app) NO debe tener BYPASSRLS: RLS sigue siendo la
+-- ultima linea de defensa del panel cliente, y la app sigue leyendo por ahi.
+--
+-- Se corre como el superusuario de la base (reece.schmeler67):
+--
+--   CREATE ROLE aicorelink_admin LOGIN PASSWORD '<deploy secret>' BYPASSRLS;
+--   GRANT aicorelink_app TO aicorelink_admin;  -- hereda los grants de la app y suma BYPASSRLS
+--
+-- Verificacion:
+--
+--   SELECT rolname, rolsuper, rolbypassrls FROM pg_roles
+--    WHERE rolname IN ('aicorelink_app', 'aicorelink_admin');
+--
+-- Esperado: aicorelink_app (f, f) y aicorelink_admin (f, t).
+--
+-- La app lo usa via la env DATABASE_URL_ADMIN (lib/db-admin.ts). El resto de las
+-- conexiones sigue usando DATABASE_URL.
+-- ---------------------------------------------------------------------------

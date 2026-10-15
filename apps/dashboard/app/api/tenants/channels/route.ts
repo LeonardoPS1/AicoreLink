@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/lib/rbac";
-import { withTenant, asAdmin } from "@/lib/tenant-context";
+import { withTenant } from "@/lib/tenant-context";
 import { CHANNELS } from "@/lib/entitlements";
 import { z } from "zod";
 
@@ -76,7 +76,10 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const result = await asAdmin(async (tx) => {
+    // The client panel writes through the RLS connection: tenantId comes from
+    // the session and the policy's USING clause doubles as WITH CHECK, so RLS
+    // keeps enforcing the tenant even if this where clause were wrong.
+    const result = await withTenant(tenantId, async (tx) => {
       return tx.tenantChannel.upsert({
         where: { tenantId_channel: { tenantId, channel } },
         update: { enabled, config: parsedConfig.data, descripcion: parsedConfig.data?.descripcion },
