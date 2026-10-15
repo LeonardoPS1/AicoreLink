@@ -11,15 +11,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 
-const PROTECTED_PATHS = [
-  "/api/",
-  "/login",
-  "/dashboard",
-  "/whatsapp",
-  "/tenants",
-  "/metricas",
-  "/infraestructura",
-];
+const PROTECTED_PATHS = ["/api/", "/login", "/dashboard"];
 
 describe("sitemap", () => {
   it("lists the landing page only", () => {
@@ -83,13 +75,13 @@ describe("robots", () => {
 
 describe("panel layouts", () => {
   it("keep the admin panel out of search results", async () => {
-    const { metadata } = await import("@/app/(admin)/layout");
+    const { metadata } = await import("@/app/dashboard/admin/layout");
 
     expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 
   it("keep the client panel out of search results", async () => {
-    const { metadata } = await import("@/app/(cliente)/layout");
+    const { metadata } = await import("@/app/dashboard/layout");
 
     expect(metadata.robots).toEqual({ index: false, follow: false });
   });

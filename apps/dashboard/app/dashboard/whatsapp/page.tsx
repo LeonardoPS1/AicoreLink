@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signOut } from "next-auth/react";
 
 interface TenantWhatsAppConfig {
   tone: "formal" | "amable" | "empatico";
@@ -136,15 +135,7 @@ export default function WhatsappPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-navy">WhatsApp</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 text-sm font-medium transition-colors"
-        >
-          Cerrar sesión
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold text-navy">WhatsApp</h1>
 
       {message && (
         <div
@@ -249,13 +240,13 @@ export default function WhatsappPage() {
                   }
                   rows={6}
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent font-mono text-sm"
-                  placeholder="Ej: La clínica abre de lunes a viernes 9 a 18hs. Dirección: Av. Siempre Viva 123. Servicios: Clínica general, Pediatría, Cardiología..."
+                  placeholder="Ej: Atendemos de lunes a viernes de 9 a 18 h. Dirección: Av. Providencia 1234. Servicios: ..."
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Descripción del canal (visible para los pacientes)
+                  Descripción del canal (visible para tus clientes)
                 </label>
                 <textarea
                   value={config.descripcion || ""}
@@ -264,7 +255,7 @@ export default function WhatsappPage() {
                   }
                   rows={3}
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent font-mono text-sm"
-                  placeholder="Ej: Atención al paciente para consultas médicas y turnos"
+                  placeholder="Ej: Atendemos consultas y agendamos horas por WhatsApp"
                 />
               </div>
 
@@ -344,8 +335,8 @@ export default function WhatsappPage() {
                   className="w-full max-w-2xl px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent"
                 />
                 <p className="mt-1 text-xs text-slate-500">
-                  Si el paciente escribe alguna de estas palabras, la conversación se marca como
-                  escalada y se notifica al staff.
+                  Si tu cliente escribe alguna de estas palabras, la conversación se marca como
+                  escalada y se avisa al equipo.
                 </p>
               </div>
 
@@ -444,7 +435,7 @@ export default function WhatsappPage() {
               <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
                 <p className="font-medium mb-1">Cómo funciona:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>El paciente envía una nota de voz</li>
+                  <li>Tu cliente envía una nota de voz</li>
                   <li>Se transcribe automáticamente con Whisper</li>
                   <li>Se procesa igual que un mensaje de texto (pipeline IA existente)</li>
                   <li>Si &quot;Responder en audio&quot; está activo, la respuesta se genera con ElevenLabs y se envía como nota de voz</li>

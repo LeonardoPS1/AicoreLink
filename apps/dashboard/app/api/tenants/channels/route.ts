@@ -22,7 +22,7 @@ const configSchema = z.object({
 export async function GET() {
   const session = await getServerSession(authOptions);
   try {
-    requireRole(session?.user as any, ["cliente", "admin_clinica", "dev_aicore"]);
+    requireRole(session?.user as any, ["cliente", "operador", "dev_aicore"]);
   } catch {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
@@ -50,7 +50,7 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions);
   try {
-    requireRole(session?.user as any, ["cliente", "admin_clinica", "dev_aicore"]);
+    requireRole(session?.user as any, ["cliente", "operador", "dev_aicore"]);
   } catch {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 
-import EmbudoPage from "@/app/(admin)/embudo/page";
+import EmbudoPage from "@/app/dashboard/admin/embudo/page";
 
 describe("EmbudoPage", () => {
   it("renders the funnel dashboard with all 7 stages", () => {

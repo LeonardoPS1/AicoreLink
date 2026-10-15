@@ -147,7 +147,7 @@ export function verifyTOTP(
  * Genera un URL QR para configurar Google Authenticator
  * 
  * @param secret Secreto TOTP
- * @param accountName Nombre de la cuenta (ej. "Clínica Demo")
+ * @param accountName Nombre de la cuenta (ej. "Barbería El Corte")
  * @param issuerName Nombre del emisor (ej. "AicoreLink")
  * @returns { string } URL data URI para QR code
  */

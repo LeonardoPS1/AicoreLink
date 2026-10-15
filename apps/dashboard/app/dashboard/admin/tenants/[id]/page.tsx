@@ -10,13 +10,13 @@ async function toggleChannel(tenantId: string, channel: Channel, enabled: boolea
   const actorId = (session?.user as any)?.id ?? "admin-desconocido";
 
   await setFeature(tenantId, channel, enabled, actorId);
-  revalidatePath(`/tenants/${tenantId}`);
+  revalidatePath(`/dashboard/admin/tenants/${tenantId}`);
 }
 
-export default async function TenantDetailPage({ params }: { params: { tenantId: string } }) {
+export default async function TenantDetailPage({ params }: { params: { id: string } }) {
   const tenant = await asAdmin((tx) =>
     tx.tenant.findUnique({
-      where: { id: params.tenantId },
+      where: { id: params.id },
       include: { channels: true },
     })
   );
@@ -44,7 +44,10 @@ export default async function TenantDetailPage({ params }: { params: { tenantId:
               className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4"
             >
               <div>
-                <p className="font-medium capitalize">{channel}{enabled ? "Activo" : "Desactivado"}</p>
+                <p className="font-medium capitalize">{channel.replace("_", " ")}</p>
+                <p className={`text-xs ${enabled ? "text-teal" : "text-slate-400"}`}>
+                  {enabled ? "Activo" : "Desactivado"}
+                </p>
               </div>
               <button
                 type="submit"

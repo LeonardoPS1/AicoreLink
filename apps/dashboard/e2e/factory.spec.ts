@@ -1,13 +1,19 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
+import { signInAs } from "./session";
+
 /**
  * Factory admin dashboard + full publish funnel (E2.7)
  *
- * Covers: `/fabrica` listing with filters + bulk approve, and the review
- * funnel at `/fabrica/[siteId]` → checklist → approve → publish → unpublish.
+ * Covers: `/dashboard/admin/fabrica` listing with filters + bulk approve, and
+ * the review funnel at `/dashboard/admin/fabrica/[siteId]` → checklist →
+ * approve → publish → unpublish.
  *
  * The admin pages are client components that fetch from the factory APIs, so
  * every network dependency is mocked with `page.route` — no DB required.
+ *
+ * The internal area is gated on the server, which `page.route` cannot mock, so
+ * every test starts from an already signed in staff session.
  *
  * Runs in all 3 viewports defined in playwright.config.ts:
  * mobile-375 (375x669), tablet-768 (768x1024), desktop-1440 (1440x900).
@@ -129,6 +135,31 @@ async function mockFactoryFunnel(
   });
 }
 
+/**
+ * Collects the `dialog.accept()` promises opened by an action.
+ *
+ * Some factory actions open two dialogs in a row: a confirmation, and then a
+ * success alert once the request resolves. Playwright fails the test when an
+ * in-flight `dialog.accept()` outlives it, so the specs that click those
+ * buttons wait for the dialogs they expect and await the collected promises
+ * before finishing.
+ */
+function acceptDialogs(page: Page): Promise<void>[] {
+  const pending: Promise<void>[] = [];
+  page.on("dialog", (dialog) => {
+    pending.push(dialog.accept());
+  });
+  return pending;
+}
+
+test.beforeEach(async ({ context }) => {
+  await signInAs(context, {
+    email: "leo@aicorebots.com",
+    role: "dev_aicore",
+    isStaff: true,
+  });
+});
+
 test.describe("Admin factory dashboard", () => {
   test("lists sites in the table", async ({ page }) => {
     await mockAdminSites(page, [
@@ -143,7 +174,7 @@ test.describe("Admin factory dashboard", () => {
       }),
     ]);
 
-    await page.goto("/fabrica");
+    await page.goto("/dashboard/admin/fabrica");
 
     await expect(
       page.getByRole("heading", { name: "Fábrica de sitios" }),
@@ -158,7 +189,7 @@ test.describe("Admin factory dashboard", () => {
     const searches: string[] = [];
     await mockAdminSites(page, [siteListItem()], (search) => searches.push(search));
 
-    await page.goto("/fabrica");
+    await page.goto("/dashboard/admin/fabrica");
     await expect(page.getByTestId("fabrica-row")).toHaveCount(1);
 
     await page.getByTestId("filter-status").selectOption("review");
@@ -185,7 +216,7 @@ test.describe("Admin factory dashboard", () => {
       return route.fulfill({ status: 404, body: "{}" });
     });
 
-    await page.goto("/fabrica");
+    await page.goto("/dashboard/admin/fabrica");
     await expect(page.getByTestId("fabrica-row")).toHaveCount(1);
 
     // Select the row (review status ⇒ checkbox enabled), then bulk approve.
@@ -200,7 +231,7 @@ test.describe("Admin factory dashboard", () => {
 test.describe("Site review funnel", () => {
   test("review → approve → publish", async ({ page }) => {
     const state: FunnelState = { approve: 0, publish: 0, unpublish: 0 };
-    page.on("dialog", (dialog) => dialog.accept());
+    const dialogs = acceptDialogs(page);
     await mockFactoryFunnel(
       page,
       {
@@ -210,7 +241,7 @@ test.describe("Site review funnel", () => {
       state,
     );
 
-    await page.goto(`/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
+    await page.goto(`/dashboard/admin/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
 
     await expect(page.getByText("Información del Sitio")).toBeVisible();
     await expect(page.getByText("Checklist de revisión")).toBeVisible();
@@ -223,6 +254,11 @@ test.describe("Site review funnel", () => {
     await expect.poll(() => state.publish).toBe(1);
     await expect(approve).toHaveText("Sitio publicado");
     await expect(approve).toBeDisabled();
+
+    // The success alert opens after the POST resolves: wait for it and let its
+    // accept settle before the test ends.
+    await expect.poll(() => dialogs.length).toBe(1);
+    await Promise.all(dialogs);
   });
 
   test("approve is blocked when the checklist fails", async ({ page }) => {
@@ -253,7 +289,7 @@ test.describe("Site review funnel", () => {
       state,
     );
 
-    await page.goto(`/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
+    await page.goto(`/dashboard/admin/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
 
     await expect(page.getByTestId("panel-approve")).toBeDisabled();
     await expect(
@@ -263,7 +299,7 @@ test.describe("Site review funnel", () => {
 
   test("unpublish a published site", async ({ page }) => {
     const state: FunnelState = { approve: 0, publish: 0, unpublish: 0 };
-    page.on("dialog", (dialog) => dialog.accept());
+    const dialogs = acceptDialogs(page);
     await mockFactoryFunnel(
       page,
       {
@@ -273,12 +309,16 @@ test.describe("Site review funnel", () => {
       state,
     );
 
-    await page.goto(`/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
+    await page.goto(`/dashboard/admin/fabrica/${SITE_ID}?tenant=${TENANT_ID}`);
 
     const unpublish = page.getByTestId("panel-unpublish");
     await expect(unpublish).toBeEnabled();
     await unpublish.click();
 
     await expect.poll(() => state.unpublish).toBe(1);
+
+    // `handleUnpublish` opens the confirmation and then the success alert.
+    await expect.poll(() => dialogs.length).toBe(2);
+    await Promise.all(dialogs);
   });
 });

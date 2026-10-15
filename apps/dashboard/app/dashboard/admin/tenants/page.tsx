@@ -33,7 +33,7 @@ export default async function TenantsPage() {
                 <td className="px-4 py-3">{t.plan}</td>
                 <td className="px-4 py-3">{t.status}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/tenants/${t.id}`} className="text-brand hover:underline">
+                  <Link href={`/dashboard/admin/tenants/${t.id}`} className="text-brand hover:underline">
                     Administrar
                   </Link>
                 </td>

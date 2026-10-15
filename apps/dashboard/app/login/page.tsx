@@ -29,7 +29,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/whatsapp");
+    router.push("/dashboard");
     router.refresh();
   }
 
