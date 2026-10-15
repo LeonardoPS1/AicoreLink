@@ -15,8 +15,10 @@ export interface RiskInput {
   daysSinceLastMessage: number | null;
 }
 
-const QUOTA_WARNING_RATIO = 0.8;
-const IDLE_WARNING_DAYS = 7;
+// Exported so the overview queries raise alerts on exactly the same thresholds
+// the glance colours a row with: two copies would drift apart silently.
+export const QUOTA_WARNING_RATIO = 0.8;
+export const IDLE_WARNING_DAYS = 7;
 const IDLE_CRITICAL_DAYS = 14;
 
 const UNFINISHED_SITE_STATUSES = ["draft", "review", "generating"];
