@@ -1,0 +1,57 @@
+// Risk scoring for the per-client glance on the Aicore menu.
+//
+// Pure function: no I/O and no database access, so the same thresholds can be
+// unit tested and reused by any surface. The first matching rule wins, and the
+// rules are ordered from highest to lowest severity.
+
+export type RiskLevel = "alto" | "medio" | "bajo";
+
+export interface RiskInput {
+  tenantStatus: string;
+  hasEnabledChannel: boolean;
+  siteStatus: string | null;
+  failedPublishes: number;
+  usageRatio: number;
+  daysSinceLastMessage: number | null;
+}
+
+const QUOTA_WARNING_RATIO = 0.8;
+const IDLE_WARNING_DAYS = 7;
+const IDLE_CRITICAL_DAYS = 14;
+
+const UNFINISHED_SITE_STATUSES = ["draft", "review", "generating"];
+
+export function riskLevelOf(input: RiskInput): RiskLevel {
+  const {
+    tenantStatus,
+    hasEnabledChannel,
+    siteStatus,
+    failedPublishes,
+    usageRatio,
+    daysSinceLastMessage,
+  } = input;
+
+  // alto: something is broken for the client right now.
+  if (tenantStatus !== "activo") return "alto";
+  if (!hasEnabledChannel) return "alto";
+  if (failedPublishes > 0) return "alto";
+  if (usageRatio >= 1) return "alto";
+  if (daysSinceLastMessage !== null && daysSinceLastMessage >= IDLE_CRITICAL_DAYS) {
+    return "alto";
+  }
+  // A client with no messages and nothing published is not a quiet client, it
+  // is a client we never got running.
+  if (daysSinceLastMessage === null && siteStatus === null) return "alto";
+
+  // medio: attention before it becomes a breakage.
+  if (usageRatio >= QUOTA_WARNING_RATIO) return "medio";
+  if (daysSinceLastMessage !== null && daysSinceLastMessage >= IDLE_WARNING_DAYS) {
+    return "medio";
+  }
+  if (siteStatus !== null && UNFINISHED_SITE_STATUSES.includes(siteStatus)) {
+    return "medio";
+  }
+  if (daysSinceLastMessage === null) return "medio";
+
+  return "bajo";
+}
