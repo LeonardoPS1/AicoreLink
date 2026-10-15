@@ -196,7 +196,7 @@ export default function FabricaPage() {
     <div className="space-y-6">
       <PageHeader
         title="Fábrica de sitios"
-        description="Revisá, aprobá y publicá los sitios generados para cada negocio."
+        description="Revisa, aprueba y publica los sitios generados para cada negocio."
         icon={Factory}
         data-testid="fabrica-page-header"
       />
