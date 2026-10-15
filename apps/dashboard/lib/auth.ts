@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
+import { nextAuthSecret } from "./env";
 import { isStaffRole } from "./rbac";
 
 declare module "next-auth" {
@@ -110,7 +111,7 @@ export async function authorizeCredentials(
  * - multiTenant flag indicates if user has access to more than one tenant
  */
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: nextAuthSecret(),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { adminDatabaseUrl } from "./env";
 
 /**
  * Second Prisma client for cross-tenant reads of the Aicore panel.
@@ -23,7 +24,7 @@ const globalForAdminPrisma = globalThis as unknown as { prismaAdmin?: PrismaClie
 let adminClient: PrismaClient | null = null;
 
 export function adminDb(): PrismaClient {
-  const url = process.env.DATABASE_URL_ADMIN;
+  const url = adminDatabaseUrl();
 
   if (!url) {
     throw new Error(
