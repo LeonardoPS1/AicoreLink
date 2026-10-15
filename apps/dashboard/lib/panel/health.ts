@@ -5,6 +5,8 @@
 // variable is reported as `sin_datos` — never `ok` and never `caido` — because
 // an unconfigured integration is not evidence of anything.
 
+import { FAILED_PUBLISH_WINDOW_MS } from "./risk";
+
 export type HealthStatus = "ok" | "degradado" | "caido" | "sin_datos";
 
 export interface HealthService {
@@ -25,6 +27,8 @@ export interface HealthDeps {
   fetchFn?: typeof fetch;
   pingPostgres?: () => Promise<number>;
   lastPublishFailure?: () => Promise<Date | null>;
+  /** Overridable so a test can prove a hanging probe gives up quickly. */
+  probeTimeoutMs?: number;
 }
 
 /** Any single probe gives up after this long (Review Focus 5). */
@@ -32,14 +36,8 @@ const PROBE_TIMEOUT_MS = 3000;
 
 const POSTGRES_FAST_MS = 500;
 // Anything that answered at all is "degradado" rather than "caido": the probe
-// only gives up at PROBE_TIMEOUT_MS, so that is the ceiling.
+// only gives up at the probe timeout, so that is the ceiling.
 const POSTGRES_SLOW_MS = PROBE_TIMEOUT_MS;
-
-/** A failed publication is only alarming while it is fresh. */
-const PUBLISH_FAILURE_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-/** Ollama runs side by side with the app; same default the AI client uses. */
-const OLLAMA_DEFAULT_BASE_URL = "http://172.18.0.1:11434";
 
 /**
  * Sentinel returned by `HealthDeps.lastPublishFailure` when the publishing
@@ -50,6 +48,27 @@ export const NO_FAILURES = new Date(0);
 
 function hasFailures(value: Date): boolean {
   return value.getTime() !== 0;
+}
+
+/**
+ * A database query cannot be aborted through Prisma, but the menu must not wait
+ * for it either: this rejects the race so the probe reports `caido` and the rest
+ * of the dashboard still renders (Review Focus 5).
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} no respondió en ${ms} ms`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }
 
 function errorText(error: unknown): string {
@@ -70,12 +89,13 @@ function trimSlash(url: string): string {
 async function probeUrl(
   fetchFn: typeof fetch,
   url: string,
+  timeoutMs: number,
   headers?: Record<string, string>,
 ): Promise<{ status: HealthStatus; detail: string | null }> {
   try {
     const response = await fetchFn(url, {
       headers,
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
       cache: "no-store",
     });
     if (response.ok) {
@@ -90,10 +110,15 @@ async function probeUrl(
 async function probePostgres(
   pingPostgres: () => Promise<number>,
   checkedAt: string,
+  timeoutMs: number,
 ): Promise<HealthService> {
   const service = { key: "postgres", label: "Base de datos", checkedAt };
   try {
-    const elapsed = await pingPostgres();
+    const elapsed = await withTimeout(
+      pingPostgres(),
+      timeoutMs,
+      "la base de datos",
+    );
     const rounded = Math.round(elapsed);
     if (elapsed < POSTGRES_FAST_MS) {
       return { ...service, status: "ok", detail: `respondió en ${rounded} ms` };
@@ -107,22 +132,46 @@ async function probePostgres(
   }
 }
 
-async function probeN8n(fetchFn: typeof fetch, checkedAt: string): Promise<HealthService> {
+async function probeN8n(
+  fetchFn: typeof fetch,
+  checkedAt: string,
+  timeoutMs: number,
+): Promise<HealthService> {
   const service = { key: "n8n", label: "Automatizaciones (n8n)", checkedAt };
   const baseUrl = process.env.N8N_BASE_URL;
   if (!baseUrl) {
     return { ...service, status: "sin_datos", detail: "N8N_BASE_URL sin configurar" };
   }
-  return { ...service, ...(await probeUrl(fetchFn, `${trimSlash(baseUrl)}/healthz`)) };
+  return {
+    ...service,
+    ...(await probeUrl(fetchFn, `${trimSlash(baseUrl)}/healthz`, timeoutMs)),
+  };
 }
 
-async function probeOllama(fetchFn: typeof fetch, checkedAt: string): Promise<HealthService> {
+async function probeOllama(
+  fetchFn: typeof fetch,
+  checkedAt: string,
+  timeoutMs: number,
+): Promise<HealthService> {
   const service = { key: "ollama", label: "IA local (Ollama)", checkedAt };
-  const baseUrl = process.env.OLLAMA_BASE_URL ?? OLLAMA_DEFAULT_BASE_URL;
-  return { ...service, ...(await probeUrl(fetchFn, `${trimSlash(baseUrl)}/api/tags`)) };
+  // No hardcoded fallback host: probing a guessed address would report `caido`
+  // (or `ok`) for an integration that was simply never configured, which is the
+  // false alarm Review Focus 3 forbids.
+  const baseUrl = process.env.OLLAMA_BASE_URL;
+  if (!baseUrl) {
+    return { ...service, status: "sin_datos", detail: "OLLAMA_BASE_URL sin configurar" };
+  }
+  return {
+    ...service,
+    ...(await probeUrl(fetchFn, `${trimSlash(baseUrl)}/api/tags`, timeoutMs)),
+  };
 }
 
-async function probeWhatsapp(fetchFn: typeof fetch, checkedAt: string): Promise<HealthService> {
+async function probeWhatsapp(
+  fetchFn: typeof fetch,
+  checkedAt: string,
+  timeoutMs: number,
+): Promise<HealthService> {
   const service = { key: "whatsapp", label: "Entrega de WhatsApp", checkedAt };
   const baseUrl = process.env.CHATWOOT_BASE_URL;
   const token = process.env.CHATWOOT_API_TOKEN;
@@ -135,9 +184,12 @@ async function probeWhatsapp(fetchFn: typeof fetch, checkedAt: string): Promise<
   }
   return {
     ...service,
-    ...(await probeUrl(fetchFn, `${trimSlash(baseUrl)}/api/v1/accounts`, {
-      api_access_token: token,
-    })),
+    ...(await probeUrl(
+      fetchFn,
+      `${trimSlash(baseUrl)}/api/v1/accounts`,
+      timeoutMs,
+      { api_access_token: token },
+    )),
   };
 }
 
@@ -145,10 +197,15 @@ async function probeSitePublishing(
   lastPublishFailure: () => Promise<Date | null>,
   checkedAt: string,
   now: () => Date,
+  timeoutMs: number,
 ): Promise<HealthService> {
   const service = { key: "sitePublishing", label: "Publicación de sitios", checkedAt };
   try {
-    const lastFailure = await lastPublishFailure();
+    const lastFailure = await withTimeout(
+      lastPublishFailure(),
+      timeoutMs,
+      "la consulta de publicaciones",
+    );
     if (lastFailure === null) {
       return { ...service, status: "sin_datos", detail: "sin publicaciones registradas todavía" };
     }
@@ -156,7 +213,7 @@ async function probeSitePublishing(
       return { ...service, status: "ok", detail: "sin fallas de publicación" };
     }
     const iso = lastFailure.toISOString();
-    const fresh = now().getTime() - lastFailure.getTime() <= PUBLISH_FAILURE_WINDOW_MS;
+    const fresh = now().getTime() - lastFailure.getTime() <= FAILED_PUBLISH_WINDOW_MS;
     return {
       ...service,
       status: fresh ? "degradado" : "ok",
@@ -197,14 +254,15 @@ export async function getSystemHealth(deps: HealthDeps = {}): Promise<SystemHeal
   const fetchFn = deps.fetchFn ?? fetch;
   const pingPostgres = deps.pingPostgres ?? defaultPingPostgres;
   const lastPublishFailure = deps.lastPublishFailure ?? defaultLastPublishFailure;
+  const timeoutMs = deps.probeTimeoutMs ?? PROBE_TIMEOUT_MS;
   const checkedAt = now().toISOString();
 
   const services = await Promise.all([
-    probePostgres(pingPostgres, checkedAt),
-    probeN8n(fetchFn, checkedAt),
-    probeOllama(fetchFn, checkedAt),
-    probeWhatsapp(fetchFn, checkedAt),
-    probeSitePublishing(lastPublishFailure, checkedAt, now),
+    probePostgres(pingPostgres, checkedAt, timeoutMs),
+    probeN8n(fetchFn, checkedAt, timeoutMs),
+    probeOllama(fetchFn, checkedAt, timeoutMs),
+    probeWhatsapp(fetchFn, checkedAt, timeoutMs),
+    probeSitePublishing(lastPublishFailure, checkedAt, now, timeoutMs),
   ]);
 
   return { services, checkedAt };

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { planDefinition, type PlanCode } from "./plans";
 import {
+  FAILED_PUBLISH_WINDOW_MS,
   IDLE_WARNING_DAYS,
   QUOTA_WARNING_RATIO,
   riskLevelOf,
@@ -8,7 +9,15 @@ import {
 } from "./risk";
 
 const DAY_MS = 86_400_000;
-const FAILED_PUBLISH_WINDOW_MS = DAY_MS;
+
+/**
+ * The only place that decides which failed publications count. Both the alert
+ * list and the glance row go through it, so a failure that stopped being fresh
+ * neither raises an alert nor keeps the client coloured as high risk.
+ */
+export function failedPublishFilter(since: Date): Prisma.PublishLogWhereInput {
+  return { status: "failed", createdAt: { gte: since } };
+}
 
 /** Business totals shown on top of the Aicore menu. */
 export interface PanelTotals {
@@ -270,7 +279,7 @@ export async function getAlerts(now: Date = new Date()): Promise<PanelAlert[]> {
   return withAdmin(async (tx) => {
     const [failedPublishes, tenants, usage, lastMessages] = await Promise.all([
       tx.publishLog.findMany({
-        where: { status: "failed", createdAt: { gte: failedSince } },
+        where: failedPublishFilter(failedSince),
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -340,6 +349,7 @@ const RISK_RANK: Record<RiskLevel, number> = { alto: 0, medio: 1, bajo: 2 };
 
 export async function getTenantGlance(now: Date = new Date()): Promise<TenantGlanceRow[]> {
   const monthStart = startOfMonth(now);
+  const failedSince = new Date(now.getTime() - FAILED_PUBLISH_WINDOW_MS);
 
   return withAdmin(async (tx) => {
     const [tenants, usage, lastMessages] = await Promise.all([
@@ -354,7 +364,9 @@ export async function getTenantGlance(now: Date = new Date()): Promise<TenantGla
             orderBy: { updatedAt: "desc" },
             select: {
               status: true,
-              publishLogs: { where: { status: "failed" }, select: { id: true } },
+              // Windowed exactly like the alert list: a failure that has since
+              // been republished must not pin the client to "alto" forever.
+              publishLogs: { where: failedPublishFilter(failedSince), select: { id: true } },
             },
           },
         },

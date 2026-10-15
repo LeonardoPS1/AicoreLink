@@ -1,5 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { buildConversationAlerts, buildGlanceRow } from "@/lib/panel/aicore-overview";
+import {
+  buildConversationAlerts,
+  buildGlanceRow,
+  failedPublishFilter,
+} from "@/lib/panel/aicore-overview";
+import { FAILED_PUBLISH_WINDOW_MS } from "@/lib/panel/risk";
+
+describe("failedPublishFilter()", () => {
+  it("windows failed publications so a stale failure stops counting", () => {
+    const since = new Date("2026-10-13T12:00:00.000Z");
+    expect(failedPublishFilter(since)).toEqual({
+      status: "failed",
+      createdAt: { gte: since },
+    });
+  });
+
+  it("keeps the glance and the alert list on the same 24h window", () => {
+    expect(FAILED_PUBLISH_WINDOW_MS).toBe(24 * 60 * 60 * 1000);
+  });
+});
 
 describe("buildGlanceRow()", () => {
   it("marks a client over the quota as high risk and keeps the real numbers", () => {

@@ -57,6 +57,38 @@ describe("Aicore main menu blocks", () => {
     expect(screen.getByText(/todavía no hay clientes/i)).toBeInTheDocument();
   });
 
+  it("renders one client row with its plan, usage, site, channel and risk", () => {
+    render(
+      <TenantGlanceTable
+        rows={[
+          {
+            tenantId: "t1",
+            name: "Peluquería María",
+            planCode: "growth",
+            planLabel: "Growth",
+            status: "activo",
+            usageThisMonth: 1200,
+            usageLimit: 1500,
+            usageRatio: 0.8,
+            siteStatus: "published",
+            channelHealth: "activo",
+            lastMessageAt: "2026-10-14T12:00:00.000Z",
+            risk: "medio",
+          },
+        ]}
+      />,
+    );
+    expect(screen.queryByText(/todavía no hay clientes/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Peluquería María")).toBeInTheDocument();
+    expect(screen.getByText("Growth")).toBeInTheDocument();
+    expect(screen.getByText("1200 / 1500")).toBeInTheDocument();
+    expect(screen.getByText("80%")).toBeInTheDocument();
+    expect(screen.getByText("publicado")).toBeInTheDocument();
+    // "activo" is both the tenant status and the channel badge.
+    expect(screen.getAllByText("activo")).toHaveLength(2);
+    expect(screen.getByText("medio")).toBeInTheDocument();
+  });
+
   it("never uses clinic vocabulary", () => {
     const { container } = render(<TenantGlanceTable rows={[]} />);
     expect(container.textContent ?? "").not.toMatch(/paciente|clínica|clinica|consultorio/i);

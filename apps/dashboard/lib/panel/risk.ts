@@ -19,6 +19,12 @@ export interface RiskInput {
 // the glance colours a row with: two copies would drift apart silently.
 export const QUOTA_WARNING_RATIO = 0.8;
 export const IDLE_WARNING_DAYS = 7;
+
+// A failed publication is only alarming while it is fresh. Past this window the
+// same event must stop raising an alert AND stop colouring the client as high
+// risk, so both queries read the window from this one constant.
+export const FAILED_PUBLISH_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 const IDLE_CRITICAL_DAYS = 14;
 
 const UNFINISHED_SITE_STATUSES = ["draft", "review", "generating"];
