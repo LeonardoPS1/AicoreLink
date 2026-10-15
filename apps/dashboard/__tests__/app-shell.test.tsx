@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { buildNav } from "@/components/dashboard/nav";
@@ -26,15 +29,30 @@ describe("buildNav", () => {
     expect(hrefs).not.toContain("/dashboard/leads");
   });
 
-  it("marks the client-only modules as coming soon", () => {
+  it("marks every menu entry that has no screen yet as coming soon", () => {
     const soon = buildNav("cliente").filter((i) => i.soon).map((i) => i.href);
     expect(soon).toEqual([
+      "/dashboard/leads",
       "/dashboard/citas",
       "/dashboard/resenas",
+      "/dashboard/sitio",
       "/dashboard/reportes",
       "/dashboard/soporte",
+      "/dashboard/mi-cuenta",
     ]);
   });
+
+  it.each(["cliente", "dev_aicore"])(
+    "never links a menu entry to a screen that does not exist: %s",
+    (role) => {
+      const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "app");
+      const broken = buildNav(role)
+        .filter((item) => !item.soon)
+        .filter((item) => !fs.existsSync(path.join(appDir, item.href, "page.tsx")))
+        .map((item) => item.href);
+      expect(broken).toEqual([]);
+    },
+  );
 });
 
 describe("AppShell", () => {

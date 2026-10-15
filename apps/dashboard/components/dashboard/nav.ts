@@ -13,26 +13,26 @@ export interface NavItem {
  */
 const CLIENT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Resumen" },
-  { href: "/dashboard/leads", label: "Leads" },
+  { href: "/dashboard/leads", label: "Leads", soon: true },
   { href: "/dashboard/conversaciones", label: "Conversaciones" },
   { href: "/dashboard/citas", label: "Citas", soon: true },
   { href: "/dashboard/resenas", label: "Reseñas", soon: true },
-  { href: "/dashboard/sitio", label: "Mi sitio" },
+  { href: "/dashboard/sitio", label: "Mi sitio", soon: true },
   { href: "/dashboard/reportes", label: "Reportes", soon: true },
   { href: "/dashboard/soporte", label: "Soporte", soon: true },
-  { href: "/dashboard/mi-cuenta", label: "Mi cuenta" },
+  { href: "/dashboard/mi-cuenta", label: "Mi cuenta", soon: true },
 ];
 
 /** Menu of the Aicore staff, in the order of the design (§4.3). */
 const STAFF_NAV: NavItem[] = [
   { href: "/dashboard", label: "Menú principal" },
   { href: "/dashboard/admin/tenants", label: "Clientes" },
-  { href: "/dashboard/admin/onboarding", label: "Onboarding" },
+  { href: "/dashboard/admin/onboarding", label: "Onboarding", soon: true },
   { href: "/dashboard/admin/fabrica", label: "Fábrica" },
   { href: "/dashboard/admin/embudo", label: "Embudo" },
   { href: "/dashboard/admin/metricas", label: "Métricas" },
   { href: "/dashboard/admin/infraestructura", label: "Infraestructura" },
-  { href: "/dashboard/admin/usuarios", label: "Usuarios" },
+  { href: "/dashboard/admin/usuarios", label: "Usuarios", soon: true },
 ];
 
 /** The role, not the route, decides the menu. */
