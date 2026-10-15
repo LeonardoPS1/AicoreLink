@@ -28,9 +28,12 @@ export const ADMIN_DB_ROLE = "aicorelink_admin";
 
 const SAFE_ROLE_NAME = /^[a-z_][a-z0-9_]*$/;
 
+/** Postgres silently truncates identifiers past NAMEDATALEN - 1. */
+const ROLE_NAME_MAX_LENGTH = 63;
+
 /** A role name is only ever a plain lowercase identifier. */
 export function isSafeRoleName(role: string): boolean {
-  return SAFE_ROLE_NAME.test(role);
+  return role.length <= ROLE_NAME_MAX_LENGTH && SAFE_ROLE_NAME.test(role);
 }
 
 /**

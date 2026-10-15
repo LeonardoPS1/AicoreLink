@@ -59,10 +59,29 @@ CREATE POLICY tenant_isolation ON messages
 --   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO aicorelink_admin;
 --   GRANT aicorelink_admin TO aicorelink_app;   -- la app puede escalar
 --
+-- Los GRANT de arriba solo alcanzan a las tablas que existen en ese momento: las
+-- migraciones corren como el superusuario, asi que las tablas de una migracion
+-- posterior nacerian sin privilegios para aicorelink_admin y una lectura del
+-- panel fallaria con 42501 hasta volver a correr el bloque. Los privilegios por
+-- defecto lo evitan (ojo: `FOR ROLE` tiene que ser el dueño que crea las tablas,
+-- o sea el usuario con el que se corren las migraciones):
+--
+--   ALTER DEFAULT PRIVILEGES FOR ROLE reece.schmeler67 IN SCHEMA public
+--     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO aicorelink_admin;
+--   ALTER DEFAULT PRIVILEGES FOR ROLE reece.schmeler67 IN SCHEMA public
+--     GRANT USAGE, SELECT ON SEQUENCES TO aicorelink_admin;
+--
 -- Si el rol admin ya existia heredando los grants de la app (membresia
 -- `GRANT aicorelink_app TO aicorelink_admin`), primero hay que revocarla:
 --
 --   REVOKE aicorelink_app FROM aicorelink_admin;
+--
+-- Y si el rol admin todavia tiene LOGIN (diseno viejo, cuando la app abria una
+-- segunda conexion con DATABASE_URL_ADMIN), apagarlo: nadie se conecta con el y
+-- su password es superficie de ataque al pedo.
+--
+--   ALTER ROLE aicorelink_admin NOLOGIN;
+--   ALTER ROLE aicorelink_admin PASSWORD NULL;
 --
 -- Verificacion:
 --

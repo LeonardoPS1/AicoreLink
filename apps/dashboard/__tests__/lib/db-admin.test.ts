@@ -52,6 +52,14 @@ describe("isSafeRoleName()", () => {
 
     expect(isSafeRoleName(role)).toBe(false);
   });
+
+  it("rejects a name past the Postgres identifier limit", async () => {
+    const { isSafeRoleName } = await import("@/lib/db-admin");
+
+    // NAMEDATALEN - 1: Postgres truncates silently at 63, so fail before it.
+    expect(isSafeRoleName("a".repeat(63))).toBe(true);
+    expect(isSafeRoleName("a".repeat(64))).toBe(false);
+  });
 });
 
 describe("escalateToAdminRole()", () => {

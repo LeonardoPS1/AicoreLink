@@ -1,6 +1,5 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { withTenant, asAdmin } from "@/lib/tenant-context";
 import { db } from "@/lib/db";
 
 interface N8nWebhookPayload {
