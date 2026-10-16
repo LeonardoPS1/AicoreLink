@@ -27,7 +27,11 @@ test("a client cannot reach the Aicore panel by typing the URL", async ({ page, 
 test("a client sees only the client menu", async ({ page, context }) => {
   await signInAs(context, { email: "duena@negocio.cl", role: "cliente", tenantId: null });
   await page.goto("/dashboard");
-  await expect(page.getByRole("link", { name: "Leads" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Conversaciones" })).toBeVisible();
+  // An entry whose screen does not exist yet stays visible but is not a link
+  // (the shell renders it as a disabled span), so the owner still sees the
+  // shape of the full menu.
+  await expect(page.locator("nav").getByText("Leads", { exact: false })).toBeVisible();
   await expect(page.getByRole("link", { name: "Clientes" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Fábrica" })).toHaveCount(0);
 });
