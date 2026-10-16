@@ -40,8 +40,8 @@ describe("riskLevelOf()", () => {
     expect(riskLevelOf({ ...healthy, daysSinceLastMessage: 14 })).toBe("alto");
   });
 
-  it("treats a client that never received a message as risk, not as healthy", () => {
+  it("caps a client that never received a message at medio, with or without a site", () => {
     expect(riskLevelOf({ ...healthy, daysSinceLastMessage: null, siteStatus: "draft" })).toBe("medio");
-    expect(riskLevelOf({ ...healthy, daysSinceLastMessage: null, siteStatus: null })).toBe("alto");
+    expect(riskLevelOf({ ...healthy, daysSinceLastMessage: null, siteStatus: null })).toBe("medio");
   });
 });

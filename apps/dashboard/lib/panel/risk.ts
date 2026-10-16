@@ -47,9 +47,6 @@ export function riskLevelOf(input: RiskInput): RiskLevel {
   if (daysSinceLastMessage !== null && daysSinceLastMessage >= IDLE_CRITICAL_DAYS) {
     return "alto";
   }
-  // A client with no messages and nothing published is not a quiet client, it
-  // is a client we never got running.
-  if (daysSinceLastMessage === null && siteStatus === null) return "alto";
 
   // medio: attention before it becomes a breakage.
   if (usageRatio >= QUOTA_WARNING_RATIO) return "medio";
@@ -59,6 +56,10 @@ export function riskLevelOf(input: RiskInput): RiskLevel {
   if (siteStatus !== null && UNFINISHED_SITE_STATUSES.includes(siteStatus)) {
     return "medio";
   }
+  // A client that never received a message was never got running, but nothing
+  // is broken either: the account is active, the channel is on and the quota is
+  // fine, so it stays at medio whether or not there is a site on file. The alert
+  // list agrees -- "sin actividad desde su alta" is reported as media there.
   if (daysSinceLastMessage === null) return "medio";
 
   return "bajo";
