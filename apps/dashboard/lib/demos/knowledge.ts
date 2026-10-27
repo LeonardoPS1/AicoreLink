@@ -1,5 +1,12 @@
 import { DEFAULT_WHATSAPP_CONFIG, type TenantWhatsAppConfig } from "@/lib/whatsapp/config";
 import type { DemoRubro } from "@/lib/demos/schema";
+import {
+  applyGuardrails as applyTenantGuardrails,
+  isInjection as isInjectionGuard,
+  NO_DATA_REPLY,
+} from "@/lib/knowledge/guardrails";
+
+const NO_DATA_FALLBACK = NO_DATA_REPLY;
 
 /**
  * Demo knowledge base and guardrails for the public live chat (SRD M7: "base de
@@ -160,8 +167,7 @@ export function isPriceRequest(message: string): boolean {
  * Answered with the canonical deflection, never with the model (ruling R20c).
  */
 export function isInjection(message: string): boolean {
-  const normalized = normalize(message);
-  return INJECTION_PATTERNS.some((pattern) => normalized.includes(pattern));
+  return isInjectionGuard(message);
 }
 
 const DOLLAR_AMOUNT = /\$\s?\d[\d.,]*/g;
@@ -188,19 +194,12 @@ function allowedAmounts(knowledgeBase: string): Set<string> {
  * fabricated price. When stripping leaves no content, the canonical deflection is
  * returned instead of an empty bubble.
  */
-export function applyGuardrails(reply: string, rubro: DemoRubro): string {
-  const business = DEMO_BUSINESSES[rubro];
-  const allowed = allowedAmounts(business.knowledgeBase);
-
-  const keepOrDrop = (match: string) =>
-    allowed.has(match.toLowerCase().replace(/\s/g, "")) ? match : " ";
-
-  const cleaned = reply
-    .replace(DOLLAR_AMOUNT, keepOrDrop)
-    .replace(WORD_AMOUNT, keepOrDrop)
-    .replace(/\s+([.,;:!?])/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return /[a-z0-9]/i.test(cleaned) ? cleaned : business.deflection;
+export function applyGuardrails(reply: string, rubro: DemoRubro | string): string {
+  // Consumer wrapper: resolve the demo business when a known rubro is passed,
+  // otherwise treat the second argument as a raw knowledge base string.
+  const business = (DEMO_BUSINESSES as Record<string, any>)[rubro as string];
+  if (business) {
+    return applyTenantGuardrails(reply, business.knowledgeBase, business.deflection);
+  }
+  return applyTenantGuardrails(reply, String(rubro ?? ""), NO_DATA_FALLBACK);
 }
