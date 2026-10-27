@@ -6,6 +6,12 @@ import { findOrCreateConversation } from "./identity";
 // a brand-new transaction object.
 const mirroredMessageIds = new Map<string, true>();
 
+// Test-only: clear the process-global seen set so tests using the same
+// (tenantId, chatwootMessageId) key across cases stay isolated.
+export function __resetMirroredMessageIds(): void {
+  mirroredMessageIds.clear();
+}
+
 function isUniqueConstraintError(err: any): boolean {
   if (!err) return false;
   const code = err?.code ?? err?.meta?.code ?? err?.error?.code;

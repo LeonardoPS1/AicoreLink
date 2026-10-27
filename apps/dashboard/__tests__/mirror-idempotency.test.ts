@@ -18,10 +18,11 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-import { mirrorMessage } from "@/lib/conversations/mirror";
+import { mirrorMessage, __resetMirroredMessageIds } from "@/lib/conversations/mirror";
 
 describe("mirrorMessage", () => {
   beforeEach(() => {
+    __resetMirroredMessageIds();
     state.convFindFirst.mockReset();
     state.convCreate.mockReset();
     state.convUpsert.mockReset();
