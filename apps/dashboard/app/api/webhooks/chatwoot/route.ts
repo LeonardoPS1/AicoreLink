@@ -4,7 +4,6 @@ import { resolveTenantByChatwootInbox } from "@/lib/whatsapp/resolve-tenant";
 import { conversationKey } from "@/lib/conversations/identity";
 import { mirrorMessage } from "@/lib/conversations/mirror";
 import { sendChatwootMessage } from "@/lib/chatwoot/client";
-import { db } from "@/lib/db";
 import { withTenant } from "@/lib/tenant-context";
 
 function chatwootSecret(): string | undefined {
