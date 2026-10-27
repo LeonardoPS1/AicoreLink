@@ -177,8 +177,13 @@ export function buildPrompt(...args: any[]): string {
   lines.push("- Si el cliente pide hablar con una persona o presenta un reclamo, deriva a un agente humano.");
   lines.push("- Usa únicamente tuteo (tú, te, tu).");
 
-  if (Array.isArray(ctx.forbiddenTopics) && ctx.forbiddenTopics.length > 0) {
-    lines.push(`- Temas prohibidos: ${ctx.forbiddenTopics.join(", ")}.`);
+  const resolvedForbidden = Array.isArray(ctx.forbiddenTopics)
+    ? ctx.forbiddenTopics
+    : typeof ctx.forbiddenTopics === "string"
+      ? ctx.forbiddenTopics.split(/[,;\\n]/).map((x) => x.trim()).filter(Boolean)
+      : [];
+  if (resolvedForbidden.length > 0) {
+    lines.push(`- Temas prohibidos: ${resolvedForbidden.join(", ")}.`);
   }
 
   return lines.join("\n") + "\n";

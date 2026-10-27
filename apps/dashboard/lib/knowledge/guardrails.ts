@@ -299,13 +299,8 @@ export interface KnowledgeMatch {
  * questions (the 50-question adversarial set) resolve to "no tengo ese dato".
  */
 export function findEntry(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): KnowledgeEntryLike | null {
-  // Forbidden topics never resolve to a KB answer (only when an explicit topic list is given).
-  if (
-    Array.isArray(forbiddenTopics) ||
-    (typeof forbiddenTopics === "object" && forbiddenTopics !== null)
-  ) {
-    if (isForbiddenTopic(question, forbiddenTopics)) return null;
-  }
+  // Forbidden topics never resolve to a KB answer.
+  if (isForbiddenTopic(question, forbiddenTopics)) return null;
   const entries = toEntries(knowledgeBase);
   const qTokens = tokenize(question);
   if (qTokens.length === 0 || entries.length === 0) return null;
@@ -337,32 +332,32 @@ export function hasAnswer(question: string, knowledgeBase: unknown, forbiddenTop
   return findEntry(question, knowledgeBase, forbiddenTopics) !== null;
 }
 
-export function isInKnowledgeBase(question: string, knowledgeBase: unknown): boolean {
-  return hasAnswer(question, knowledgeBase);
+export function isInKnowledgeBase(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
-export function isInBase(question: string, knowledgeBase: unknown): boolean {
-  return hasAnswer(question, knowledgeBase);
+export function isInBase(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
-export function canAnswer(question: string, knowledgeBase: unknown): boolean {
-  return hasAnswer(question, knowledgeBase);
+export function canAnswer(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
-export function canAnswerFromKb(question: string, knowledgeBase: unknown): boolean {
-  return hasAnswer(question, knowledgeBase);
+export function canAnswerFromKb(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
-export function canAnswerFromKnowledgeBase(question: string, knowledgeBase: unknown): boolean {
-  return hasAnswer(question, knowledgeBase);
+export function canAnswerFromKnowledgeBase(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
-export function isOutOfBase(question: string, knowledgeBase: unknown): boolean {
-  return !hasAnswer(question, knowledgeBase);
+export function isOutOfBase(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return !hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
-export function isOutOfKnowledgeBase(question: string, knowledgeBase: unknown): boolean {
-  return !hasAnswer(question, knowledgeBase);
+export function isOutOfKnowledgeBase(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return !hasAnswer(question, knowledgeBase, forbiddenTopics);
 }
 
 /**
@@ -377,12 +372,22 @@ export function guardrailReply(
 ): string {
   let deflection: string | undefined;
   let topics: unknown = forbiddenTopics;
+
   if (Array.isArray(deflectionOrForbidden)) {
     topics = deflectionOrForbidden;
-    deflection = undefined;
+    // Honor deflection passed as 4th arg (string) even when 3rd is topics array.
+    if (typeof forbiddenTopics === "string") {
+      deflection = forbiddenTopics;
+    } else if (forbiddenTopics && typeof forbiddenTopics === "object") {
+      const o = forbiddenTopics as Record<string, unknown>;
+      if (typeof o.deflection === "string" || typeof o.canonicalReply === "string") {
+        deflection = (o.deflection ?? o.canonicalReply) as string;
+      }
+      if (o.forbiddenTopics || o.forbidden_topics || o.topics) {
+        topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics;
+      }
+    }
   } else if (typeof deflectionOrForbidden === "string") {
-    // Could be a deflection message or a single forbidden topic; treat as deflection
-    // unless it clearly matches a forbidden-topic list passed separately.
     deflection = deflectionOrForbidden;
   } else if (deflectionOrForbidden && typeof deflectionOrForbidden === "object") {
     const obj = deflectionOrForbidden as Record<string, unknown>;
@@ -392,6 +397,12 @@ export function guardrailReply(
     if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics) {
       topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics;
     }
+  }
+
+  // Honor a 4th-arg string deflection in all cases.
+  if (typeof forbiddenTopics === "string" && !deflection) {
+    deflection = forbiddenTopics;
+    topics = Array.isArray(deflectionOrForbidden) ? deflectionOrForbidden : topics;
   }
 
   if (isForbiddenTopic(question, topics)) {

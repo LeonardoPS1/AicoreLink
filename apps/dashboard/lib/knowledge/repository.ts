@@ -7,6 +7,7 @@
  */
 
 import { withTenant, asAdmin } from "@/lib/tenant-context";
+import { normalizeForbiddenTopics } from "@/lib/knowledge/guardrails";
 
 export interface KnowledgeBaseRow {
   id: string;
@@ -216,14 +217,20 @@ export interface KnowledgeBaseConfig {
 
 function normalizeConfigInput(data: any): { tone?: string; forbiddenTopics?: string[] } {
   if (data == null) return {};
-  if (Array.isArray(data)) return { forbiddenTopics: data.map(String) };
-  if (typeof data === "string") return { tone: data };
+  if (Array.isArray(data)) return { forbiddenTopics: normalizeForbiddenTopics(data) };
+  if (typeof data === "string") {
+    if (/[;,\\n]/.test(data) || data.includes(",")) {
+      const topics = normalizeForbiddenTopics(data);
+      if (topics.length > 0) return { forbiddenTopics: topics };
+    }
+    return { tone: data };
+  }
   const out: { tone?: string; forbiddenTopics?: string[] } = {};
   if (typeof data.tone === "string") out.tone = data.tone;
-  if (typeof data.forbiddenTopic === "string") out.forbiddenTopics = [data.forbiddenTopic];
   const topics =
-    data.forbiddenTopics ?? data.forbidden_topics ?? data.topics ?? data.forbiddenTopicList;
-  if (Array.isArray(topics)) out.forbiddenTopics = topics.map(String);
+    data.forbiddenTopics ?? data.forbidden_topics ?? data.topics ?? data.forbiddenTopicList ?? data.forbiddenTopic;
+  const normalized = normalizeForbiddenTopics(topics);
+  if (normalized.length > 0) out.forbiddenTopics = normalized;
   return out;
 }
 
@@ -235,20 +242,20 @@ function getConfigModel(t: any): any {
     t?.knowledgeBaseSettings ??
     t?.knowledgeBaseSetting ??
     t?.tenantKnowledgeBase ??
-    t?.knowledgeBase ??
     null
   );
 }
 
 function normalizeConfigRow(row: any, tenantId: string): KnowledgeBaseConfig {
   const topics =
-    row?.forbiddenTopics ?? row?.forbidden_topics ?? row?.topics ?? [];
+    row?.forbiddenTopics ?? row?.forbidden_topics ?? row?.topics ?? row?.forbiddenTopicList;
+  const normalized = normalizeForbiddenTopics(topics);
   return {
     id: row?.id,
     tenantId: row?.tenantId ?? row?.tenant_id ?? tenantId,
     tone: row?.tone ?? "amable",
-    forbiddenTopics: Array.isArray(topics) ? topics.map(String) : [],
-    forbidden_topics: Array.isArray(topics) ? topics.map(String) : [],
+    forbiddenTopics: normalized,
+    forbidden_topics: normalized,
     createdAt: row?.createdAt ?? row?.created_at,
     updatedAt: row?.updatedAt ?? row?.updated_at,
   };
@@ -306,7 +313,12 @@ export async function upsertKnowledgeBaseConfig(
     if (input.tone !== undefined) payload.tone = input.tone;
     if (input.forbiddenTopics !== undefined) {
       payload.forbiddenTopics = input.forbiddenTopics;
-      payload.forbidden_topics = input.forbiddenTopics;
+    }
+    // Snake-case variant for explicit raw/mock fallbacks only.
+    const snakePayload: any = { tenant_id: tenantId };
+    if (input.tone !== undefined) snakePayload.tone = input.tone;
+    if (input.forbiddenTopics !== undefined) {
+      snakePayload.forbidden_topics = input.forbiddenTopics;
     }
 
     if (typeof model.upsert === "function") {
@@ -321,8 +333,8 @@ export async function upsertKnowledgeBaseConfig(
         try {
           const row = await model.upsert({
             where: { tenant_id: tenantId },
-            create: payload,
-            update: payload,
+            create: snakePayload,
+            update: snakePayload,
           });
           return normalizeConfigRow(row, tenantId);
         } catch {
@@ -337,6 +349,13 @@ export async function upsertKnowledgeBaseConfig(
         existing = await model.findFirst({ where: { tenantId } });
       } catch {
         existing = null;
+      }
+      if (!existing) {
+        try {
+          existing = await model.findFirst({ where: { tenant_id: tenantId } });
+        } catch {
+          existing = null;
+        }
       }
     }
     if (!existing && typeof model.findUnique === "function") {
@@ -355,7 +374,15 @@ export async function upsertKnowledgeBaseConfig(
         });
         return normalizeConfigRow(row ?? existing, tenantId);
       } catch {
-        // fall through
+        try {
+          const row = await model.update({
+            where: { id: existing.id ?? tenantId },
+            data: snakePayload,
+          });
+          return normalizeConfigRow(row ?? existing, tenantId);
+        } catch {
+          // fall through
+        }
       }
     }
 
@@ -364,7 +391,12 @@ export async function upsertKnowledgeBaseConfig(
         const row = await model.create({ data: payload });
         return normalizeConfigRow(row, tenantId);
       } catch {
-        // fall through
+        try {
+          const row = await model.create({ data: snakePayload });
+          return normalizeConfigRow(row, tenantId);
+        } catch {
+          // fall through
+        }
       }
     }
 
@@ -398,7 +430,7 @@ export async function setForbiddenTopics(
   topics: any,
   tx?: Tx
 ): Promise<KnowledgeBaseConfig | null> {
-  const list = Array.isArray(topics) ? topics.map(String) : [String(topics)];
+  const list = normalizeForbiddenTopics(topics);
   return upsertKnowledgeBaseConfig(tenantId, { forbiddenTopics: list }, tx);
 }
 
