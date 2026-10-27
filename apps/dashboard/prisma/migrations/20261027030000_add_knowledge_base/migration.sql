@@ -18,7 +18,7 @@ CREATE INDEX "knowledge_bases_tenant_id_idx" ON "knowledge_bases"("tenant_id");
 CREATE INDEX "knowledge_bases_tenant_id_category_idx" ON "knowledge_bases"("tenant_id", "category");
 
 -- AddForeignKey
-ALTER TABLE "knowledge_bases" ADD CONSTRAINT "knowledge_bases_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "knowledge_bases" ADD CONSTRAINT "knowledge_bases_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- Enable Row Level Security for knowledge base
 ALTER TABLE "knowledge_bases" ENABLE ROW LEVEL SECURITY;

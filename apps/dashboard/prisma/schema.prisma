@@ -339,7 +339,7 @@ model KnowledgeBase {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@index([tenantId, category])
