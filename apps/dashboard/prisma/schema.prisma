@@ -126,6 +126,7 @@ model CostRate {
 model Conversation {
   id          String   @id @default(uuid())
   tenantId    String   @map("tenant_id")
+  externalId  String?  @map("external_id")
   channel     String   @default("whatsapp_text")
   contactRef  String   @map("contact_ref")
   status      String   @default("abierta")
@@ -134,6 +135,7 @@ model Conversation {
 
   messages Message[]
 
+  @@unique([tenantId, externalId])
   @@map("conversations")
 }
 
