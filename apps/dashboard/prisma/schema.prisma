@@ -22,6 +22,7 @@ model Tenant {
   credentials      ChannelCredential[]
   businessProfiles BusinessProfile[]
   sites            Site[]
+  knowledgeBases   KnowledgeBase[]
 
   @@map("tenants")
 }
@@ -325,4 +326,22 @@ model PublishLog {
 
   @@index([siteId])
   @@map("publish_logs")
+}
+
+/// Structured knowledge base entries for a tenant (category, question, answer).
+/// The assistant may only cite facts present in these rows (E3 KB, RF-KB-01..05).
+model KnowledgeBase {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  category  String
+  question  String
+  answer    String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, category])
+  @@map("knowledge_bases")
 }

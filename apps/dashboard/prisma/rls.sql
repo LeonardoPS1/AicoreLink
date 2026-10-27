@@ -9,6 +9,7 @@ DROP POLICY IF EXISTS tenant_isolation ON channel_credentials;
 DROP POLICY IF EXISTS tenant_isolation ON tenant_usage;
 DROP POLICY IF EXISTS tenant_isolation ON conversations;
 DROP POLICY IF EXISTS tenant_isolation ON messages;
+DROP POLICY IF EXISTS tenant_isolation ON knowledge_bases;
 
 ALTER TABLE tenant_channels ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON tenant_channels
@@ -28,6 +29,10 @@ CREATE POLICY tenant_isolation ON conversations
 
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON messages
+  USING (tenant_id::text = current_setting('app.current_tenant', true));
+
+ALTER TABLE knowledge_bases ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON knowledge_bases
   USING (tenant_id::text = current_setting('app.current_tenant', true));
 
 -- Nota: el rol de base de datos usado por el panel ADMIN debe tener BYPASSRLS
