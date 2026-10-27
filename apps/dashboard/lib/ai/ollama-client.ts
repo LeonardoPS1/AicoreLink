@@ -1,3 +1,5 @@
+import { buildPrompt } from "@/lib/knowledge/prompt";
+
 export interface OllamaGenerateRequest {
   model: string;
   prompt: string;
@@ -101,16 +103,15 @@ export async function ollamaGenerateResponse(
     tone: string;
     knowledgeBase: string;
     maxTokens: number;
+    businessHours?: string;
   },
   baseUrl?: string
 ): Promise<{ text: string; tokensUsed: number }> {
-  const systemPrompt = `Eres un asistente virtual de un negocio.
-Tono: ${config.tone}
-Base de conocimiento/FAQ:
-${config.knowledgeBase || "No hay informacion adicional."}
-
-Responde de forma util, breve y profesional. No inventes informacion.
-Si no sabes algo, di que un humano te contactara.`;
+  const systemPrompt = buildPrompt({
+    tone: config.tone,
+    knowledgeBase: config.knowledgeBase,
+    businessHours: config.businessHours,
+  });
 
   const prompt = `Historial:
 ${history.map((h) => `${h.role}: ${h.content}`).join("\n")}
