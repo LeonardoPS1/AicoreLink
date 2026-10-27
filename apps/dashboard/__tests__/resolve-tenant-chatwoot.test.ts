@@ -45,7 +45,7 @@ describe("resolveTenantByChatwootInbox", () => {
     expect(result).toEqual({ tenantId: "tenant-1", channelId: "cred-1" });
     expect(state.findFirst).toHaveBeenCalledWith({
       where: { provider: "chatwoot", externalId: "inbox-42", enabled: true },
-      select: { tenantId: true, id: true },
+      select: { tenantId: true, id: true, enabled: true },
     });
   });
 

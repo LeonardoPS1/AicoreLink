@@ -78,6 +78,7 @@ model ChannelCredential {
   provider        String
   externalId      String?  @map("external_id")
   encryptedSecret String   @map("encrypted_secret")
+  enabled         Boolean  @default(true)
   createdAt       DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])

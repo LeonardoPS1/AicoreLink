@@ -24,13 +24,14 @@ export async function resolveTenantByChatwootInbox(
         provider: "chatwoot",
         externalId: inboxId,
         enabled: true,
-      } as any,
-      select: { tenantId: true, id: true },
+      },
+      select: { tenantId: true, id: true, enabled: true },
     });
     if (!cred) return null;
+    const loose = cred as { channelId?: string; channel?: string };
     return {
       tenantId: cred.tenantId,
-      channelId: cred.id ?? cred.channelId ?? cred.channel,
+      channelId: loose.channelId ?? loose.channel ?? cred.id,
     };
   });
 }
