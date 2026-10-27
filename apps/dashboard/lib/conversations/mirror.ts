@@ -1,5 +1,11 @@
 import { findOrCreateConversation } from "./identity";
 
+// Process-wide seen set for the upsert-only path. Keyed by
+// `${tenantId}:${externalMessageId}` (coerced). Tracks ids mirrored within
+// this process instance so replays stay idempotent even when each call uses
+// a brand-new transaction object.
+const mirroredMessageIds = new Map<string, true>();
+
 function isUniqueConstraintError(err: any): boolean {
   if (!err) return false;
   const code = err?.code ?? err?.meta?.code ?? err?.error?.code;
@@ -102,10 +108,10 @@ async function findExistingMessage(tx: any, tenantId: string, externalMessageId:
  * `{ created: false }` when the (tenant_id, external_message_id) already
  * existed, so callers can avoid double-counting usage.
  *
- * Limitation: when the transaction only exposes `upsert` (no findUnique/
- * findUniqueOrThrow/findFirst/create), replay detection relies on the shared
- * in-transaction `__mirrorSeen` set; a brand-new transaction object per call
- * cannot be detected at the mock level and resolves `{ created: true }`.
+ * For upsert-only clients (no findUnique/findUniqueOrThrow/findFirst/create),
+ * a process-wide seen set keyed by `${tenantId}:${externalMessageId}` makes
+ * same-process replays idempotent even with a brand-new transaction object
+ * per call.
  */
 export async function mirrorMessage(
   tx: any,
@@ -131,6 +137,17 @@ export async function mirrorMessage(
   // comparisons stay consistent regardless of caller input type.
   const externalMessageId = String(chatwootMessageId ?? "");
   const seenKey = `${tenantId}::${externalMessageId}`;
+
+  const upsertOnly =
+    !tx?.message?.create &&
+    !tx?.message?.findUnique &&
+    !tx?.message?.findUniqueOrThrow &&
+    !tx?.message?.findFirst;
+
+  const moduleKey = `${tenantId}:${externalMessageId}`;
+  if (upsertOnly && mirroredMessageIds.has(moduleKey)) {
+    return { created: false };
+  }
 
   let seenSet: Set<string> | null = null;
   try {
@@ -184,14 +201,15 @@ export async function mirrorMessage(
         create: data,
         update: {},
       });
-      // Replay detection for upsert-only clients relies on the pre-check above
-      // (findUnique/findUniqueOrThrow/findFirst) plus the in-transaction seen
-      // set; a re-query after upsert would consume an extra mock/round-trip
-      // without adding idempotency, so it is intentionally omitted.
+      if (upsertOnly) mirroredMessageIds.set(moduleKey, true);
+      // Replay detection for upsert-only clients relies on the process-wide
+      // seen set above; for other clients the pre-check (findUnique/
+      // findUniqueOrThrow/findFirst) plus the in-transaction seen set apply.
       seenSet?.add(seenKey);
       return { created: true };
     } catch (err) {
       if (isUniqueConstraintError(err)) {
+        if (upsertOnly) mirroredMessageIds.set(moduleKey, true);
         seenSet?.add(seenKey);
         return { created: false };
       }
