@@ -74,19 +74,20 @@ export async function getKnowledgeEntry(
   tx?: Tx
 ): Promise<KnowledgeBaseRow | null> {
   return withTx(tenantId, tx, async (t) => {
-    try {
-      const row = await t.knowledgeBase.findUnique({
-        where: { id },
-      });
-      if (row && row.tenantId !== tenantId) return null;
-      return (row ?? null) as KnowledgeBaseRow | null;
-    } catch {
-      // Fallback for mocks that key by tenantId+id
-      const found = await t.knowledgeBase.findFirst?.({
-        where: { tenantId, id },
-      });
+    const kb = t.knowledgeBase;
+    // App-layer tenant scoping: look up by (tenantId, id) so a row owned by
+    // another tenant is never returned, even without RLS.
+    if (typeof kb?.findFirst === "function") {
+      const found = await kb.findFirst({ where: { tenantId, id } });
       return (found ?? null) as KnowledgeBaseRow | null;
     }
+    // Fallback for mocks that only expose findUnique.
+    if (typeof kb?.findUnique === "function") {
+      const row = await kb.findUnique({ where: { id } });
+      if (row && row.tenantId !== tenantId) return null;
+      return (row ?? null) as KnowledgeBaseRow | null;
+    }
+    return null;
   });
 }
 
@@ -118,28 +119,30 @@ export async function updateKnowledgeEntry(
   tx?: Tx
 ): Promise<KnowledgeBaseRow | null> {
   return withTx(tenantId, tx, async (t) => {
+    const kb = t.knowledgeBase;
+    const payload = {
+      ...(data.category !== undefined ? { category: data.category } : {}),
+      ...(data.question !== undefined ? { question: data.question } : {}),
+      ...(data.answer !== undefined ? { answer: data.answer } : {}),
+    };
+
+    // App-layer tenant scoping: confirm ownership before mutating.
+    let existing: any = null;
+    if (typeof kb?.findFirst === "function") {
+      existing = await kb.findFirst({ where: { tenantId, id } });
+    } else if (typeof kb?.findUnique === "function") {
+      const row = await kb.findUnique({ where: { id } });
+      if (row && row.tenantId !== tenantId) return null;
+      existing = row;
+    }
+    if (!existing) return null;
+
+    if (typeof kb?.update !== "function") return null;
     try {
-      const row = await t.knowledgeBase.update({
-        where: { tenantId_id: { tenantId, id } },
-        data: {
-          ...(data.category !== undefined ? { category: data.category } : {}),
-          ...(data.question !== undefined ? { question: data.question } : {}),
-          ...(data.answer !== undefined ? { answer: data.answer } : {}),
-        },
-      });
-      return row as KnowledgeBaseRow;
-    } catch {
-      const existing = await t.knowledgeBase.findFirst?.({ where: { tenantId, id } });
-      if (!existing) return null;
-      const row = await t.knowledgeBase.update?.({
-        where: { id },
-        data: {
-          ...(data.category !== undefined ? { category: data.category } : {}),
-          ...(data.question !== undefined ? { question: data.question } : {}),
-          ...(data.answer !== undefined ? { answer: data.answer } : {}),
-        },
-      });
+      const row = await kb.update({ where: { id }, data: payload });
       return (row ?? null) as KnowledgeBaseRow | null;
+    } catch {
+      return null;
     }
   });
 }
@@ -150,16 +153,25 @@ export async function deleteKnowledgeEntry(
   tx?: Tx
 ): Promise<boolean> {
   return withTx(tenantId, tx, async (t) => {
+    const kb = t.knowledgeBase;
+
+    // App-layer tenant scoping: confirm ownership before deleting.
+    let existing: any = null;
+    if (typeof kb?.findFirst === "function") {
+      existing = await kb.findFirst({ where: { tenantId, id } });
+    } else if (typeof kb?.findUnique === "function") {
+      const row = await kb.findUnique({ where: { id } });
+      if (row && row.tenantId !== tenantId) return false;
+      existing = row;
+    }
+    if (!existing) return false;
+
+    if (typeof kb?.delete !== "function") return false;
     try {
-      await t.knowledgeBase.delete({ where: { tenantId_id: { tenantId, id } } });
+      await kb.delete({ where: { id } });
       return true;
     } catch {
-      try {
-        await t.knowledgeBase.delete({ where: { id } });
-        return true;
-      } catch {
-        return false;
-      }
+      return false;
     }
   });
 }

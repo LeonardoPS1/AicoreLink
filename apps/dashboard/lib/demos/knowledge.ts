@@ -3,6 +3,7 @@ import type { DemoRubro } from "@/lib/demos/schema";
 import {
   applyGuardrails as applyTenantGuardrails,
   isInjection as isInjectionGuard,
+  normalize as normalizeGuard,
   NO_DATA_REPLY,
 } from "@/lib/knowledge/guardrails";
 
@@ -121,14 +122,6 @@ export function demoConfigFor(rubro: DemoRubro): TenantWhatsAppConfig {
   };
 }
 
-/** Lowercases and strips diacritics so "cuánto" and "cuanto" behave the same. */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 /** Phrases that mean the visitor is asking for a price (ruling R20a). */
 const PRICE_PATTERNS: string[] = [
   "precio",
@@ -142,23 +135,13 @@ const PRICE_PATTERNS: string[] = [
   "cobran",
 ];
 
-/** Phrases that look like an attempt to extract the system prompt (ruling R20c). */
-const INJECTION_PATTERNS: string[] = [
-  "ignore",
-  "ignora",
-  "olvida tus instrucciones",
-  "system prompt",
-  "revela tus instrucciones",
-  "actua como",
-];
-
 /**
  * True when the message is a price request. Such messages never reach the model:
  * they are answered with the rubro's canonical deflection so the demo can neither
  * spend tokens nor invent a figure (ruling R20a).
  */
 export function isPriceRequest(message: string): boolean {
-  const normalized = normalize(message);
+  const normalized = normalizeGuard(message);
   return PRICE_PATTERNS.some((pattern) => normalized.includes(pattern));
 }
 
