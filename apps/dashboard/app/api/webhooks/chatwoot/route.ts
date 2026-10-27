@@ -31,10 +31,18 @@ export async function POST(request: NextRequest) {
     "";
 
   const secret = chatwootSecret();
-  if (secret) {
-    if (!verifyChatwootSignature(rawBody, timestamp, signature, secret)) {
+  if (!secret) {
+    console.warn(
+      "[chatwoot/webhook] CHATWOOT_WEBHOOK_SECRET not configured - signature not verified"
+    );
+    console.error(
+      "[chatwoot/webhook] CHATWOOT_WEBHOOK_SECRET not configured - signature not verified"
+    );
+    if (process.env.NODE_ENV === "production") {
       return new NextResponse("Invalid signature", { status: 401 });
     }
+  } else if (!verifyChatwootSignature(rawBody, timestamp, signature, secret)) {
+    return new NextResponse("Invalid signature", { status: 401 });
   }
 
   let payload: any;
@@ -49,6 +57,22 @@ export async function POST(request: NextRequest) {
   }
 
   if (payload?.event !== "message_created") {
+    return new NextResponse("OK", { status: 200 });
+  }
+
+  // Ignore outgoing / bot / agent / private messages to avoid reply loops.
+  const messageType =
+    payload?.message_type ?? payload?.message?.message_type;
+  const senderForFilter =
+    payload?.sender ?? payload?.contact ?? payload?.message?.sender;
+  const senderType = senderForFilter?.type;
+  const isOutgoing = typeof messageType === "string" && messageType !== "incoming";
+  const isNonContactSender =
+    typeof senderType === "string" &&
+    ["agent", "bot", "system", "administrator", "admin"].includes(
+      senderType.toLowerCase()
+    );
+  if (isOutgoing || isNonContactSender || payload?.private === true) {
     return new NextResponse("OK", { status: 200 });
   }
 
@@ -88,7 +112,6 @@ export async function POST(request: NextRequest) {
   let mirrorCalled = false;
   try {
     await withTenant(tenantId, async (tx) => {
-      mirrorCalled = true;
       const result = await mirrorMessage(tx, {
         tenantId,
         conversationKey: key,
@@ -98,8 +121,10 @@ export async function POST(request: NextRequest) {
         senderRef,
       });
       created = result?.created ?? false;
+      mirrorCalled = true;
     });
-  } catch {
+  } catch (err) {
+    console.error("[chatwoot/webhook] transactional mirror failed:", err);
     // Fall through to the direct-mirror fallback below.
   }
 
@@ -114,7 +139,8 @@ export async function POST(request: NextRequest) {
         senderRef,
       });
       created = result?.created ?? false;
-    } catch {
+    } catch (err) {
+      console.error("[chatwoot/webhook] direct mirror fallback failed:", err);
       created = false;
     }
   }
@@ -138,7 +164,8 @@ export async function POST(request: NextRequest) {
       content: String(content ?? ""),
       accessToken,
     });
-  } catch {
+  } catch (err) {
+    console.error("[chatwoot/webhook] sendChatwootMessage failed:", err);
     // Best-effort; do not fail the webhook.
   }
 
