@@ -383,9 +383,7 @@ export function guardrailReply(
       if (typeof o.deflection === "string" || typeof o.canonicalReply === "string") {
         deflection = (o.deflection ?? o.canonicalReply) as string;
       }
-      if (o.forbiddenTopics || o.forbidden_topics || o.topics || o.forbiddenTopic || o.forbiddenTopicList) {
-        topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics ?? o.forbiddenTopicList ?? o.forbiddenTopic ?? o.forbidden_topic;
-      }
+      topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics ?? o.forbiddenTopicList ?? o.forbiddenTopic ?? o.forbidden_topic ?? topics;
     }
   } else if (typeof deflectionOrForbidden === "string") {
     deflection = deflectionOrForbidden;
@@ -394,9 +392,7 @@ export function guardrailReply(
     if (typeof obj.deflection === "string" || typeof obj.canonicalReply === "string") {
       deflection = (obj.deflection ?? obj.canonicalReply) as string;
     }
-    if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopic || obj.forbiddenTopicList) {
-      topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic;
-    }
+    topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic ?? topics;
   }
 
   // Honor a 4th-arg string deflection in all cases.
