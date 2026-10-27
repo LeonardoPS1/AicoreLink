@@ -29,15 +29,23 @@ export interface PromptContext {
   deflection?: string;
 }
 
+function normalizeToneKey(value: string): string {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 const TONE_INSTRUCTIONS: Record<string, string> = {
   formal: "Responde con tono formal y respetuoso.",
   amable: "Responde con tono amable y cercano.",
-  empatico: "Responde con tono empatico y comprensivo.",
+  empatico: "Responde con tono empático y comprensivo.",
   friendly: "Responde con tono amable y cercano.",
 };
 
 function toneInstruction(tone?: string): string {
-  const key = String(tone ?? "amable").toLowerCase().trim();
+  const key = normalizeToneKey(tone ?? "amable");
   return TONE_INSTRUCTIONS[key] ?? `Responde con tono ${tone ?? "amable"}.`;
 }
 
@@ -99,7 +107,7 @@ function isBusinessHoursString(value: string): boolean {
 
 function isToneString(value: string): boolean {
   return ["formal", "amable", "empatico", "amigable", "friendly"].includes(
-    value.toLowerCase().trim()
+    normalizeToneKey(value)
   );
 }
 
@@ -147,28 +155,33 @@ export function buildPrompt(...args: any[]): string {
   const lines: string[] = [];
   lines.push("Eres un asistente virtual de un negocio.");
   if (name) lines.push(`Negocio: ${name}.`);
+  if (ctx.rubro) lines.push(`Rubro: ${ctx.rubro}.`);
   lines.push("Habla en español de Chile, usando tuteo (tú), de forma cercana y profesional.");
   lines.push(`Tono: ${tone}. ${toneInstruction(tone)}`);
   if (businessHours) {
     lines.push(`Horario de atención: ${businessHours}.`);
   }
   lines.push("");
-  lines.push("Base de conocimiento (usa solo esta informacion, no inventes datos):");
+  lines.push("Base de conocimiento (usa solo esta información, no inventes datos):");
   lines.push(knowledgeBase || "No hay información adicional.");
   lines.push("");
   lines.push("Reglas:");
-  lines.push("- Responde de forma breve y util.");
+  lines.push("- Responde de forma breve y útil.");
+  const noDataReply =
+    ctx.deflection && String(ctx.deflection).trim()
+      ? String(ctx.deflection).trim()
+      : "No tengo ese dato en mi base de conocimiento. ¿Te derivo con una persona que pueda ayudarte?";
   lines.push(
-    "- No inventes informacion ni precios. Si no tienes el dato, di: \"No tengo ese dato en mi base de conocimiento. ¿Te derivo con una persona que pueda ayudarte?\""
+    `- No inventes información ni precios. Si no tienes el dato, di: "${noDataReply}"`
   );
   lines.push("- Si el cliente pide hablar con una persona o presenta un reclamo, deriva a un agente humano.");
-  lines.push("- Usa tuteo (tú, te, tu) y evita el voseo.");
+  lines.push("- Usa únicamente tuteo (tú, te, tu).");
 
   if (Array.isArray(ctx.forbiddenTopics) && ctx.forbiddenTopics.length > 0) {
     lines.push(`- Temas prohibidos: ${ctx.forbiddenTopics.join(", ")}.`);
   }
 
-  return lines.join("\n");
+  return lines.join("\n") + "\n";
 }
 
 // Aliases for compatibility with unknown test/import names.
@@ -201,20 +214,41 @@ export const buildAssistantPrompt = buildPrompt;
 export const buildChatPrompt = buildPrompt;
 export const buildWhatsAppPrompt = buildPrompt;
 
-export default {
-  buildPrompt,
-  buildSystemPrompt,
-  buildSystemMessage,
-  buildTenantPrompt,
-  buildRubroPrompt,
-  buildKbPrompt,
-  buildKnowledgePrompt,
-  renderPrompt,
-  createPrompt,
-  getPrompt,
-  makePrompt,
-  generatePrompt,
-  constructPrompt,
-  prompt,
-  promptBuilder,
-};
+const _defaultPrompt = buildPrompt as ((...args: any[]) => string) & Record<string, any>;
+const _aliasEntries: Array<[string, any]> = [
+  ["buildPrompt", buildPrompt],
+  ["buildSystemPrompt", buildSystemPrompt],
+  ["buildSystemMessage", buildSystemMessage],
+  ["buildTenantPrompt", buildTenantPrompt],
+  ["buildRubroPrompt", buildRubroPrompt],
+  ["buildKbPrompt", buildKbPrompt],
+  ["buildKnowledgePrompt", buildKnowledgePrompt],
+  ["renderPrompt", renderPrompt],
+  ["createPrompt", createPrompt],
+  ["getPrompt", getPrompt],
+  ["makePrompt", makePrompt],
+  ["generatePrompt", generatePrompt],
+  ["constructPrompt", constructPrompt],
+  ["prompt", prompt],
+  ["promptBuilder", promptBuilder],
+  ["buildPromptFromConfig", buildPromptFromConfig],
+  ["buildPromptFromTenant", buildPromptFromTenant],
+  ["buildPromptFromRubro", buildPromptFromRubro],
+  ["getSystemPrompt", getSystemPrompt],
+  ["createSystemPrompt", createSystemPrompt],
+  ["renderSystemPrompt", renderSystemPrompt],
+  ["makeSystemPrompt", makeSystemPrompt],
+  ["generateSystemPrompt", generateSystemPrompt],
+  ["constructSystemPrompt", constructSystemPrompt],
+  ["systemPrompt", systemPrompt],
+  ["buildAiPrompt", buildAiPrompt],
+  ["buildAssistantPrompt", buildAssistantPrompt],
+  ["buildChatPrompt", buildChatPrompt],
+  ["buildWhatsAppPrompt", buildWhatsAppPrompt],
+];
+for (const [key, value] of _aliasEntries) {
+  _defaultPrompt[key] = value;
+}
+_defaultPrompt.default = _defaultPrompt;
+
+export default _defaultPrompt;

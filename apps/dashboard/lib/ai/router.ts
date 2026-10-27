@@ -89,6 +89,7 @@ export async function generateResponse(
     tone: config.tone,
     knowledgeBase: config.knowledgeBase,
     maxTokens: config.maxTokensResponse,
+    businessHours: config.businessHours,
   });
   return { ...result, usedOpenRouter: false };
 }
