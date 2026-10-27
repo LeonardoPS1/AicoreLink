@@ -383,7 +383,9 @@ export function guardrailReply(
       if (typeof o.deflection === "string" || typeof o.canonicalReply === "string") {
         deflection = (o.deflection ?? o.canonicalReply) as string;
       }
-      topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics ?? o.forbiddenTopicList ?? o.forbiddenTopic ?? o.forbidden_topic ?? topics;
+      if (o.forbiddenTopics || o.forbidden_topics || o.topics || o.forbiddenTopicList || o.forbiddenTopic || o.forbidden_topic) {
+        topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics ?? o.forbiddenTopicList ?? o.forbiddenTopic ?? o.forbidden_topic ?? topics;
+      }
     }
   } else if (typeof deflectionOrForbidden === "string") {
     deflection = deflectionOrForbidden;
@@ -392,7 +394,9 @@ export function guardrailReply(
     if (typeof obj.deflection === "string" || typeof obj.canonicalReply === "string") {
       deflection = (obj.deflection ?? obj.canonicalReply) as string;
     }
-    topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic ?? topics;
+    if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopicList || obj.forbiddenTopic || obj.forbidden_topic) {
+      topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic ?? topics;
+    }
   }
 
   // Honor a 4th-arg string deflection in all cases.
