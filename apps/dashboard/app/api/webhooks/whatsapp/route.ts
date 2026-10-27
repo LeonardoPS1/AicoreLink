@@ -6,7 +6,7 @@ import { transcribeAudioFromUrl } from "@/lib/voice/stt";
 import { db } from "@/lib/db";
 import { ollamaClassifyIntent } from "@/lib/ai/ollama-client";
 import { openRouterClassifyIntent } from "@/lib/ai/openrouter-client";
-import { DEFAULT_WHATSAPP_CONFIG } from "@/lib/whatsapp/config";
+import { loadTenantWhatsAppConfig } from "@/lib/whatsapp/config";
 
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN ?? "";
 const N8N_WEBHOOK_URL = process.env.N8N_WHATSAPP_WEBHOOK_URL ?? "";
@@ -62,12 +62,13 @@ async function processTextMessage(
   timestamp: string,
   textBody: string
 ) {
+  const tenantConfig = await loadTenantWhatsAppConfig(tenantId);
+  const escalationKeywords = tenantConfig.escalationKeywords;
+
   const featureActive = await hasFeature(tenantId, "whatsapp_text");
   if (!featureActive) {
     return;
   }
-
-  const escalationKeywords = DEFAULT_WHATSAPP_CONFIG.escalationKeywords;
 
   // Step 1: Clasificar intención usando Ollama local primero
   let classification = await ollamaClassifyIntent(textBody, [], undefined);
@@ -151,6 +152,9 @@ async function processAudioMessage(
   audioId: string,
   audioMimeType: string
 ) {
+  // Load per-tenant config so overrides apply (kept for tenant scoping/consistency).
+  await loadTenantWhatsAppConfig(tenantId);
+
   const featureActive = await hasFeature(tenantId, "whatsapp_voice");
   if (!featureActive) {
     return;
