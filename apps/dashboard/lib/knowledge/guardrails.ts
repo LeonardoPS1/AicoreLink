@@ -66,7 +66,7 @@ export function normalizeForbiddenTopics(input: unknown): string[] {
   if (typeof input === "object") {
     const obj = input as Record<string, unknown>;
     const topics =
-      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList;
+      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic;
     if (Array.isArray(topics)) return topics.map((x) => String(x).trim()).filter(Boolean);
     if (typeof topics === "string") return topics.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
   }
@@ -84,7 +84,7 @@ export function isForbiddenTopic(message: unknown, forbiddenTopics?: unknown): b
     const obj = message as Record<string, unknown>;
     const msg = (obj.message ?? obj.question ?? obj.text ?? obj.input) as unknown;
     const topics = normalizeForbiddenTopics(
-      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList
+      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic
     );
     if (topics.length === 0) return false;
     const normalizedMsg = normalize(String(msg ?? ""));
@@ -383,8 +383,8 @@ export function guardrailReply(
       if (typeof o.deflection === "string" || typeof o.canonicalReply === "string") {
         deflection = (o.deflection ?? o.canonicalReply) as string;
       }
-      if (o.forbiddenTopics || o.forbidden_topics || o.topics) {
-        topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics;
+      if (o.forbiddenTopics || o.forbidden_topics || o.topics || o.forbiddenTopic || o.forbiddenTopicList) {
+        topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics ?? o.forbiddenTopicList ?? o.forbiddenTopic ?? o.forbidden_topic;
       }
     }
   } else if (typeof deflectionOrForbidden === "string") {
@@ -394,8 +394,8 @@ export function guardrailReply(
     if (typeof obj.deflection === "string" || typeof obj.canonicalReply === "string") {
       deflection = (obj.deflection ?? obj.canonicalReply) as string;
     }
-    if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics) {
-      topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics;
+    if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopic || obj.forbiddenTopicList) {
+      topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic;
     }
   }
 

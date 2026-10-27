@@ -7,6 +7,7 @@
  */
 
 import { knowledgeBaseToString } from "@/lib/knowledge/repository";
+import { normalizeForbiddenTopics } from "@/lib/knowledge/guardrails";
 
 export interface PromptContext {
   tone?: string;
@@ -177,11 +178,7 @@ export function buildPrompt(...args: any[]): string {
   lines.push("- Si el cliente pide hablar con una persona o presenta un reclamo, deriva a un agente humano.");
   lines.push("- Usa únicamente tuteo (tú, te, tu).");
 
-  const resolvedForbidden = Array.isArray(ctx.forbiddenTopics)
-    ? ctx.forbiddenTopics
-    : typeof ctx.forbiddenTopics === "string"
-      ? ctx.forbiddenTopics.split(/[,;\\n]/).map((x) => x.trim()).filter(Boolean)
-      : [];
+  const resolvedForbidden = normalizeForbiddenTopics(ctx);
   if (resolvedForbidden.length > 0) {
     lines.push(`- Temas prohibidos: ${resolvedForbidden.join(", ")}.`);
   }
