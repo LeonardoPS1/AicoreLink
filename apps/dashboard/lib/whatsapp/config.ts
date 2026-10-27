@@ -42,6 +42,29 @@ export function mergeWhatsAppConfig(
   } as TenantWhatsAppConfig;
 }
 
+/**
+ * Placeholder for E3.2: load a tenant's WhatsApp config (including KB) from
+ * persistence. Until E3.2 lands, returns the defaults merged with any stored
+ * channel config when it can be read; never throws.
+ */
+export async function loadTenantWhatsAppConfig(
+  tenantId: string
+): Promise<TenantWhatsAppConfig> {
+  if (!tenantId) return DEFAULT_WHATSAPP_CONFIG;
+  try {
+    const { db } = await import("@/lib/db");
+    const channel = await (db as any)?.tenantChannel?.findUnique?.({
+      where: { tenantId_channel: { tenantId, channel: "whatsapp_text" } },
+    });
+    const stored = (channel?.config ?? null) as Record<string, unknown> | null;
+    return mergeWhatsAppConfig(stored);
+  } catch {
+    return DEFAULT_WHATSAPP_CONFIG;
+  }
+}
+
+export const getTenantWhatsAppConfig = loadTenantWhatsAppConfig;
+
 export function isWithinBusinessHours(businessHours: string): boolean {
   if (!businessHours || !businessHours.includes("-")) return true;
   const now = new Date();

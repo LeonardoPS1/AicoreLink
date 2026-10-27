@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { verifyN8nWebhookSignature } from "@/lib/n8n/signature";
 
 interface N8nWebhookPayload {
   tenantId: string;
@@ -13,40 +14,39 @@ interface N8nWebhookPayload {
   intent?: string;
   confidence?: number;
   escalated?: boolean;
-}
-
-/**
- * Verifica la firma del webhook N8N usando el secreto compartido.
- * Configura N8N_WEBHOOK_SECRET en las variables de entorno.
- * Si no está configurado, emite warning pero sigue procesando (modo desarrollo).
- */
-function verifyN8nWebhookSignature(req: NextRequest, secret?: string): boolean {
-  if (!secret) {
-    console.warn(
-      "[n8n/webhook] N8N_WEBHOOK_SECRET no configurado - firma no verificada"
-    );
-    return true; // En desarrollo, permitir pasar; en producción configurar secreto
-  }
-
-  const signature = req.headers.get("x-n8n-signature") ?? "";
-  const body = req.body || "";
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(typeof body === "string" ? body : JSON.stringify(body))
-    .digest("hex");
-
-  // El signature de N8N puede venir con prefijo "sha256="
-  const cleanSignature = signature.replace("sha256=", "");
-
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature),
-    Buffer.from(cleanSignature)
-  );
+  audioId?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const payload: N8nWebhookPayload = await request.json();
+    // Read the raw body first so the signature can be verified over the exact
+    // bytes that were sent (App Router exposes the body via request.text()).
+    const rawBody = await request.text();
+
+    const signature = request.headers.get("x-n8n-signature") ?? "";
+
+    // Verify webhook signature if secret is configured
+    const n8nWebhookSecret = process.env.N8N_WEBHOOK_SECRET;
+    if (n8nWebhookSecret) {
+      if (!verifyN8nWebhookSignature(rawBody, signature, n8nWebhookSecret)) {
+        console.warn("[n8n/webhook] Invalid webhook signature");
+        return new NextResponse("Invalid signature", { status: 401 });
+      }
+    } else {
+      console.warn(
+        "[n8n/webhook] N8N_WEBHOOK_SECRET no configurado - firma no verificada"
+      );
+      if (process.env.NODE_ENV === "production") {
+        return new NextResponse("Invalid signature", { status: 401 });
+      }
+    }
+
+    let payload: N8nWebhookPayload;
+    try {
+      payload = JSON.parse(rawBody) as N8nWebhookPayload;
+    } catch {
+      return NextResponse.json({ error: "Payload invalido" }, { status: 400 });
+    }
 
     // Validate required fields
     if (!payload.tenantId || !payload.contactRef || !payload.messageId) {
@@ -54,13 +54,6 @@ export async function POST(request: NextRequest) {
         { error: "Payload inválido: faltan campos requeridos" },
         { status: 400 }
       );
-    }
-
-    // Verify webhook signature if secret is configured
-    const n8nWebhookSecret = process.env.N8N_WEBHOOK_SECRET;
-    if (n8nWebhookSecret && !verifyN8nWebhookSignature(request, n8nWebhookSecret)) {
-      console.warn("[n8n/webhook] Invalid webhook signature");
-      return new NextResponse("Invalid signature", { status: 401 });
     }
 
     // Persistir la clasificación IA en la conversación
@@ -90,6 +83,7 @@ export async function POST(request: NextRequest) {
         aiGenerated: true,
         tokensUsed: 0,
         mediaType: payload.mediaType,
+        ...(payload.audioId && { audioUrl: payload.audioId }),
       },
     });
 
@@ -120,3 +114,6 @@ export async function GET(request: NextRequest) {
     methods: ["POST"],
   });
 }
+
+// Re-export for callers/tests that import from the route module.
+export { verifyN8nWebhookSignature } from "@/lib/n8n/signature";
