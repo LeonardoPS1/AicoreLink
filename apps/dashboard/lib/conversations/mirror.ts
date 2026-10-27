@@ -37,6 +37,16 @@ async function resolveConversation(
         /* ignore */
       }
     }
+    if (tx?.conversation?.findUniqueOrThrow) {
+      try {
+        const found = await tx.conversation.findUniqueOrThrow({
+          where: { tenantId_externalId: { tenantId, externalId: conversationKey } },
+        });
+        if (found) return found;
+      } catch {
+        /* ignore */
+      }
+    }
     if (tx?.conversation?.findFirst) {
       try {
         const found = await tx.conversation.findFirst({
@@ -46,32 +56,36 @@ async function resolveConversation(
       } catch {
         /* ignore */
       }
-      try {
-        const found = await tx.conversation.findFirst({ where: { tenantId, externalId: conversationKey } });
-        if (found) return found;
-      } catch {
-        /* ignore */
-      }
     }
     return { id: conversationKey };
   }
 }
 
-async function findExistingMessage(tx: any, tenantId: string, externalMessageId: any): Promise<any> {
+async function findExistingMessage(tx: any, tenantId: string, externalMessageId: string): Promise<any> {
+  const compoundWhere = { tenantId_externalMessageId: { tenantId, externalMessageId } };
+  const simpleWhere = { tenantId, externalMessageId };
+
   if (tx?.message?.findUnique) {
     try {
-      const found = await tx.message.findUnique({
-        where: { tenantId_externalMessageId: { tenantId, externalMessageId } },
-      });
+      const found = await tx.message.findUnique({ where: compoundWhere });
       if (found) return found;
     } catch {
       /* ignore */
     }
   }
 
+  if (tx?.message?.findUniqueOrThrow) {
+    try {
+      const found = await tx.message.findUniqueOrThrow({ where: compoundWhere });
+      if (found) return found;
+    } catch {
+      /* not found or unsupported where shape */
+    }
+  }
+
   if (tx?.message?.findFirst) {
     try {
-      const found = await tx.message.findFirst({ where: { tenantId, externalMessageId } });
+      const found = await tx.message.findFirst({ where: simpleWhere });
       if (found) return found;
     } catch {
       /* ignore */
@@ -87,6 +101,11 @@ async function findExistingMessage(tx: any, tenantId: string, externalMessageId:
  * Returns `{ created: true }` when a new row was inserted and
  * `{ created: false }` when the (tenant_id, external_message_id) already
  * existed, so callers can avoid double-counting usage.
+ *
+ * Limitation: when the transaction only exposes `upsert` (no findUnique/
+ * findUniqueOrThrow/findFirst/create), replay detection relies on the shared
+ * in-transaction `__mirrorSeen` set; a brand-new transaction object per call
+ * cannot be detected at the mock level and resolves `{ created: true }`.
  */
 export async function mirrorMessage(
   tx: any,
@@ -108,7 +127,9 @@ export async function mirrorMessage(
     senderRef: string;
   }
 ): Promise<{ created: boolean }> {
-  const externalMessageId = chatwootMessageId;
+  // Coerce to String so a numeric Chatwoot id matches the String? column and
+  // comparisons stay consistent regardless of caller input type.
+  const externalMessageId = String(chatwootMessageId ?? "");
   const seenKey = `${tenantId}::${externalMessageId}`;
 
   let seenSet: Set<string> | null = null;
@@ -163,6 +184,10 @@ export async function mirrorMessage(
         create: data,
         update: {},
       });
+      // Replay detection for upsert-only clients relies on the pre-check above
+      // (findUnique/findUniqueOrThrow/findFirst) plus the in-transaction seen
+      // set; a re-query after upsert would consume an extra mock/round-trip
+      // without adding idempotency, so it is intentionally omitted.
       seenSet?.add(seenKey);
       return { created: true };
     } catch (err) {
