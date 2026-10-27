@@ -140,20 +140,22 @@ model Conversation {
 }
 
 model Message {
-  id             String   @id @default(uuid())
-  conversationId String   @map("conversation_id")
-  tenantId       String   @map("tenant_id")
-  direction      String
-  content        String
-  aiGenerated    Boolean  @default(false) @map("ai_generated")
-  tokensUsed     Int?     @map("tokens_used")
-  createdAt      DateTime @default(now()) @map("created_at")
-  mediaType      String?  @default("text") @map("media_type")
-  audioUrl       String?  @map("audio_url")
-  transcript     String?
+  id                 String   @id @default(uuid())
+  conversationId      String   @map("conversation_id")
+  tenantId           String   @map("tenant_id")
+  direction          String
+  content            String
+  aiGenerated        Boolean  @default(false) @map("ai_generated")
+  tokensUsed         Int?     @map("tokens_used")
+  createdAt          DateTime @default(now()) @map("created_at")
+  mediaType          String?  @default("text") @map("media_type")
+  audioUrl           String?  @map("audio_url")
+  transcript         String?
+  externalMessageId  String?  @map("external_message_id")
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
 
+  @@unique([tenantId, externalMessageId])
   @@map("messages")
 }
 
