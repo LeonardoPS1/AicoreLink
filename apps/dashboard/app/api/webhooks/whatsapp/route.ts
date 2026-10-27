@@ -152,9 +152,6 @@ async function processAudioMessage(
   audioId: string,
   audioMimeType: string
 ) {
-  // Load per-tenant config so overrides apply (kept for tenant scoping/consistency).
-  await loadTenantWhatsAppConfig(tenantId);
-
   const featureActive = await hasFeature(tenantId, "whatsapp_voice");
   if (!featureActive) {
     return;

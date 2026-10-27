@@ -1,3 +1,6 @@
+import type { Prisma } from "@prisma/client";
+import { withTenant } from "@/lib/tenant-context";
+
 export interface TenantWhatsAppConfig {
   // General
   tone: "formal" | "amable" | "empatico";
@@ -48,14 +51,23 @@ export function mergeWhatsAppConfig(
  * channel config when it can be read; never throws.
  */
 export async function loadTenantWhatsAppConfig(
-  tenantId: string
+  tenantId: string,
+  tx?: Prisma.TransactionClient
 ): Promise<TenantWhatsAppConfig> {
   if (!tenantId) return DEFAULT_WHATSAPP_CONFIG;
   try {
-    const { db } = await import("@/lib/db");
-    const channel = await (db as any)?.tenantChannel?.findUnique?.({
-      where: { tenantId_channel: { tenantId, channel: "whatsapp_text" } },
-    });
+    let channel: { config?: unknown } | null = null;
+    if (tx) {
+      channel = await (tx as any)?.tenantChannel?.findUnique?.({
+        where: { tenantId_channel: { tenantId, channel: "whatsapp_text" } },
+      });
+    } else {
+      channel = await withTenant(tenantId, async (scopedTx) => {
+        return (scopedTx as any)?.tenantChannel?.findUnique?.({
+          where: { tenantId_channel: { tenantId, channel: "whatsapp_text" } },
+        });
+      });
+    }
     const stored = (channel?.config ?? null) as Record<string, unknown> | null;
     return mergeWhatsAppConfig(stored);
   } catch {
