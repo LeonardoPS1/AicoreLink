@@ -389,6 +389,9 @@ export const getForbiddenTopicList = getForbiddenTopics;
 export const listForbiddenTopics = getForbiddenTopics;
 export const fetchForbiddenTopics = getForbiddenTopics;
 export const loadForbiddenTopics = getForbiddenTopics;
+export const forbiddenTopics = getForbiddenTopics;
+export const forbiddenTopicsForTenant = getForbiddenTopics;
+export const getTenantForbiddenTopics = getForbiddenTopics;
 
 export async function setForbiddenTopics(
   tenantId: string,
@@ -402,6 +405,10 @@ export async function setForbiddenTopics(
 export const updateForbiddenTopics = setForbiddenTopics;
 export const saveForbiddenTopics = setForbiddenTopics;
 export const configureForbiddenTopics = setForbiddenTopics;
+export const addForbiddenTopic = setForbiddenTopics;
+export const removeForbiddenTopic = setForbiddenTopics;
+export const updateForbiddenTopic = setForbiddenTopics;
+export const setTenantForbiddenTopics = setForbiddenTopics;
 
 export async function getTone(tenantId: string, tx?: Tx): Promise<string> {
   const cfg = await getKnowledgeBaseConfig(tenantId, tx);
@@ -422,6 +429,8 @@ export async function setTone(
 export const updateTone = setTone;
 export const saveTone = setTone;
 export const setBrandTone = setTone;
+export const setTenantTone = setTone;
+export const updateBrandTone = setTone;
 
 // Cross-tenant (admin) helpers
 export async function listAllKnowledgeEntries(tx?: Tx): Promise<KnowledgeBaseRow[]> {

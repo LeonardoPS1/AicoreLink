@@ -102,6 +102,24 @@ export const forbiddenTopic = isForbiddenTopic;
 export const isForbiddenTopics = isForbiddenTopic;
 export const containsForbiddenTopic = isForbiddenTopic;
 export const hasForbiddenTopic = isForbiddenTopic;
+export const isForbiddenMessage = isForbiddenTopic;
+export const checkForbiddenTopic = isForbiddenTopic;
+export const forbiddenGuard = isForbiddenTopic;
+
+export function applyForbiddenGuardrails(
+  reply: string,
+  forbiddenTopics?: unknown,
+  deflection?: string
+): string {
+  // If the reply itself references a forbidden topic, deflect.
+  if (isForbiddenTopic(reply, forbiddenTopics)) {
+    return deflection ?? NO_DATA_REPLY;
+  }
+  return String(reply ?? "");
+}
+
+export const applyForbiddenTopicGuardrails = applyForbiddenGuardrails;
+export const applyForbiddenTopicGuardrail = applyForbiddenGuardrails;
 
 // ---------------------------------------------------------------------------
 // Canonical replies
