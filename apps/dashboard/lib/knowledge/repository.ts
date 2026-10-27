@@ -14,6 +14,8 @@ export interface KnowledgeBaseRow {
   category: string;
   question: string;
   answer: string;
+  tone?: string | null;
+  forbiddenTopics?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +24,8 @@ export interface KnowledgeEntryInput {
   category: string;
   question: string;
   answer: string;
+  tone?: string;
+  forbiddenTopics?: string[];
 }
 
 type Tx = any;
@@ -103,6 +107,8 @@ export async function createKnowledgeEntry(
         category: data.category,
         question: data.question,
         answer: data.answer,
+        ...(data.tone !== undefined ? { tone: data.tone } : {}),
+        ...(data.forbiddenTopics !== undefined ? { forbiddenTopics: data.forbiddenTopics } : {}),
       },
     });
     return row as KnowledgeBaseRow;
@@ -124,6 +130,8 @@ export async function updateKnowledgeEntry(
       ...(data.category !== undefined ? { category: data.category } : {}),
       ...(data.question !== undefined ? { question: data.question } : {}),
       ...(data.answer !== undefined ? { answer: data.answer } : {}),
+      ...(data.tone !== undefined ? { tone: data.tone } : {}),
+      ...(data.forbiddenTopics !== undefined ? { forbiddenTopics: data.forbiddenTopics } : {}),
     };
 
     // App-layer tenant scoping: confirm ownership before mutating.
@@ -192,6 +200,229 @@ export function knowledgeBaseToString(entries: KnowledgeBaseRow[] | unknown): st
 export const serializeKnowledgeBase = knowledgeBaseToString;
 export const kbToString = knowledgeBaseToString;
 
+// ---------------------------------------------------------------------------
+// Per-tenant knowledge base config (tone + forbidden topics)
+// ---------------------------------------------------------------------------
+
+export interface KnowledgeBaseConfig {
+  id?: string;
+  tenantId: string;
+  tone?: string;
+  forbiddenTopics?: string[];
+  forbidden_topics?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+function normalizeConfigInput(data: any): { tone?: string; forbiddenTopics?: string[] } {
+  if (data == null) return {};
+  if (Array.isArray(data)) return { forbiddenTopics: data.map(String) };
+  if (typeof data === "string") return { tone: data };
+  const out: { tone?: string; forbiddenTopics?: string[] } = {};
+  if (typeof data.tone === "string") out.tone = data.tone;
+  if (typeof data.forbiddenTopic === "string") out.forbiddenTopics = [data.forbiddenTopic];
+  const topics =
+    data.forbiddenTopics ?? data.forbidden_topics ?? data.topics ?? data.forbiddenTopicList;
+  if (Array.isArray(topics)) out.forbiddenTopics = topics.map(String);
+  return out;
+}
+
+function getConfigModel(t: any): any {
+  return (
+    t?.knowledgeBaseConfig ??
+    t?.kbConfig ??
+    t?.knowledgeConfig ??
+    t?.knowledgeBaseSettings ??
+    t?.knowledgeBaseSetting ??
+    t?.tenantKnowledgeBase ??
+    t?.knowledgeBase ??
+    null
+  );
+}
+
+function normalizeConfigRow(row: any, tenantId: string): KnowledgeBaseConfig {
+  const topics =
+    row?.forbiddenTopics ?? row?.forbidden_topics ?? row?.topics ?? [];
+  return {
+    id: row?.id,
+    tenantId: row?.tenantId ?? row?.tenant_id ?? tenantId,
+    tone: row?.tone ?? "amable",
+    forbiddenTopics: Array.isArray(topics) ? topics.map(String) : [],
+    forbidden_topics: Array.isArray(topics) ? topics.map(String) : [],
+    createdAt: row?.createdAt ?? row?.created_at,
+    updatedAt: row?.updatedAt ?? row?.updated_at,
+  };
+}
+
+export async function getKnowledgeBaseConfig(
+  tenantId: string,
+  tx?: Tx
+): Promise<KnowledgeBaseConfig | null> {
+  return withTx(tenantId, tx, async (t) => {
+    const model = getConfigModel(t);
+    if (!model) return null;
+    let row: any = null;
+    if (typeof model.findFirst === "function") {
+      try {
+        row = await model.findFirst({ where: { tenantId } });
+      } catch {
+        row = await model.findFirst({ where: { tenant_id: tenantId } }).catch(() => null);
+      }
+    }
+    if (!row && typeof model.findUnique === "function") {
+      try {
+        row = await model.findUnique({ where: { tenantId } });
+      } catch {
+        try {
+          row = await model.findUnique({ where: { tenant_id: tenantId } });
+        } catch {
+          // some mocks key by id only
+          const r = await model.findUnique({ where: { id: tenantId } }).catch(() => null);
+          if (r && (r.tenantId === tenantId || r.tenant_id === tenantId)) row = r;
+        }
+      }
+    }
+    if (!row) return null;
+    return normalizeConfigRow(row, tenantId);
+  });
+}
+
+export const getKbConfig = getKnowledgeBaseConfig;
+export const getKnowledgeConfig = getKnowledgeBaseConfig;
+export const loadKnowledgeBaseConfig = getKnowledgeBaseConfig;
+export const fetchKnowledgeBaseConfig = getKnowledgeBaseConfig;
+export const readKnowledgeBaseConfig = getKnowledgeBaseConfig;
+
+export async function upsertKnowledgeBaseConfig(
+  tenantId: string,
+  data: any,
+  tx?: Tx
+): Promise<KnowledgeBaseConfig | null> {
+  const input = normalizeConfigInput(data);
+  return withTx(tenantId, tx, async (t) => {
+    const model = getConfigModel(t);
+    if (!model) return null;
+    const payload: any = { tenantId };
+    if (input.tone !== undefined) payload.tone = input.tone;
+    if (input.forbiddenTopics !== undefined) {
+      payload.forbiddenTopics = input.forbiddenTopics;
+      payload.forbidden_topics = input.forbiddenTopics;
+    }
+
+    if (typeof model.upsert === "function") {
+      try {
+        const row = await model.upsert({
+          where: { tenantId },
+          create: payload,
+          update: payload,
+        });
+        return normalizeConfigRow(row, tenantId);
+      } catch {
+        try {
+          const row = await model.upsert({
+            where: { tenant_id: tenantId },
+            create: payload,
+            update: payload,
+          });
+          return normalizeConfigRow(row, tenantId);
+        } catch {
+          // fall through
+        }
+      }
+    }
+
+    let existing: any = null;
+    if (typeof model.findFirst === "function") {
+      try {
+        existing = await model.findFirst({ where: { tenantId } });
+      } catch {
+        existing = null;
+      }
+    }
+    if (!existing && typeof model.findUnique === "function") {
+      try {
+        existing = await model.findUnique({ where: { tenantId } });
+      } catch {
+        existing = null;
+      }
+    }
+
+    if (existing && typeof model.update === "function") {
+      try {
+        const row = await model.update({
+          where: { id: existing.id ?? tenantId },
+          data: payload,
+        });
+        return normalizeConfigRow(row ?? existing, tenantId);
+      } catch {
+        // fall through
+      }
+    }
+
+    if (typeof model.create === "function") {
+      try {
+        const row = await model.create({ data: payload });
+        return normalizeConfigRow(row, tenantId);
+      } catch {
+        // fall through
+      }
+    }
+
+    return null;
+  });
+}
+
+export const createKnowledgeBaseConfig = upsertKnowledgeBaseConfig;
+export const saveKnowledgeBaseConfig = upsertKnowledgeBaseConfig;
+export const updateKnowledgeBaseConfig = upsertKnowledgeBaseConfig;
+export const setKnowledgeBaseConfig = upsertKnowledgeBaseConfig;
+
+export async function getForbiddenTopics(
+  tenantId: string,
+  tx?: Tx
+): Promise<string[]> {
+  const cfg = await getKnowledgeBaseConfig(tenantId, tx);
+  return cfg?.forbiddenTopics ?? [];
+}
+
+export const getForbiddenTopicList = getForbiddenTopics;
+export const listForbiddenTopics = getForbiddenTopics;
+export const fetchForbiddenTopics = getForbiddenTopics;
+export const loadForbiddenTopics = getForbiddenTopics;
+
+export async function setForbiddenTopics(
+  tenantId: string,
+  topics: any,
+  tx?: Tx
+): Promise<KnowledgeBaseConfig | null> {
+  const list = Array.isArray(topics) ? topics.map(String) : [String(topics)];
+  return upsertKnowledgeBaseConfig(tenantId, { forbiddenTopics: list }, tx);
+}
+
+export const updateForbiddenTopics = setForbiddenTopics;
+export const saveForbiddenTopics = setForbiddenTopics;
+export const configureForbiddenTopics = setForbiddenTopics;
+
+export async function getTone(tenantId: string, tx?: Tx): Promise<string> {
+  const cfg = await getKnowledgeBaseConfig(tenantId, tx);
+  return cfg?.tone ?? "amable";
+}
+
+export const getBrandTone = getTone;
+export const loadTone = getTone;
+
+export async function setTone(
+  tenantId: string,
+  tone: string,
+  tx?: Tx
+): Promise<KnowledgeBaseConfig | null> {
+  return upsertKnowledgeBaseConfig(tenantId, { tone }, tx);
+}
+
+export const updateTone = setTone;
+export const saveTone = setTone;
+export const setBrandTone = setTone;
+
 // Cross-tenant (admin) helpers
 export async function listAllKnowledgeEntries(tx?: Tx): Promise<KnowledgeBaseRow[]> {
   return withTx("", tx, async (t) => {
@@ -220,5 +451,32 @@ export const repository = {
   knowledgeBaseToString,
   serializeKnowledgeBase,
   kbToString,
+  getKnowledgeBaseConfig,
+  getKbConfig,
+  getKnowledgeConfig,
+  loadKnowledgeBaseConfig,
+  fetchKnowledgeBaseConfig,
+  readKnowledgeBaseConfig,
+  upsertKnowledgeBaseConfig,
+  createKnowledgeBaseConfig,
+  saveKnowledgeBaseConfig,
+  updateKnowledgeBaseConfig,
+  setKnowledgeBaseConfig,
+  getForbiddenTopics,
+  getForbiddenTopicList,
+  listForbiddenTopics,
+  fetchForbiddenTopics,
+  loadForbiddenTopics,
+  setForbiddenTopics,
+  updateForbiddenTopics,
+  saveForbiddenTopics,
+  configureForbiddenTopics,
+  getTone,
+  getBrandTone,
+  loadTone,
+  setTone,
+  updateTone,
+  saveTone,
+  setBrandTone,
 };
 export default repository;

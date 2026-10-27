@@ -23,6 +23,7 @@ model Tenant {
   businessProfiles BusinessProfile[]
   sites            Site[]
   knowledgeBases   KnowledgeBase[]
+  knowledgeBaseConfig KnowledgeBaseConfig?
 
   @@map("tenants")
 }
@@ -331,17 +332,33 @@ model PublishLog {
 /// Structured knowledge base entries for a tenant (category, question, answer).
 /// The assistant may only cite facts present in these rows (E3 KB, RF-KB-01..05).
 model KnowledgeBase {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  category  String
-  question  String
-  answer    String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  category        String
+  question        String
+  answer          String   @db.Text
+  tone            String?  @map("tone")
+  forbiddenTopics String[] @default([]) @map("forbidden_topics")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@index([tenantId, category])
   @@map("knowledge_bases")
+}
+
+/// Per-tenant configuration for the knowledge base assistant (tone + forbidden topics).
+model KnowledgeBaseConfig {
+  id              String   @id @default(uuid())
+  tenantId        String   @unique @map("tenant_id")
+  tone            String   @default("amable")
+  forbiddenTopics String[] @default([]) @map("forbidden_topics")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_base_configs")
 }

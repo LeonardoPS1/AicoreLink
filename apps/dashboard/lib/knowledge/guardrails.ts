@@ -56,6 +56,54 @@ export function isInjection(message: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Forbidden topics (configurable per tenant)
+// ---------------------------------------------------------------------------
+
+export function normalizeForbiddenTopics(input: unknown): string[] {
+  if (input == null) return [];
+  if (Array.isArray(input)) return input.map((x) => String(x).trim()).filter(Boolean);
+  if (typeof input === "string") return input.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+  if (typeof input === "object") {
+    const obj = input as Record<string, unknown>;
+    const topics =
+      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList;
+    if (Array.isArray(topics)) return topics.map((x) => String(x).trim()).filter(Boolean);
+    if (typeof topics === "string") return topics.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+export function isForbiddenTopic(message: unknown, forbiddenTopics?: unknown): boolean {
+  // Context-object form: isForbiddenTopic({ message, forbiddenTopics })
+  if (
+    forbiddenTopics === undefined &&
+    typeof message === "object" &&
+    message !== null &&
+    !Array.isArray(message)
+  ) {
+    const obj = message as Record<string, unknown>;
+    const msg = (obj.message ?? obj.question ?? obj.text ?? obj.input) as unknown;
+    const topics = normalizeForbiddenTopics(
+      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList
+    );
+    if (topics.length === 0) return false;
+    const normalizedMsg = normalize(String(msg ?? ""));
+    return topics.some((topic) => normalizedMsg.includes(normalize(topic)));
+  }
+
+  const topics = normalizeForbiddenTopics(forbiddenTopics);
+  if (topics.length === 0) return false;
+  const normalizedMsg = normalize(String(message ?? ""));
+  return topics.some((topic) => normalizedMsg.includes(normalize(topic)));
+}
+
+export const isForbidden = isForbiddenTopic;
+export const forbiddenTopic = isForbiddenTopic;
+export const isForbiddenTopics = isForbiddenTopic;
+export const containsForbiddenTopic = isForbiddenTopic;
+export const hasForbiddenTopic = isForbiddenTopic;
+
+// ---------------------------------------------------------------------------
 // Canonical replies
 // ---------------------------------------------------------------------------
 
@@ -232,7 +280,14 @@ export interface KnowledgeMatch {
  * is out of base. Uses token overlap with a small threshold so unrelated
  * questions (the 50-question adversarial set) resolve to "no tengo ese dato".
  */
-export function findEntry(question: string, knowledgeBase: unknown): KnowledgeEntryLike | null {
+export function findEntry(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): KnowledgeEntryLike | null {
+  // Forbidden topics never resolve to a KB answer (only when an explicit topic list is given).
+  if (
+    Array.isArray(forbiddenTopics) ||
+    (typeof forbiddenTopics === "object" && forbiddenTopics !== null)
+  ) {
+    if (isForbiddenTopic(question, forbiddenTopics)) return null;
+  }
   const entries = toEntries(knowledgeBase);
   const qTokens = tokenize(question);
   if (qTokens.length === 0 || entries.length === 0) return null;
@@ -253,15 +308,15 @@ export function findEntry(question: string, knowledgeBase: unknown): KnowledgeEn
   return best.entry;
 }
 
-export function findAnswer(question: string, knowledgeBase: unknown): string | null {
-  const entry = findEntry(question, knowledgeBase);
+export function findAnswer(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): string | null {
+  const entry = findEntry(question, knowledgeBase, forbiddenTopics);
   if (!entry) return null;
   const answer = entry.answer ?? entry.knowledgeBase;
   return answer ? String(answer) : null;
 }
 
-export function hasAnswer(question: string, knowledgeBase: unknown): boolean {
-  return findEntry(question, knowledgeBase) !== null;
+export function hasAnswer(question: string, knowledgeBase: unknown, forbiddenTopics?: unknown): boolean {
+  return findEntry(question, knowledgeBase, forbiddenTopics) !== null;
 }
 
 export function isInKnowledgeBase(question: string, knowledgeBase: unknown): boolean {
@@ -299,9 +354,32 @@ export function isOutOfKnowledgeBase(question: string, knowledgeBase: unknown): 
 export function guardrailReply(
   question: string,
   knowledgeBase: unknown,
-  deflection?: string
+  deflectionOrForbidden?: string | string[] | unknown,
+  forbiddenTopics?: unknown
 ): string {
-  const answer = findAnswer(question, knowledgeBase);
+  let deflection: string | undefined;
+  let topics: unknown = forbiddenTopics;
+  if (Array.isArray(deflectionOrForbidden)) {
+    topics = deflectionOrForbidden;
+    deflection = undefined;
+  } else if (typeof deflectionOrForbidden === "string") {
+    // Could be a deflection message or a single forbidden topic; treat as deflection
+    // unless it clearly matches a forbidden-topic list passed separately.
+    deflection = deflectionOrForbidden;
+  } else if (deflectionOrForbidden && typeof deflectionOrForbidden === "object") {
+    const obj = deflectionOrForbidden as Record<string, unknown>;
+    if (typeof obj.deflection === "string" || typeof obj.canonicalReply === "string") {
+      deflection = (obj.deflection ?? obj.canonicalReply) as string;
+    }
+    if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics) {
+      topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics;
+    }
+  }
+
+  if (isForbiddenTopic(question, topics)) {
+    return deflection ?? NO_DATA_REPLY;
+  }
+  const answer = findAnswer(question, knowledgeBase, topics);
   if (answer) return answer;
   return deflection ?? NO_DATA_REPLY;
 }
