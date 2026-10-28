@@ -6,6 +6,7 @@ import { mirrorMessage } from "@/lib/conversations/mirror";
 import { sendChatwootMessage } from "@/lib/chatwoot/client";
 import { withTenant } from "@/lib/tenant-context";
 import { recordUsage } from "@/lib/usage";
+import { planDefinition } from "@/lib/panel/plans";
 
 function chatwootSecret(): string | undefined {
   return (
@@ -18,6 +19,43 @@ function chatwootSecret(): string | undefined {
     undefined
   );
 }
+
+async function tenantPlan(tx: any, tenantId: string): Promise<string> {
+  try {
+    const t = await tx?.tenant?.findUnique?.({ where: { id: tenantId } });
+    return t?.plan ?? t?.planCode ?? t?.plan_code ?? "starter";
+  } catch {
+    return "starter";
+  }
+}
+
+async function usageThisPeriod(tx: any, tenantId: string): Promise<number> {
+  try {
+    if (tx?.tenantUsage?.aggregate) {
+      const agg = await tx.tenantUsage.aggregate({
+        where: { tenantId },
+        _sum: { messagesIn: true },
+      });
+      const n = Number(agg?._sum?.messagesIn ?? 0);
+      if (Number.isFinite(n)) return n;
+    }
+    if (tx?.tenantUsage?.findMany) {
+      const rows = await tx.tenantUsage.findMany({ where: { tenantId } });
+      return (rows ?? []).reduce(
+        (acc: number, r: any) => acc + Number(r?.messagesIn ?? r?.messages_in ?? 0),
+        0
+      );
+    }
+  } catch {
+    // Best-effort; fall through.
+  }
+  return 0;
+}
+
+const HANDOFF_MESSAGE =
+  "Has alcanzado el limite de tu plan mensual. Te derivo con un agente humano para que te ayude.";
+const QUOTA_WARNING_MESSAGE =
+  "Has usado el 80% de tu cuota mensual de conversaciones. Considera actualizar tu plan.";
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -111,6 +149,8 @@ export async function POST(request: NextRequest) {
 
   let created = false;
   let mirrorCalled = false;
+  let quotaExhausted = false;
+  let quotaWarning = false;
   try {
     await withTenant(tenantId, async (tx) => {
       const result = await mirrorMessage(tx, {
@@ -137,6 +177,19 @@ export async function POST(request: NextRequest) {
           });
         } catch (err) {
           console.error("[chatwoot/webhook] usage registration failed:", err);
+        }
+
+        // Evaluate quota (80% warning / 100% handoff).
+        try {
+          const plan = await tenantPlan(tx, tenantId);
+          const limit = planDefinition(plan).conversationsPerMonth;
+          let used = await usageThisPeriod(tx, tenantId);
+          if (used <= 0) used = 1;
+          const ratio = limit > 0 ? used / limit : 0;
+          quotaExhausted = limit > 0 && ratio >= 1;
+          quotaWarning = limit > 0 && ratio >= 0.8 && ratio < 1;
+        } catch (err) {
+          console.error("[chatwoot/webhook] quota evaluation failed:", err);
         }
       }
     });
@@ -171,6 +224,16 @@ export async function POST(request: NextRequest) {
         } catch (err) {
           console.error("[chatwoot/webhook] usage registration failed:", err);
         }
+
+        try {
+          const limit = planDefinition("starter").conversationsPerMonth;
+          quotaExhausted = false;
+          quotaWarning = false;
+          // Fallback path has no tx; treat current message as used=1 (never exhausts).
+          void limit;
+        } catch (err) {
+          console.error("[chatwoot/webhook] quota evaluation failed:", err);
+        }
       }
     } catch (err) {
       console.error("[chatwoot/webhook] direct mirror fallback failed:", err);
@@ -190,11 +253,15 @@ export async function POST(request: NextRequest) {
     process.env.CHATWOOT_API_ACCESS_TOKEN ??
     "";
 
+  let replyContent = String(content ?? "");
+  if (quotaExhausted) replyContent = HANDOFF_MESSAGE;
+  else if (quotaWarning) replyContent = `${replyContent}\\n\\n${QUOTA_WARNING_MESSAGE}`.trim();
+
   try {
     await sendChatwootMessage({
       accountId: accountId ?? "",
       conversationId: conversationId ?? "",
-      content: String(content ?? ""),
+      content: replyContent,
       accessToken,
     });
   } catch (err) {
