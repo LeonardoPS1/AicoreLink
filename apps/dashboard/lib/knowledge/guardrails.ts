@@ -66,7 +66,7 @@ export function normalizeForbiddenTopics(input: unknown): string[] {
   if (typeof input === "object") {
     const obj = input as Record<string, unknown>;
     const topics =
-      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic;
+      obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopicList || obj.forbiddenTopic || obj.forbidden_topic;
     if (Array.isArray(topics)) return topics.map((x) => String(x).trim()).filter(Boolean);
     if (typeof topics === "string") return topics.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
   }
@@ -84,7 +84,7 @@ export function isForbiddenTopic(message: unknown, forbiddenTopics?: unknown): b
     const obj = message as Record<string, unknown>;
     const msg = (obj.message ?? obj.question ?? obj.text ?? obj.input) as unknown;
     const topics = normalizeForbiddenTopics(
-      obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic
+      obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopicList || obj.forbiddenTopic || obj.forbidden_topic
     );
     if (topics.length === 0) return false;
     const normalizedMsg = normalize(String(msg ?? ""));
@@ -381,10 +381,10 @@ export function guardrailReply(
     } else if (forbiddenTopics && typeof forbiddenTopics === "object") {
       const o = forbiddenTopics as Record<string, unknown>;
       if (typeof o.deflection === "string" || typeof o.canonicalReply === "string") {
-        deflection = (o.deflection ?? o.canonicalReply) as string;
+        deflection = (o.deflection || o.canonicalReply) as string;
       }
       if (o.forbiddenTopics || o.forbidden_topics || o.topics || o.forbiddenTopicList || o.forbiddenTopic || o.forbidden_topic) {
-        topics = o.forbiddenTopics ?? o.forbidden_topics ?? o.topics ?? o.forbiddenTopicList ?? o.forbiddenTopic ?? o.forbidden_topic ?? topics;
+        topics = o.forbiddenTopics || o.forbidden_topics || o.topics || o.forbiddenTopicList || o.forbiddenTopic || o.forbidden_topic || topics;
       }
     }
   } else if (typeof deflectionOrForbidden === "string") {
@@ -392,10 +392,10 @@ export function guardrailReply(
   } else if (deflectionOrForbidden && typeof deflectionOrForbidden === "object") {
     const obj = deflectionOrForbidden as Record<string, unknown>;
     if (typeof obj.deflection === "string" || typeof obj.canonicalReply === "string") {
-      deflection = (obj.deflection ?? obj.canonicalReply) as string;
+      deflection = (obj.deflection || obj.canonicalReply) as string;
     }
     if (obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopicList || obj.forbiddenTopic || obj.forbidden_topic) {
-      topics = obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? obj.forbiddenTopicList ?? obj.forbiddenTopic ?? obj.forbidden_topic ?? topics;
+      topics = obj.forbiddenTopics || obj.forbidden_topics || obj.topics || obj.forbiddenTopicList || obj.forbiddenTopic || obj.forbidden_topic || topics;
     }
   }
 

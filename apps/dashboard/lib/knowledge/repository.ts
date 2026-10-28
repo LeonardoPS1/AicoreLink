@@ -228,7 +228,7 @@ function normalizeConfigInput(data: any): { tone?: string; forbiddenTopics?: str
   const out: { tone?: string; forbiddenTopics?: string[] } = {};
   if (typeof data.tone === "string") out.tone = data.tone;
   const topics =
-    data.forbiddenTopics ?? data.forbidden_topics ?? data.topics ?? data.forbiddenTopicList ?? data.forbiddenTopic ?? data.forbidden_topic;
+    data.forbiddenTopics || data.forbidden_topics || data.topics || data.forbiddenTopicList || data.forbiddenTopic || data.forbidden_topic;
   const normalized = normalizeForbiddenTopics(topics);
   if (normalized.length > 0) out.forbiddenTopics = normalized;
   return out;
@@ -248,7 +248,7 @@ function getConfigModel(t: any): any {
 
 function normalizeConfigRow(row: any, tenantId: string): KnowledgeBaseConfig {
   const topics =
-    row?.forbiddenTopics ?? row?.forbidden_topics ?? row?.topics ?? row?.forbiddenTopicList ?? row?.forbiddenTopic ?? row?.forbidden_topic;
+    row?.forbiddenTopics || row?.forbidden_topics || row?.topics || row?.forbiddenTopicList || row?.forbiddenTopic || row?.forbidden_topic;
   const normalized = normalizeForbiddenTopics(topics);
   return {
     id: row?.id,
