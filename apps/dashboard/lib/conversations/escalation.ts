@@ -87,15 +87,17 @@ function isValidStateString(value: any): boolean {
 function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
   const data: Record<string, any> = {};
   let tx: any = null;
+  // When a valid thread-state string appears anywhere in the args, it must
+  // override every state-like field carried by any thread object, regardless
+  // of argument order.
+  let forcedState: string | null = null;
   for (const arg of args ?? []) {
     if (arg == null) continue;
     if (typeof arg === "string") {
-      // A valid thread-state value is treated as `state`, even when the
-      // thread object merged earlier already carried a `state` field.
       if (isValidStateString(arg)) {
-        data.state = arg;
-        data.status = data.status ?? arg;
-        data.threadState = data.threadState ?? arg;
+        forcedState = arg;
+        // Keep the content available for single-string summaries/escalations.
+        if (data.message == null) data.message = arg;
         continue;
       }
       if (data.message == null) data.message = arg;
@@ -125,6 +127,17 @@ function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
         if (arg[k] !== undefined) data[k] = arg[k];
       }
     }
+  }
+  if (forcedState) {
+    data.state = forcedState;
+    data.threadState = forcedState;
+    data.thread_state = forcedState;
+    data.status = forcedState;
+    data.threadStatus = forcedState;
+    const isEsc = forcedState === "escalated";
+    data.escalated = isEsc;
+    data.escalado = isEsc;
+    data.handoff = isEsc;
   }
   return { tx, data };
 }
