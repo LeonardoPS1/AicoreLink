@@ -29,7 +29,7 @@ function isTxObject(arg: any): boolean {
   if (typeof arg.$transaction === "function") return true;
   // Narrowed to learning/knowledge-specific models only. A bare `conversation`
   // (or any other unrelated) model must NOT make an object look like a tx.
-  const candidates = ["knowledgeBase", "knowledge_base", "kb", "knowledge", "knowledgeEntry", "knowledge_entry", "learning", "learningRequest", "learning_request", "pendingQuestion", "pending_question"];
+  const candidates = ["knowledgeBase", "knowledge_base", "kb", "knowledgeEntry", "knowledge_entry", "learning", "learningRequest", "learning_request", "pendingQuestion", "pending_question"];
   for (const key of candidates) {
     const m = (arg as any)[key];
     if (m && typeof m === "object") {
