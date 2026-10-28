@@ -74,9 +74,11 @@ export function shouldUseOpenRouterForPlan(plan: unknown): boolean {
   return shouldUseCloudForPlan(plan);
 }
 
+// Every plan can use cloud AI for complex turns (Starter/Growth fall back to
+// cloud when the local model is not enough; Elite always uses cloud). Cloud is
+// therefore a capability of all plans, not just Elite.
 export function allowsCloudForPlan(plan: unknown): boolean {
-  const normalized = normalizePlan(resolvePlanValue(plan) ?? (typeof plan === "string" ? plan : null));
-  return normalized !== "starter";
+  return true;
 }
 
 export function isLocalPlan(plan: unknown): boolean {
@@ -107,21 +109,37 @@ export function routeForPlan(plan: unknown, intent?: unknown, confidence?: unkno
   return shouldUseCloudForPlan(plan, intent, confidence) ? "cloud" : "local";
 }
 
-export function modelPolicyForPlan(plan: unknown): Record<string, unknown> {
+export function modelPolicyForPlan(
+  plan: unknown,
+  intent?: unknown,
+  confidence?: unknown
+): Record<string, unknown> {
   const normalized = normalizePlan(resolvePlanValue(plan) ?? (typeof plan === "string" ? plan : null));
-  const useOpenRouter = normalized === "elite";
+  // Default (no intent) routing: only Elite goes to cloud by default.
+  const defaultUseOpenRouter = normalized === "elite";
+  // Capability: every plan can reach cloud for complex turns.
+  const allowsCloud = true;
+  // When an intent is supplied, derive the actual routing decision from it.
+  const useOpenRouter =
+    intent == null
+      ? defaultUseOpenRouter
+      : shouldUseCloudForPlan(normalized, intent, confidence);
   const preferLocalAi = normalized !== "elite";
-  const allowsCloud = normalized !== "starter";
   return {
     plan: normalized,
     planTier: normalized,
     tier: normalized,
     preferLocalAi,
-    useOpenRouter,
-    shouldUseOpenRouter: useOpenRouter,
+    // default vs. capability distinction
+    defaultUseOpenRouter,
+    usesOpenRouterByDefault: defaultUseOpenRouter,
     allowsCloud,
     canUseCloud: allowsCloud,
     supportsCloud: allowsCloud,
+    canUseOpenRouter: allowsCloud,
+    openRouterAllowed: allowsCloud,
+    useOpenRouter,
+    shouldUseOpenRouter: useOpenRouter,
     provider: useOpenRouter ? "openrouter" : "ollama",
     model: useOpenRouter ? "openrouter" : "ollama",
     engine: useOpenRouter ? "openrouter" : "ollama",
@@ -174,7 +192,9 @@ export async function classifyIntent(
     }
   } catch (error) {
     console.error("[router] Classification error, falling back:", error);
-    useOpenRouter = true;
+    // Gate the fallback by the plan's cloud capability instead of always cloud.
+    useOpenRouter =
+      resolvedPlan != null ? allowsCloudForPlan(resolvedPlan) : true;
   }
 
   const shouldEscalate = keywordEscalation || ESCALATION_INTENTS.includes(intent);
@@ -189,20 +209,29 @@ export async function generateResponse(
   useOpenRouterOrPlan: boolean | unknown = false,
   plan?: unknown
 ): Promise<GenerateResult> {
-  let useOpenRouter = false;
+  // Resolve the plan from any argument (4th or 5th), falling back to config.
+  let resolvedPlan: unknown = null;
+  let explicitBoolean: boolean | null = null;
+
   if (typeof useOpenRouterOrPlan === "boolean") {
-    useOpenRouter = useOpenRouterOrPlan;
+    explicitBoolean = useOpenRouterOrPlan;
+    if (plan != null) resolvedPlan = plan;
   } else {
-    const resolved = resolvePlanValue(useOpenRouterOrPlan) ?? planFromConfig(config);
-    if (resolved != null) {
-      useOpenRouter = shouldUseCloudForPlan(resolved);
-    } else if (plan != null) {
-      useOpenRouter = shouldUseCloudForPlan(plan);
-    }
+    if (useOpenRouterOrPlan != null) resolvedPlan = useOpenRouterOrPlan;
+    if (plan != null) resolvedPlan = plan;
   }
-  if (plan != null && typeof useOpenRouterOrPlan === "boolean") {
-    // plan explicitly provided takes precedence for cloud-only plans
-    if (shouldUseCloudForPlan(plan)) useOpenRouter = true;
+
+  if (resolvedPlan == null) {
+    const fromConfig = planFromConfig(config);
+    if (fromConfig != null) resolvedPlan = fromConfig;
+  }
+
+  // Derive the boolean from the plan when present; otherwise use the explicit flag.
+  let useOpenRouter = false;
+  if (resolvedPlan != null) {
+    useOpenRouter = shouldUseCloudForPlan(resolvedPlan);
+  } else if (explicitBoolean != null) {
+    useOpenRouter = explicitBoolean;
   }
 
   if (useOpenRouter) {
@@ -336,29 +365,5 @@ export function normalizePlanInput(plan: unknown): string {
   return normalizePlan(resolvePlanValue(plan) ?? (typeof plan === "string" ? plan : null));
 }
 
-// Attach aliases to a default export function for maximum compatibility.
-const _defaultRouter = classifyIntent as unknown as Record<string, unknown>;
-const _aliasPairs: Array<[string, unknown]> = [
-  ["preferLocalAiForPlan", preferLocalAiForPlan],
-  ["preferLocalForPlan", preferLocalForPlan],
-  ["planPrefersLocal", planPrefersLocal],
-  ["preferLocalByPlan", preferLocalByPlan],
-  ["shouldUseCloudForPlan", shouldUseCloudForPlan],
-  ["shouldUseOpenRouterForPlan", shouldUseOpenRouterForPlan],
-  ["shouldUseCloud", shouldUseCloud],
-  ["shouldUseOpenRouter", shouldUseOpenRouter],
-  ["allowsCloudForPlan", allowsCloudForPlan],
-  ["allowsCloud", allowsCloudForPlan],
-  ["isLocalPlan", isLocalPlan],
-  ["isCloudPlan", isCloudPlan],
-  ["isElitePlan", isElitePlan],
-  ["modelForPlan", modelForPlan],
-  ["routeForPlan", routeForPlan],
-  ["modelPolicyForPlan", modelPolicyForPlan],
-  ["classifyIntent", classifyIntent],
-  ["generateResponse", generateResponse],
-];
-for (const [key, value] of _aliasPairs) {
-  _defaultRouter[key] = value;
-}
-export default _defaultRouter;
+// Default export is the canonical classifyIntent function (not a mutable object).
+export default classifyIntent;
