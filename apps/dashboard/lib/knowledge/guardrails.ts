@@ -517,17 +517,43 @@ export function shouldEscalate(...args: any[]): boolean {
   // Accept (message, keywords?) or (context object).
   let message: unknown = args[0];
   let keywords: unknown = args[1];
+  let forbidden: unknown = args[2];
   let intent: string | undefined;
   if (args.length === 1 && message && typeof message === "object" && !Array.isArray(message)) {
     const obj = message as Record<string, unknown>;
     message = obj.message ?? obj.text ?? obj.content ?? obj.question ?? obj.input ?? obj;
     keywords = obj.keywords ?? obj.escalationKeywords ?? obj.escalation_keywords ?? keywords;
     intent = String(obj.intent ?? (obj.classification as any)?.intent ?? "").toLowerCase();
+    forbidden =
+      obj.forbidden ?? obj.forbiddenTopic ?? obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? forbidden;
+  } else if (args.length >= 2 && keywords && typeof keywords === "object" && !Array.isArray(keywords)) {
+    const obj = keywords as Record<string, unknown>;
+    if (obj.keywords || obj.escalationKeywords || obj.escalation_keywords || obj.triggers) {
+      keywords = obj.keywords ?? obj.escalationKeywords ?? obj.escalation_keywords ?? obj.triggers;
+    }
+    if (
+      obj.forbidden !== undefined ||
+      obj.forbiddenTopic !== undefined ||
+      obj.forbiddenTopics !== undefined ||
+      obj.forbidden_topics !== undefined ||
+      obj.topics !== undefined
+    ) {
+      forbidden =
+        obj.forbidden ?? obj.forbiddenTopic ?? obj.forbiddenTopics ?? obj.forbidden_topics ?? obj.topics ?? forbidden;
+    }
+    if (obj.intent) intent = String(obj.intent).toLowerCase();
   }
   if (hasEscalationKeyword(message, keywords)) return true;
   if (intent && (intent === "reclamo" || intent === "complaint" || intent === "escalate")) return true;
   const text = normalize(String(message ?? ""));
   if (text.includes("hablar con") || text.includes("humano") || text.includes("agente")) return true;
+  // Forbidden topics are escalation triggers.
+  if (forbidden === true) return true;
+  try {
+    if (isForbiddenTopic(message, forbidden)) return true;
+  } catch {
+    /* ignore */
+  }
   return false;
 }
 

@@ -7,7 +7,7 @@ import { sendChatwootMessage } from "@/lib/chatwoot/client";
 import { withTenant } from "@/lib/tenant-context";
 import { recordUsage } from "@/lib/usage";
 import { planDefinition } from "@/lib/panel/plans";
-import { isEscalationRequest, escalateThread } from "@/lib/escalation";
+import { isEscalationRequest, escalateThread, isEscalated, HANDOFF_MESSAGE as ESCALATION_HANDOFF_MESSAGE } from "@/lib/escalation";
 
 function chatwootSecret(): string | undefined {
   return (
@@ -59,10 +59,37 @@ async function usageThisPeriod(tx: any, tenantId: string): Promise<number> {
   return 0;
 }
 
-const HANDOFF_MESSAGE =
+const QUOTA_HANDOFF_MESSAGE =
   "Has alcanzado el límite de tu plan mensual. Te derivo con un agente humano para que te ayude.";
 const QUOTA_WARNING_MESSAGE =
   "Has usado el 80% de tu cuota mensual de conversaciones. Considera actualizar tu plan.";
+
+async function readPersistedThread(tx: any, tenantId: string, key: string): Promise<any> {
+  const tryFind = async (fn: any, where: any) => {
+    if (typeof fn !== "function") return null;
+    try {
+      return await fn({ where });
+    } catch {
+      return null;
+    }
+  };
+  if (tx?.conversation?.findUnique) {
+    let conv = await tryFind(tx.conversation.findUnique.bind(tx.conversation), {
+      tenantId_externalId: { tenantId, externalId: key },
+    });
+    if (conv) return conv;
+    conv = await tryFind(tx.conversation.findUnique.bind(tx.conversation), { id: key });
+    if (conv) return conv;
+  }
+  if (tx?.conversation?.findFirst) {
+    const conv = await tryFind(tx.conversation.findFirst.bind(tx.conversation), {
+      tenantId,
+      externalId: key,
+    });
+    if (conv) return conv;
+  }
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -159,6 +186,7 @@ export async function POST(request: NextRequest) {
   let quotaExhausted = false;
   let quotaWarning = false;
   let threadEscalated = false;
+  let threadAlreadyEscalated = false;
   try {
     await withTenant(tenantId, async (tx) => {
       const result = await mirrorMessage(tx, {
@@ -173,6 +201,14 @@ export async function POST(request: NextRequest) {
       mirrorCalled = true;
 
       if (created) {
+        // Consult persisted thread state before replying (E3.4).
+        try {
+          const conv = await readPersistedThread(tx, tenantId, key);
+          threadAlreadyEscalated = isEscalated(conv);
+        } catch (err) {
+          console.error("[chatwoot/webhook] thread state read failed:", err);
+        }
+
         // Register per-conversation usage/cost for this turn (best-effort).
         try {
           await recordUsage(tx, {
@@ -202,7 +238,9 @@ export async function POST(request: NextRequest) {
 
         // Evaluate escalation / thread state (E3.4).
         try {
-          if (isEscalationRequest(String(content ?? ""))) {
+          if (threadAlreadyEscalated) {
+            // Already escalated: stay silent until reactivation.
+          } else if (isEscalationRequest(String(content ?? ""))) {
             threadEscalated = true;
             await escalateThread(tx, {
               tenantId,
@@ -290,19 +328,34 @@ export async function POST(request: NextRequest) {
     "";
 
   let replyContent = String(content ?? "");
-  if (quotaExhausted || threadEscalated) replyContent = HANDOFF_MESSAGE;
-  else if (quotaWarning) replyContent = `${replyContent}\n\n${QUOTA_WARNING_MESSAGE}`.trim();
-
-  try {
-    await sendChatwootMessage({
-      accountId: accountId ?? "",
-      conversationId: conversationId ?? "",
-      content: replyContent,
-      accessToken,
-    });
-  } catch (err) {
-    console.error("[chatwoot/webhook] sendChatwootMessage failed:", err);
-    // Best-effort; do not fail the webhook.
+  if (threadAlreadyEscalated) {
+    // Stay silent: do not reply until reactivation.
+  } else if (quotaExhausted || threadEscalated) {
+    replyContent = quotaExhausted ? QUOTA_HANDOFF_MESSAGE : ESCALATION_HANDOFF_MESSAGE;
+    try {
+      await sendChatwootMessage({
+        accountId: accountId ?? "",
+        conversationId: conversationId ?? "",
+        content: replyContent,
+        accessToken,
+      });
+    } catch (err) {
+      console.error("[chatwoot/webhook] sendChatwootMessage failed:", err);
+      // Best-effort; do not fail the webhook.
+    }
+  } else {
+    if (quotaWarning) replyContent = `${replyContent}\n\n${QUOTA_WARNING_MESSAGE}`.trim();
+    try {
+      await sendChatwootMessage({
+        accountId: accountId ?? "",
+        conversationId: conversationId ?? "",
+        content: replyContent,
+        accessToken,
+      });
+    } catch (err) {
+      console.error("[chatwoot/webhook] sendChatwootMessage failed:", err);
+      // Best-effort; do not fail the webhook.
+    }
   }
 
   return new NextResponse("OK", { status: 200 });

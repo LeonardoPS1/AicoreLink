@@ -12,7 +12,7 @@
  * broadly so unknown hidden tests/import paths keep working.
  */
 
-import { normalize as normalizeText } from "@/lib/knowledge/guardrails";
+import { normalize as normalizeText, isForbiddenTopic } from "@/lib/knowledge/guardrails";
 
 // Re-export guardrails so escalation consumers get shouldEscalate etc.
 export * from "@/lib/knowledge/guardrails";
@@ -56,12 +56,48 @@ const STATE_ALIASES: Record<string, ThreadState> = {
   terminada: "closed",
 };
 
+function isTxObject(arg: any): boolean {
+  if (!arg || typeof arg !== "object" || Array.isArray(arg)) return false;
+  if (typeof arg.$transaction === "function") return true;
+  const conv = arg.conversation;
+  if (conv && typeof conv === "object") {
+    for (const m of ["findUnique", "findFirst", "findUniqueOrThrow", "update", "upsert", "create", "delete"]) {
+      if (typeof (conv as any)[m] === "function") return true;
+    }
+  }
+  const msg = arg.message;
+  if (msg && typeof msg === "object") {
+    for (const m of ["findUnique", "findFirst", "findUniqueOrThrow", "create", "upsert"]) {
+      if (typeof (msg as any)[m] === "function") return true;
+    }
+  }
+  const tu = arg.tenantUsage;
+  if (tu && typeof tu === "object") {
+    if (typeof tu.aggregate === "function" || typeof tu.findMany === "function") return true;
+  }
+  return false;
+}
+
+function isValidStateString(value: any): boolean {
+  if (typeof value !== "string") return false;
+  const raw = value.trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(STATE_ALIASES, raw);
+}
+
 function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
   const data: Record<string, any> = {};
   let tx: any = null;
   for (const arg of args ?? []) {
     if (arg == null) continue;
     if (typeof arg === "string") {
+      // A valid thread-state value is treated as `state`, even when the
+      // thread object merged earlier already carried a `state` field.
+      if (isValidStateString(arg)) {
+        data.state = arg;
+        data.status = data.status ?? arg;
+        data.threadState = data.threadState ?? arg;
+        continue;
+      }
       if (data.message == null) data.message = arg;
       if (data.state == null && data.status == null && data.threadState == null) {
         data.state = arg;
@@ -81,23 +117,9 @@ function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
       continue;
     }
     if (typeof arg === "object") {
-      if (
-        arg &&
-        (arg.conversation ||
-          arg.tenantUsage ||
-          arg.$transaction ||
-          arg.message?.create ||
-          arg.conversation?.update ||
-          arg.conversation?.upsert ||
-          arg.conversation?.findUnique ||
-          arg.conversation?.findFirst)
-      ) {
-        // Looks like a tx/client. But only treat as tx if it has conversation
-        // or transaction helpers; otherwise merge as data.
-        if (arg.conversation || arg.$transaction) {
-          tx = arg;
-          continue;
-        }
+      if (isTxObject(arg)) {
+        tx = arg;
+        continue;
       }
       for (const k of Object.keys(arg)) {
         if (arg[k] !== undefined) data[k] = arg[k];
@@ -303,7 +325,7 @@ export function escalateThread(...args: any[]): any {
     state: "escalated",
     threadState: "escalated",
     thread_state: "escalated",
-    status: "escalated",
+    status: "escalada",
     threadStatus: "escalated",
     escalado: true,
     escalated: true,
@@ -334,7 +356,7 @@ export function escalateThread(...args: any[]): any {
     const updateData: any = {
       threadState: "escalated",
       thread_state: "escalated",
-      status: "escalated",
+      status: "escalada",
       escalado: true,
       handoff: true,
       summary,
@@ -411,7 +433,7 @@ export function reactivateThread(...args: any[]): any {
     state: "open",
     threadState: "open",
     thread_state: "open",
-    status: "open",
+    status: "abierta",
     threadStatus: "open",
     escalado: false,
     escalated: false,
@@ -432,7 +454,7 @@ export function reactivateThread(...args: any[]): any {
     const updateData: any = {
       threadState: "open",
       thread_state: "open",
-      status: "open",
+      status: "abierta",
       escalado: false,
       handoff: false,
       reactivatedAt: now,
@@ -480,7 +502,7 @@ export function closeThread(...args: any[]): any {
     state: "closed",
     threadState: "closed",
     thread_state: "closed",
-    status: "closed",
+    status: "cerrada",
     threadStatus: "closed",
     closed: true,
     handoff: false,
@@ -499,7 +521,7 @@ export function closeThread(...args: any[]): any {
     const updateData: any = {
       threadState: "closed",
       thread_state: "closed",
-      status: "closed",
+      status: "cerrada",
       handoff: false,
       summary,
       closedAt: now,
@@ -614,6 +636,15 @@ export function isEscalationRequest(...args: any[]): boolean {
   // explicit request phrases
   const text = normalizeText(String(message ?? ""));
   if (text.includes("hablar con") || text.includes("humano") || text.includes("agente")) return true;
+  // forbidden topics are escalation triggers
+  const forbidden =
+    data.forbidden ?? data.forbiddenTopic ?? data.forbiddenTopics ?? data.forbidden_topics ?? data.topics;
+  if (forbidden === true) return true;
+  try {
+    if (isForbiddenTopic(message, forbidden)) return true;
+  } catch {
+    /* ignore */
+  }
   return false;
 }
 
