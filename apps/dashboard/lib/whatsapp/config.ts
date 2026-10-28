@@ -9,6 +9,9 @@ export interface TenantWhatsAppConfig {
   autoReplyEnabled: boolean;
   // IA
   preferLocalAi: boolean;
+  plan?: string | null;
+  planTier?: string | null;
+  tier?: string | null;
   maxTokensResponse: number;
   // Escalado
   escalationKeywords: string[];
