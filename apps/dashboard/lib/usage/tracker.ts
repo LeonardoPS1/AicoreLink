@@ -27,6 +27,11 @@ export interface UsageRecordInput {
   tokensUsed?: number;
   tokens_used?: number;
   tokens?: number;
+  minutesUsed?: number;
+  minutes_used?: number;
+  minutes?: number;
+  durationMinutes?: number;
+  duration?: number;
   costEstimate?: number | string;
   cost_estimate?: number | string;
   cost?: number | string;
@@ -119,6 +124,18 @@ function toDate(value: any): Date {
   return startOfMonth(new Date());
 }
 
+function normalizeUnit(u: any): string {
+  const s = String(u ?? "").toLowerCase();
+  if (s === "tokens") return "token";
+  if (s === "messages") return "message";
+  if (s === "minutes" || s === "min" || s === "mins") return "minute";
+  return s;
+}
+
+function rateValue(r: any): number {
+  return toNumber(r?.rate ?? r?.data?.rate ?? r?.price, 0);
+}
+
 export async function recordUsage(...args: any[]): Promise<any> {
   const { tx, data } = normalizeArgs(args);
 
@@ -148,6 +165,10 @@ export async function recordUsage(...args: any[]): Promise<any> {
     data.tokensUsed ?? data.tokens_used ?? data.tokens,
     0,
   );
+  const minutesUsed = toNumber(
+    data.minutesUsed ?? data.minutes_used ?? data.minutes ?? data.durationMinutes ?? data.duration,
+    0,
+  );
 
   let costEstimate: any =
     data.costEstimate ??
@@ -159,31 +180,49 @@ export async function recordUsage(...args: any[]): Promise<any> {
   const provider =
     data.provider ?? data.engine ?? data.route ?? null;
 
-  if (costEstimate == null) {
+  const hasProvidedCost =
+    costEstimate != null && Number(costEstimate) !== 0;
+
+  if (!hasProvidedCost) {
     costEstimate = 0;
     if (data.rate != null) {
-      costEstimate = tokensUsed * toNumber(data.rate, 0);
+      const r = toNumber(data.rate, 0);
+      if (minutesUsed > 0 && tokensUsed === 0 && messagesIn + messagesOut === 0) {
+        costEstimate = minutesUsed * r;
+      } else if (tokensUsed > 0) {
+        costEstimate = tokensUsed * r;
+      } else {
+        costEstimate = (messagesIn + messagesOut) * r;
+      }
     } else if (tx?.costRate?.findMany) {
       try {
         const rates = await tx.costRate.findMany();
         const candidates = (rates ?? []).filter((r: any) => {
-          if (r?.unit && r.unit !== "token" && r.unit !== "message") return false;
+          const u = normalizeUnit(r?.unit);
+          if (u && u !== "token" && u !== "message" && u !== "minute") return false;
           if (provider && r?.provider && r.provider !== provider) return false;
           return true;
         });
         let rate: any = null;
         if (tokensUsed > 0) {
-          rate = candidates.find((r: any) => r?.unit === "token") ?? candidates[0];
+          rate = candidates.find((r: any) => normalizeUnit(r?.unit) === "token") ?? null;
         }
         if (!rate && (messagesIn + messagesOut) > 0) {
-          rate = candidates.find((r: any) => r?.unit === "message") ?? candidates[0];
+          rate = candidates.find((r: any) => normalizeUnit(r?.unit) === "message") ?? null;
+        }
+        if (!rate && minutesUsed > 0) {
+          rate = candidates.find((r: any) => normalizeUnit(r?.unit) === "minute") ?? null;
         }
         if (!rate && candidates.length) rate = candidates[0];
         if (rate) {
-          if (rate.unit === "message") {
-            costEstimate = (messagesIn + messagesOut) * toNumber(rate.rate, 0);
+          const u = normalizeUnit(rate?.unit);
+          const r = rateValue(rate);
+          if (u === "message") {
+            costEstimate = (messagesIn + messagesOut) * r;
+          } else if (u === "minute") {
+            costEstimate = minutesUsed * r;
           } else {
-            costEstimate = tokensUsed * toNumber(rate.rate, 0);
+            costEstimate = tokensUsed * r;
           }
         }
       } catch {

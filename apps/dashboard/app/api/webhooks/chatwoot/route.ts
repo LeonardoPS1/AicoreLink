@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       if (created) {
         // Register per-conversation usage/cost for this turn (best-effort).
         try {
-          await recordUsage({} as any, {
+          await recordUsage({
             tenantId,
             channel: "whatsapp_text",
             messagesIn: 1,
