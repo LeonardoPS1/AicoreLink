@@ -134,8 +134,18 @@ function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
     const isEscState = normalized === "escalated";
     const isClosedState = normalized === "closed";
 
+    const WRAPPER_KEYS = ["thread", "conversation", "ctx", "data"];
+    const visited = new WeakSet();
     const apply = (obj: any) => {
-      if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+      if (!obj) return;
+      if (typeof obj === "string") {
+        // string-typed wrapper: cannot carry flags; caller overwrites the
+        // wrapper slot with the forced state string (handled below).
+        return;
+      }
+      if (typeof obj !== "object" || Array.isArray(obj)) return;
+      if (visited.has(obj)) return;
+      visited.add(obj);
       obj.state = forcedState;
       obj.threadState = forcedState;
       obj.thread_state = forcedState;
@@ -150,13 +160,41 @@ function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
       obj.closed = isClosedState;
       obj.isClosed = isClosedState;
       obj.isEscalated = isEscState;
+      // Recursively propagate into every nested wrapper (arbitrary depth).
+      for (const key of WRAPPER_KEYS) {
+        const val = obj[key];
+        if (val == null) continue;
+        if (typeof val === "string") {
+          // Overwrite string-typed wrappers with the forced state string.
+          obj[key] = forcedState;
+        } else if (typeof val === "object" && !Array.isArray(val)) {
+          apply(val);
+        }
+      }
     };
 
     apply(data);
-    for (const key of ["thread", "conversation", "ctx", "data"]) {
-      if (data[key] && typeof data[key] === "object" && !Array.isArray(data[key])) {
-        apply(data[key]);
-      }
+
+    // Write back string-typed wrappers on the original (non-tx) object args,
+    // since strings are primitives and are not shared by reference with `data`.
+    for (const arg of args ?? []) {
+      if (!arg || typeof arg !== "object" || Array.isArray(arg) || isTxObject(arg)) continue;
+      const seen = new WeakSet();
+      const writeBack = (obj: any) => {
+        if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+        if (seen.has(obj)) return;
+        seen.add(obj);
+        for (const key of WRAPPER_KEYS) {
+          const val = obj[key];
+          if (val == null) continue;
+          if (typeof val === "string") {
+            obj[key] = forcedState;
+          } else if (typeof val === "object" && !Array.isArray(val)) {
+            writeBack(val);
+          }
+        }
+      };
+      writeBack(arg);
     }
   }
   return { tx, data };
