@@ -28,10 +28,19 @@ per tenant via environment variables and internal API calls.
 - `OLLAMA_URL` - Ollama base URL (default `http://ollama:11434`).
 - `N8N_WEBHOOK_SECRET` - Shared secret used to sign callbacks to `/api/webhooks/n8n`.
 
+## Authentication paths
+
+- Workflows in `workflows/` call dashboard endpoints under `/api/internal/*`
+  (e.g. `/api/internal/messages`, `/api/internal/usage`). These authenticate with
+  `x-internal-key: $FACTORY_INTERNAL_API_KEY`. No HMAC signature is required.
+- The separate callback endpoint `/api/webhooks/n8n` (n8n -> dashboard, used to
+  persist AI classification) authenticates with the HMAC signature
+  `x-n8n-signature` (signed with `N8N_WEBHOOK_SECRET`). This path is not used by
+  the workflows in this folder.
+
 ## Multi-tenant notes
 
 - Workflows are cloned per tenant by changing parameters only; business logic lives
   in the dashboard (`/api/internal/*`).
-- Callbacks to the dashboard must include a valid HMAC signature
-  (`x-n8n-signature`) or the route returns 401.
-- Internal calls authenticate with `x-internal-key: $FACTORY_INTERNAL_API_KEY`.
+- `recordatorio.json` and `reporte.json` hardcode the `'default'` tenant for v1;
+  parameterize the tenant list when cloning per tenant.
