@@ -30,17 +30,23 @@ async function tenantPlan(tx: any, tenantId: string): Promise<string> {
 }
 
 async function usageThisPeriod(tx: any, tenantId: string): Promise<number> {
+  const now = new Date();
+  const monthStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  );
   try {
     if (tx?.tenantUsage?.aggregate) {
       const agg = await tx.tenantUsage.aggregate({
-        where: { tenantId },
+        where: { tenantId, channel: "whatsapp_text", period: { gte: monthStart } },
         _sum: { messagesIn: true },
       });
       const n = Number(agg?._sum?.messagesIn ?? 0);
       if (Number.isFinite(n)) return n;
     }
     if (tx?.tenantUsage?.findMany) {
-      const rows = await tx.tenantUsage.findMany({ where: { tenantId } });
+      const rows = await tx.tenantUsage.findMany({
+        where: { tenantId, channel: "whatsapp_text", period: { gte: monthStart } },
+      });
       return (rows ?? []).reduce(
         (acc: number, r: any) => acc + Number(r?.messagesIn ?? r?.messages_in ?? 0),
         0
@@ -53,7 +59,7 @@ async function usageThisPeriod(tx: any, tenantId: string): Promise<number> {
 }
 
 const HANDOFF_MESSAGE =
-  "Has alcanzado el limite de tu plan mensual. Te derivo con un agente humano para que te ayude.";
+  "Has alcanzado el límite de tu plan mensual. Te derivo con un agente humano para que te ayude.";
 const QUOTA_WARNING_MESSAGE =
   "Has usado el 80% de tu cuota mensual de conversaciones. Considera actualizar tu plan.";
 
@@ -230,6 +236,8 @@ export async function POST(request: NextRequest) {
           quotaExhausted = false;
           quotaWarning = false;
           // Fallback path has no tx; treat current message as used=1 (never exhausts).
+          // Operator notification at 80%/100% is deferred (RC-04): the Chatwoot
+          // thread already keeps the operator in the loop; no out-of-band notify wired yet.
           void limit;
         } catch (err) {
           console.error("[chatwoot/webhook] quota evaluation failed:", err);
@@ -255,7 +263,7 @@ export async function POST(request: NextRequest) {
 
   let replyContent = String(content ?? "");
   if (quotaExhausted) replyContent = HANDOFF_MESSAGE;
-  else if (quotaWarning) replyContent = `${replyContent}\\n\\n${QUOTA_WARNING_MESSAGE}`.trim();
+  else if (quotaWarning) replyContent = `${replyContent}\n\n${QUOTA_WARNING_MESSAGE}`.trim();
 
   try {
     await sendChatwootMessage({

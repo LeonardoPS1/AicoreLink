@@ -95,6 +95,18 @@ export function planDefinition(plan: string | null | undefined): PlanDefinition 
 // ---------------------------------------------------------------------------
 // Quota enforcement (E3.3 / Task 14)
 // ---------------------------------------------------------------------------
+// CANONICAL QUOTA CONTRACT (single source of truth):
+//   - Entry point: `quotaStatus(...args)` (and its alias `enforceQuota`). Every
+//     other exported name in this module (checkQuota, evaluateQuota, isQuota*,
+//     shouldHandoff, quotaAlert, HANDOFF_MESSAGE, ...) is a compatibility alias
+//     or a thin wrapper over `quotaStatus`. Do NOT add a parallel implementation;
+//     extend `quotaStatus` instead.
+//   - Input: positional (plan, used) or (used, limit) or an object carrying any
+//     of the aliased field names (plan/planCode/tier..., used/usage/..., limit/
+//     quota/conversationsPerMonth...). `quotaNormalizeArgs` flattens them.
+//   - Output: `QuotaStatus` (see interface). Key booleans: `exhausted`,
+//     `warning`, `allowed`, `handoff`; plus `message`/`notice`/`alertMessage`.
+//   - Thresholds: warning at QUOTA_WARNING_RATIO (0.8), exhausted at 1.0.
 // AicoreLink plans cap the number of AI conversations per month (SRD §3.2).
 // The assistant must NEVER go silent when the cap is reached: at 80% it warns,
 // at 100% it hands off to a human. These helpers are pure (no I/O) so they
@@ -272,7 +284,7 @@ export function quotaStatus(...args: any[]): QuotaStatus {
       : null;
   const alertLevel = exhausted ? "alta" : warning ? "media" : null;
   const message = exhausted
-    ? "Has alcanzado el limite de tu plan mensual. Te derivo con un agente humano para que te ayude."
+    ? "Has alcanzado el límite de tu plan mensual. Te derivo con un agente humano para que te ayude."
     : warning
       ? "Has usado el 80% de tu cuota mensual de conversaciones. Considera actualizar tu plan."
       : "";
@@ -375,7 +387,7 @@ export function quotaAlertMessage(...args: any[]): string {
 }
 
 export function handoffMessage(...args: any[]): string {
-  return "Has alcanzado el limite de tu plan mensual. Te derivo con un agente humano para que te ayude.";
+  return "Has alcanzado el límite de tu plan mensual. Te derivo con un agente humano para que te ayude.";
 }
 export const HANDOFF_MESSAGE = handoffMessage();
 export const QUOTA_HANDOFF_MESSAGE = HANDOFF_MESSAGE;
