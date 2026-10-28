@@ -156,6 +156,22 @@ export async function POST(request: NextRequest) {
         senderRef,
       });
       created = result?.created ?? false;
+
+      if (created) {
+        // Register per-conversation usage/cost for this turn (best-effort).
+        try {
+          await recordUsage({} as any, {
+            tenantId,
+            channel: "whatsapp_text",
+            messagesIn: 1,
+            messagesOut: 1,
+            tokensUsed: 0,
+            costEstimate: 0,
+          });
+        } catch (err) {
+          console.error("[chatwoot/webhook] usage registration failed:", err);
+        }
+      }
     } catch (err) {
       console.error("[chatwoot/webhook] direct mirror fallback failed:", err);
       created = false;

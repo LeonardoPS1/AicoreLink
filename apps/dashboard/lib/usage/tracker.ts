@@ -43,7 +43,7 @@ export interface UsageRecordInput {
 }
 
 function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
 function isTx(value: any): boolean {
@@ -52,8 +52,6 @@ function isTx(value: any): boolean {
     typeof value === "object" &&
     ("tenantUsage" in value ||
       "costRate" in value ||
-      "conversation" in value ||
-      "message" in value ||
       "$transaction" in value)
   );
 }
@@ -158,8 +156,6 @@ export async function recordUsage(...args: any[]): Promise<any> {
     data.estimatedCost ??
     data.price;
 
-  const model =
-    data.model ?? data.modelUsed ?? data.model_used ?? data.modelName ?? null;
   const provider =
     data.provider ?? data.engine ?? data.route ?? null;
 
@@ -170,12 +166,26 @@ export async function recordUsage(...args: any[]): Promise<any> {
     } else if (tx?.costRate?.findMany) {
       try {
         const rates = await tx.costRate.findMany();
-        const rate = (rates ?? []).find((r: any) => {
-          if (r?.unit && r.unit !== "token") return false;
+        const candidates = (rates ?? []).filter((r: any) => {
+          if (r?.unit && r.unit !== "token" && r.unit !== "message") return false;
           if (provider && r?.provider && r.provider !== provider) return false;
           return true;
         });
-        if (rate) costEstimate = tokensUsed * toNumber(rate.rate, 0);
+        let rate: any = null;
+        if (tokensUsed > 0) {
+          rate = candidates.find((r: any) => r?.unit === "token") ?? candidates[0];
+        }
+        if (!rate && (messagesIn + messagesOut) > 0) {
+          rate = candidates.find((r: any) => r?.unit === "message") ?? candidates[0];
+        }
+        if (!rate && candidates.length) rate = candidates[0];
+        if (rate) {
+          if (rate.unit === "message") {
+            costEstimate = (messagesIn + messagesOut) * toNumber(rate.rate, 0);
+          } else {
+            costEstimate = tokensUsed * toNumber(rate.rate, 0);
+          }
+        }
       } catch {
         costEstimate = 0;
       }
@@ -192,8 +202,6 @@ export async function recordUsage(...args: any[]): Promise<any> {
     tokensUsed,
     costEstimate,
   };
-  if (model) payload.model = model;
-  if (provider) payload.provider = provider;
 
   if (!tx?.tenantUsage) {
     return { created: false, ...payload };
@@ -202,6 +210,23 @@ export async function recordUsage(...args: any[]): Promise<any> {
   const where = {
     tenantId_channel_period: { tenantId, channel, period },
   };
+
+  if (tx.tenantUsage.upsert) {
+    try {
+      return await tx.tenantUsage.upsert({
+        where,
+        create: payload,
+        update: {
+          messagesIn: { increment: messagesIn },
+          messagesOut: { increment: messagesOut },
+          tokensUsed: { increment: tokensUsed },
+          costEstimate: { increment: costEstimate },
+        },
+      });
+    } catch (err) {
+      // Fall through to findUnique/create.
+    }
+  }
 
   // Fallback for clients exposing findUnique/update instead of upsert.
   if (tx.tenantUsage.findUnique && tx.tenantUsage.update) {
@@ -219,23 +244,6 @@ export async function recordUsage(...args: any[]): Promise<any> {
         });
       }
     } catch {
-      // Fall through to upsert/create.
-    }
-  }
-
-  if (tx.tenantUsage.upsert) {
-    try {
-      return await tx.tenantUsage.upsert({
-        where,
-        create: payload,
-        update: {
-          messagesIn: { increment: messagesIn },
-          messagesOut: { increment: messagesOut },
-          tokensUsed: { increment: tokensUsed },
-          costEstimate: { increment: costEstimate },
-        },
-      });
-    } catch (err) {
       // Fall through to create.
     }
   }
