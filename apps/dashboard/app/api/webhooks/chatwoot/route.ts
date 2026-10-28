@@ -5,6 +5,7 @@ import { conversationKey } from "@/lib/conversations/identity";
 import { mirrorMessage } from "@/lib/conversations/mirror";
 import { sendChatwootMessage } from "@/lib/chatwoot/client";
 import { withTenant } from "@/lib/tenant-context";
+import { recordUsage } from "@/lib/usage";
 
 function chatwootSecret(): string | undefined {
   return (
@@ -122,6 +123,22 @@ export async function POST(request: NextRequest) {
       });
       created = result?.created ?? false;
       mirrorCalled = true;
+
+      if (created) {
+        // Register per-conversation usage/cost for this turn (best-effort).
+        try {
+          await recordUsage(tx, {
+            tenantId,
+            channel: "whatsapp_text",
+            messagesIn: 1,
+            messagesOut: 1,
+            tokensUsed: 0,
+            costEstimate: 0,
+          });
+        } catch (err) {
+          console.error("[chatwoot/webhook] usage registration failed:", err);
+        }
+      }
     });
   } catch (err) {
     console.error("[chatwoot/webhook] transactional mirror failed:", err);
