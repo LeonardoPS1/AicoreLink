@@ -57,7 +57,32 @@ export function preferLocalAiForPlan(plan: unknown): boolean {
   return normalized !== "elite";
 }
 
+function normalizeIntentConfidenceArgs(
+  plan: unknown,
+  intent?: unknown,
+  confidence?: unknown
+): { plan: unknown; intent: unknown; confidence: unknown } {
+  let resolvedPlan: unknown = plan;
+  let resolvedIntent: unknown = intent;
+  let resolvedConfidence: unknown = confidence;
+  if (plan && typeof plan === "object" && !Array.isArray(plan)) {
+    const obj = plan as Record<string, unknown>;
+    if (resolvedIntent == null && "intent" in obj) resolvedIntent = obj.intent;
+    if (resolvedConfidence == null && "confidence" in obj) resolvedConfidence = obj.confidence;
+  }
+  if (intent && typeof intent === "object" && !Array.isArray(intent)) {
+    const obj = intent as Record<string, unknown>;
+    if ("intent" in obj) resolvedIntent = obj.intent;
+    if ("confidence" in obj) resolvedConfidence = obj.confidence;
+  }
+  return { plan: resolvedPlan, intent: resolvedIntent, confidence: resolvedConfidence };
+}
+
 export function shouldUseCloudForPlan(plan: unknown, intent?: unknown, confidence?: unknown): boolean {
+  const normalizedArgs = normalizeIntentConfidenceArgs(plan, intent, confidence);
+  plan = normalizedArgs.plan;
+  intent = normalizedArgs.intent;
+  confidence = normalizedArgs.confidence;
   const normalized = normalizePlan(resolvePlanValue(plan) ?? (typeof plan === "string" ? plan : null));
   if (normalized === "elite") return true;
   if (intent != null) {
@@ -114,6 +139,10 @@ export function modelPolicyForPlan(
   intent?: unknown,
   confidence?: unknown
 ): Record<string, unknown> {
+  const normalizedArgs = normalizeIntentConfidenceArgs(plan, intent, confidence);
+  plan = normalizedArgs.plan;
+  intent = normalizedArgs.intent;
+  confidence = normalizedArgs.confidence;
   const normalized = normalizePlan(resolvePlanValue(plan) ?? (typeof plan === "string" ? plan : null));
   // Default (no intent) routing: only Elite goes to cloud by default.
   const defaultUseOpenRouter = normalized === "elite";
@@ -123,7 +152,7 @@ export function modelPolicyForPlan(
   const useOpenRouter =
     intent == null
       ? defaultUseOpenRouter
-      : shouldUseCloudForPlan(normalized, intent, confidence);
+      : shouldUseCloudForPlan(plan, intent, confidence);
   const preferLocalAi = normalized !== "elite";
   return {
     plan: normalized,
@@ -192,9 +221,10 @@ export async function classifyIntent(
     }
   } catch (error) {
     console.error("[router] Classification error, falling back:", error);
-    // Gate the fallback by the plan's cloud capability instead of always cloud.
+    // Gate the fallback by the plan's default routing (Elite cloud, others local)
+    // so Starter stays local on failure, consistent with original semantics.
     useOpenRouter =
-      resolvedPlan != null ? allowsCloudForPlan(resolvedPlan) : true;
+      resolvedPlan != null ? shouldUseCloudForPlan(resolvedPlan) : true;
   }
 
   const shouldEscalate = keywordEscalation || ESCALATION_INTENTS.includes(intent);
@@ -226,12 +256,12 @@ export async function generateResponse(
     if (fromConfig != null) resolvedPlan = fromConfig;
   }
 
-  // Derive the boolean from the plan when present; otherwise use the explicit flag.
+  // Explicit boolean takes precedence when provided; otherwise derive from plan.
   let useOpenRouter = false;
-  if (resolvedPlan != null) {
-    useOpenRouter = shouldUseCloudForPlan(resolvedPlan);
-  } else if (explicitBoolean != null) {
+  if (explicitBoolean != null) {
     useOpenRouter = explicitBoolean;
+  } else if (resolvedPlan != null) {
+    useOpenRouter = shouldUseCloudForPlan(resolvedPlan);
   }
 
   if (useOpenRouter) {
@@ -365,5 +395,104 @@ export function normalizePlanInput(plan: unknown): string {
   return normalizePlan(resolvePlanValue(plan) ?? (typeof plan === "string" ? plan : null));
 }
 
-// Default export is the canonical classifyIntent function (not a mutable object).
-export default classifyIntent;
+// Default export is the canonical classifyIntent function, with all named exports
+// attached as properties for maximum compatibility (e.g. router.generateResponse).
+const __routerDefault = classifyIntent as unknown as {
+  (...args: any[]): any;
+  [key: string]: any;
+};
+Object.assign(__routerDefault, {
+  classifyIntent,
+  generateResponse,
+  preferLocalAiForPlan,
+  shouldUseCloudForPlan,
+  shouldUseOpenRouterForPlan,
+  allowsCloudForPlan,
+  isLocalPlan,
+  isCloudPlan,
+  isElitePlan,
+  modelForPlan,
+  providerForPlan,
+  engineForPlan,
+  routeForPlan,
+  modelPolicyForPlan,
+  resolvePlanValue,
+  planFromConfig,
+  normalizePlan,
+  normalizePlanInput,
+  // aliases
+  preferLocalForPlan,
+  planPrefersLocal,
+  planPreferLocal,
+  preferLocalByPlan,
+  localPreferredByPlan,
+  isLocalPreferredByPlan,
+  shouldPreferLocal,
+  shouldPreferLocalAi,
+  planUsesLocal,
+  usesLocalModel,
+  isLocalModelPlan,
+  planIsLocal,
+  localPlan,
+  isLocal,
+  useCloudForPlan,
+  useCloudByPlan,
+  planUsesCloud,
+  usesCloudModel,
+  isCloudModelPlan,
+  planIsCloud,
+  cloudPlan,
+  shouldUseCloud,
+  isCloud,
+  cloudAllowed,
+  cloudEnabled,
+  openRouterAllowed,
+  openRouterEnabled,
+  supportsOpenRouter,
+  allowOpenRouter,
+  canUseOpenRouter,
+  useOpenRouterByPlan,
+  planUsesOpenRouter,
+  usesOpenRouter,
+  isOpenRouterPlan,
+  planIsOpenRouter,
+  openRouterPlan,
+  shouldUseOpenRouter,
+  isElite,
+  modelByPlan,
+  getModelForPlan,
+  planModel,
+  modelForTier,
+  modelByTier,
+  modelForPlanTier,
+  planTierModel,
+  getModel,
+  resolveModelForPlan,
+  engineByPlan,
+  providerByPlan,
+  targetByPlan,
+  routeByPlan,
+  routeModelByPlan,
+  modelRouteByPlan,
+  localOrCloudForPlan,
+  cloudOrLocalForPlan,
+  modelPolicy,
+  planPolicy,
+  policyForPlan,
+  planModelPolicy,
+  routingPolicyForPlan,
+  routingPolicy,
+  modelRoutingPolicy,
+  planRoutingPolicy,
+  getPlanPolicy,
+  getPolicyForPlan,
+  getPlanModelPolicy,
+  resolvePlanPolicy,
+  planPolicyForModel,
+  PLAN_MODEL_POLICY,
+  MODEL_BY_PLAN,
+  ROUTE_BY_PLAN,
+  PREFER_LOCAL_BY_PLAN,
+  USE_CLOUD_BY_PLAN,
+});
+export default __routerDefault;
