@@ -236,7 +236,7 @@ export async function generateResponse(
   message: string,
   history: Array<{ role: string; content: string }>,
   config: TenantWhatsAppConfig,
-  useOpenRouterOrPlan: boolean | unknown = false,
+  useOpenRouterOrPlan: boolean | unknown = undefined,
   plan?: unknown
 ): Promise<GenerateResult> {
   // Resolve the plan from any argument (4th or 5th), falling back to config.
