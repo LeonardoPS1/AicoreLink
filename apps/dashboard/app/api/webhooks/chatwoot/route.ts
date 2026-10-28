@@ -7,6 +7,7 @@ import { sendChatwootMessage } from "@/lib/chatwoot/client";
 import { withTenant } from "@/lib/tenant-context";
 import { recordUsage } from "@/lib/usage";
 import { planDefinition } from "@/lib/panel/plans";
+import { isEscalationRequest, escalateThread } from "@/lib/escalation";
 
 function chatwootSecret(): string | undefined {
   return (
@@ -157,6 +158,7 @@ export async function POST(request: NextRequest) {
   let mirrorCalled = false;
   let quotaExhausted = false;
   let quotaWarning = false;
+  let threadEscalated = false;
   try {
     await withTenant(tenantId, async (tx) => {
       const result = await mirrorMessage(tx, {
@@ -197,6 +199,29 @@ export async function POST(request: NextRequest) {
         } catch (err) {
           console.error("[chatwoot/webhook] quota evaluation failed:", err);
         }
+
+        // Evaluate escalation / thread state (E3.4).
+        try {
+          if (isEscalationRequest(String(content ?? ""))) {
+            threadEscalated = true;
+            await escalateThread(tx, {
+              tenantId,
+              conversationKey: key,
+              content: String(content ?? ""),
+              reason: "keyword",
+            });
+          } else if (quotaExhausted) {
+            threadEscalated = true;
+            await escalateThread(tx, {
+              tenantId,
+              conversationKey: key,
+              content: String(content ?? ""),
+              reason: "quota_exhausted",
+            });
+          }
+        } catch (err) {
+          console.error("[chatwoot/webhook] escalation evaluation failed:", err);
+        }
       }
     });
   } catch (err) {
@@ -235,6 +260,9 @@ export async function POST(request: NextRequest) {
           const limit = planDefinition("starter").conversationsPerMonth;
           quotaExhausted = false;
           quotaWarning = false;
+          if (isEscalationRequest(String(content ?? ""))) {
+            threadEscalated = true;
+          }
           // Fallback path has no tx; treat current message as used=1 (never exhausts).
           // Operator notification at 80%/100% is deferred (RC-04): the Chatwoot
           // thread already keeps the operator in the loop; no out-of-band notify wired yet.
@@ -262,7 +290,7 @@ export async function POST(request: NextRequest) {
     "";
 
   let replyContent = String(content ?? "");
-  if (quotaExhausted) replyContent = HANDOFF_MESSAGE;
+  if (quotaExhausted || threadEscalated) replyContent = HANDOFF_MESSAGE;
   else if (quotaWarning) replyContent = `${replyContent}\n\n${QUOTA_WARNING_MESSAGE}`.trim();
 
   try {

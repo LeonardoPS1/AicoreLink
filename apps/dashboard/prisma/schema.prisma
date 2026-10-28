@@ -125,19 +125,32 @@ model CostRate {
   @@map("cost_rates")
 }
 
+enum ThreadState {
+  open
+  escalated
+  closed
+}
+
 model Conversation {
-  id          String   @id @default(uuid())
-  tenantId    String   @map("tenant_id")
-  externalId  String?  @map("external_id")
-  channel     String   @default("whatsapp_text")
-  contactRef  String   @map("contact_ref")
-  status      String   @default("abierta")
-  escalado    Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id             String      @id @default(uuid())
+  tenantId       String      @map("tenant_id")
+  externalId     String?     @map("external_id")
+  channel        String      @default("whatsapp_text")
+  contactRef     String      @map("contact_ref")
+  status         String      @default("abierta")
+  threadState    ThreadState @default(open) @map("thread_state")
+  escalado       Boolean     @default(false)
+  handoff        Boolean     @default(false)
+  summary        String?     @db.Text
+  escalatedAt    DateTime?   @map("escalated_at")
+  closedAt       DateTime?   @map("closed_at")
+  reactivatedAt  DateTime?   @map("reactivated_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
 
   messages Message[]
 
   @@unique([tenantId, externalId])
+  @@index([tenantId, threadState])
   @@map("conversations")
 }
 

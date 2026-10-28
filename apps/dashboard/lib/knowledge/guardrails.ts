@@ -475,3 +475,66 @@ export const outOfBase = isOutOfBase;
 export const applyKbGuardrails = applyGuardrails;
 export const applyKnowledgeGuardrails = applyGuardrails;
 
+// ---------------------------------------------------------------------
+// Escalation detection guardrails (E3.4)
+// ---------------------------------------------------------------------
+
+const DEFAULT_ESCALATION_KEYWORDS = [
+  "humano",
+  "agente",
+  "persona",
+  "operador",
+  "reclamo",
+  "queja",
+  "hablar con",
+  "derivar",
+];
+
+export function normalizeEscalationKeywords(input: unknown): string[] {
+  if (input == null) return [...DEFAULT_ESCALATION_KEYWORDS];
+  if (Array.isArray(input)) return input.map((x) => String(x).trim()).filter(Boolean);
+  if (typeof input === "string") return input.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+  if (typeof input === "object") {
+    const obj = input as Record<string, unknown>;
+    const kw =
+      (obj as any).escalationKeywords ??
+      (obj as any).escalation_keywords ??
+      (obj as any).keywords ??
+      (obj as any).triggers;
+    if (Array.isArray(kw)) return kw.map((x) => String(x).trim()).filter(Boolean);
+    if (typeof kw === "string") return kw.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+  }
+  return [...DEFAULT_ESCALATION_KEYWORDS];
+}
+
+export function hasEscalationKeyword(message: unknown, keywords?: unknown): boolean {
+  const text = normalize(String(message ?? ""));
+  const kws = normalizeEscalationKeywords(keywords);
+  return kws.some((kw) => text.includes(normalize(String(kw))));
+}
+
+export function shouldEscalate(...args: any[]): boolean {
+  // Accept (message, keywords?) or (context object).
+  let message: unknown = args[0];
+  let keywords: unknown = args[1];
+  let intent: string | undefined;
+  if (args.length === 1 && message && typeof message === "object" && !Array.isArray(message)) {
+    const obj = message as Record<string, unknown>;
+    message = obj.message ?? obj.text ?? obj.content ?? obj.question ?? obj.input ?? obj;
+    keywords = obj.keywords ?? obj.escalationKeywords ?? obj.escalation_keywords ?? keywords;
+    intent = String(obj.intent ?? (obj.classification as any)?.intent ?? "").toLowerCase();
+  }
+  if (hasEscalationKeyword(message, keywords)) return true;
+  if (intent && (intent === "reclamo" || intent === "complaint" || intent === "escalate")) return true;
+  const text = normalize(String(message ?? ""));
+  if (text.includes("hablar con") || text.includes("humano") || text.includes("agente")) return true;
+  return false;
+}
+
+export const isEscalationRequest = shouldEscalate;
+export const needsEscalation = shouldEscalate;
+export const mustEscalate = shouldEscalate;
+export const requiresEscalation = shouldEscalate;
+export const detectEscalation = shouldEscalate;
+export const escalationNeeded = shouldEscalate;
+
