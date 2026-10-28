@@ -1,0 +1,79 @@
+{
+  "name": "Resena - Solicitud de resena",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resena",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-resena",
+      "name": "Webhook Resena",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "resena-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = $json.body || $json;\nif (!data.tenantId || !data.contactRef) {\n  throw new Error('Falta tenantId o contactRef');\n}\nreturn [{ json: data }];"
+      },
+      "id": "validate-resena",
+      "name": "Validar Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const d = $('Validar Payload').item.json;\nconst msg = `¡Gracias por tu visita! ¿Nos dejas una reseña rápida? Tu opinión nos ayuda a mejorar.`;\nreturn [{ json: { reply: msg, contactRef: d.contactRef, tenantId: d.tenantId } }];"
+      },
+      "id": "build-review",
+      "name": "Armar Solicitud",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $json.tenantId }}\",\n  \"contactRef\": \"{{ $json.contactRef }}\",\n  \"direction\": \"out\",\n  \"content\": \"{{ $json.reply }}\",\n  \"aiGenerated\": false\n}"
+      },
+      "id": "log-resena",
+      "name": "Registrar Resena",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Webhook Resena": {
+      "main": [[{ "node": "Validar Payload", "type": "main", "index": 0 }]]
+    },
+    "Validar Payload": {
+      "main": [[{ "node": "Armar Solicitud", "type": "main", "index": 0 }]]
+    },
+    "Armar Solicitud": {
+      "main": [[{ "node": "Registrar Resena", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "resena-workflow",
+  "tags": ["resena", "mensajeria", "e3"],
+  "meta": { "templateCredsSetupCompleted": true }
+}

@@ -1,0 +1,64 @@
+{
+  "name": "Recordatorio - Recordatorios de cita",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+        }
+      },
+      "id": "schedule-recordatorio",
+      "name": "Programador Diario",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const now = new Date();\nconst tenants = ['default'];\nreturn tenants.map(t => ({ json: { tenantId: t, date: now.toISOString().slice(0,10) } }));"
+      },
+      "id": "list-tenants",
+      "name": "Listar Tenants",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $json.tenantId }}\",\n  \"contactRef\": \"reminder-{{ $json.date }}\",\n  \"direction\": \"out\",\n  \"content\": \"Recordatorio: tienes una cita proxima. Responde para confirmar o reagendar.\",\n  \"aiGenerated\": false\n}"
+      },
+      "id": "log-reminder",
+      "name": "Registrar Recordatorio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    }
+  ],
+  "connections": {
+    "Programador Diario": {
+      "main": [[{ "node": "Listar Tenants", "type": "main", "index": 0 }]]
+    },
+    "Listar Tenants": {
+      "main": [[{ "node": "Registrar Recordatorio", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "recordatorio-workflow",
+  "tags": ["recordatorio", "mensajeria", "e3"],
+  "meta": { "templateCredsSetupCompleted": true }
+}

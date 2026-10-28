@@ -1,0 +1,79 @@
+{
+  "name": "Reserva - Agendamiento de cita",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reserva",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-reserva",
+      "name": "Webhook Reserva",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "reserva-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = $json.body || $json;\nconst required = ['tenantId', 'contactRef', 'fecha', 'hora'];\nfor (const k of required) {\n  if (!data[k]) throw new Error('Falta campo: ' + k);\n}\nreturn [{ json: data }];"
+      },
+      "id": "validate-reserva",
+      "name": "Validar Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $json.tenantId }}\",\n  \"contactRef\": \"{{ $json.contactRef }}\",\n  \"direction\": \"in\",\n  \"content\": \"Reserva solicitada: {{ $json.fecha }} {{ $json.hora }}\",\n  \"aiGenerated\": false\n}"
+      },
+      "id": "log-reserva",
+      "name": "Registrar Reserva",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "functionCode": "const d = $('Validar Payload').item.json;\nconst msg = `Tu cita quedo agendada para el ${d.fecha} a las ${d.hora}. Te enviaremos un recordatorio antes. ¡Gracias!`;\nreturn [{ json: { reply: msg } }];"
+      },
+      "id": "build-confirm",
+      "name": "Armar Confirmacion",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Reserva": {
+      "main": [[{ "node": "Validar Payload", "type": "main", "index": 0 }]]
+    },
+    "Validar Payload": {
+      "main": [[{ "node": "Registrar Reserva", "type": "main", "index": 0 }]]
+    },
+    "Registrar Reserva": {
+      "main": [[{ "node": "Armar Confirmacion", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "reserva-workflow",
+  "tags": ["reserva", "mensajeria", "e3"],
+  "meta": { "templateCredsSetupCompleted": true }
+}
