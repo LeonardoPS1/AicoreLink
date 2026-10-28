@@ -129,15 +129,35 @@ function mergeArgs(args: any[]): { tx: any; data: Record<string, any> } {
     }
   }
   if (forcedState) {
-    data.state = forcedState;
-    data.threadState = forcedState;
-    data.thread_state = forcedState;
-    data.status = forcedState;
-    data.threadStatus = forcedState;
-    const isEsc = forcedState === "escalated";
-    data.escalated = isEsc;
-    data.escalado = isEsc;
-    data.handoff = isEsc;
+    const normalized = STATE_ALIASES[String(forcedState).trim().toLowerCase()] ?? String(forcedState).trim().toLowerCase();
+    const isOpenState = normalized === "open";
+    const isEscState = normalized === "escalated";
+    const isClosedState = normalized === "closed";
+
+    const apply = (obj: any) => {
+      if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+      obj.state = forcedState;
+      obj.threadState = forcedState;
+      obj.thread_state = forcedState;
+      obj.thread_status = forcedState;
+      obj.threadStatus = forcedState;
+      obj.status = forcedState;
+      obj.escalated = isEscState;
+      obj.escalado = isEscState;
+      obj.handoff = isEscState;
+      obj.open = isOpenState;
+      obj.isOpen = isOpenState;
+      obj.closed = isClosedState;
+      obj.isClosed = isClosedState;
+      obj.isEscalated = isEscState;
+    };
+
+    apply(data);
+    for (const key of ["thread", "conversation", "ctx", "data"]) {
+      if (data[key] && typeof data[key] === "object" && !Array.isArray(data[key])) {
+        apply(data[key]);
+      }
+    }
   }
   return { tx, data };
 }
@@ -150,6 +170,7 @@ function asThread(data: any): Record<string, any> {
     if (data.thread) return asThread(data.thread);
     if (data.conversation) return asThread(data.conversation);
     if (data.ctx) return asThread(data.ctx);
+    if (data.data) return asThread(data.data);
     return { ...data };
   }
   return {};
@@ -188,40 +209,47 @@ export function normalizeThreadState(input: any): ThreadState {
 
 export function threadState(...args: any[]): ThreadState {
   const { data } = mergeArgs(args);
-  return normalizeThreadState(data.thread ?? data.conversation ?? data.ctx ?? data);
+  return normalizeThreadState(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
 }
 
 export const getThreadState = threadState;
 export const getState = threadState;
 export const getStatus = threadState;
 export const threadStatus = threadState;
+export const thread_state = threadState;
+export const thread_status = threadState;
 export const statusOf = threadState;
 
 function stateOf(...args: any[]): ThreadState {
   const { data } = mergeArgs(args);
-  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data);
+  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
   return normalizeThreadState(t);
 }
 
 export function isEscalated(...args: any[]): boolean {
   const { data } = mergeArgs(args);
-  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data);
+  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
   if (t.escalated === true || t.escalado === true || t.handoff === true) return true;
   return normalizeThreadState(t) === "escalated";
 }
 
 export function isOpen(...args: any[]): boolean {
   const { data } = mergeArgs(args);
-  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data);
+  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
   if (t.open === true) return true;
   return normalizeThreadState(t) === "open" && !t.handoff;
 }
 
 export function isClosed(...args: any[]): boolean {
   const { data } = mergeArgs(args);
-  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data);
+  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
   return normalizeThreadState(t) === "closed";
 }
+export const is_open = isOpen;
+export const is_escalated = isEscalated;
+export const is_closed = isClosed;
+export const can_respond = canRespond;
+export const build_summary = buildSummary;
 
 export function isDerived(...args: any[]): boolean {
   return isEscalated(...args);
@@ -235,7 +263,7 @@ export function canRespond(...args: any[]): boolean {
   if (isEscalated(...args)) return false;
   if (isClosed(...args)) return false;
   const { data } = mergeArgs(args);
-  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data);
+  const t = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
   if (t.handoff === true) return false;
   if (t.canRespond === false || t.can_reply === false) return false;
   return true;
@@ -279,7 +307,7 @@ export function summarizeMessage(msg: any): string {
 
 export function buildSummary(...args: any[]): string {
   const { data } = mergeArgs(args);
-  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? data);
+  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? data);
   const messages =
     data.messages ?? thread.messages ?? data.conversation?.messages ?? (Array.isArray(data) ? data : []);
   const reason = data.reason ?? data.motive ?? data.cause ?? data.intent ?? data.why;
@@ -324,7 +352,7 @@ export const generateSummary = buildSummary;
 
 export function escalateThread(...args: any[]): any {
   const { tx, data } = mergeArgs(args);
-  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? (tx ? undefined : data));
+  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? (tx ? undefined : data));
   // If no thread-like input but data has fields, use data as thread.
   const base = Object.keys(thread).length ? thread : { ...data };
 
@@ -438,7 +466,7 @@ export const escalateHilo = escalateThread;
 
 export function reactivateThread(...args: any[]): any {
   const { tx, data } = mergeArgs(args);
-  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? (tx ? undefined : data));
+  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? (tx ? undefined : data));
   const base = Object.keys(thread).length ? thread : { ...data };
   const now = new Date();
   const result: any = {
@@ -506,7 +534,7 @@ export const resumeThread = reactivateThread;
 
 export function closeThread(...args: any[]): any {
   const { tx, data } = mergeArgs(args);
-  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? (tx ? undefined : data));
+  const thread = asThread(data.thread ?? data.conversation ?? data.ctx ?? data.data ?? (tx ? undefined : data));
   const base = Object.keys(thread).length ? thread : { ...data };
   const now = new Date();
   const summary = data.summary ?? thread.summary ?? buildSummary(data);
