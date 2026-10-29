@@ -10,6 +10,8 @@ import {
   WORD_AMOUNT,
   WORD_BEFORE_AMOUNT,
   CURRENCY_BEFORE_AMOUNT,
+  CURRENCY_BEFORE_NUMBER,
+  WORD_BEFORE_NUMBER,
 } from "@/lib/knowledge/guardrails";
 
 const NO_DATA_FALLBACK = NO_DATA_REPLY;
@@ -173,7 +175,7 @@ function allowedAmounts(knowledgeBase: string): Set<string> {
   return allowed;
 }
 
-export { DOLLAR_AMOUNT, WORD_AMOUNT, WORD_BEFORE_AMOUNT, CURRENCY_BEFORE_AMOUNT, MONEY_REGEXES };
+export { DOLLAR_AMOUNT, WORD_AMOUNT, WORD_BEFORE_AMOUNT, CURRENCY_BEFORE_AMOUNT, CURRENCY_BEFORE_NUMBER, WORD_BEFORE_NUMBER, MONEY_REGEXES };
 
 /**
  * Post-filter (ruling R20b): removes any monetary figure from a generated reply
