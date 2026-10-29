@@ -160,21 +160,6 @@ export function isInjection(message: string): boolean {
   return isInjectionGuard(message);
 }
 
-/** Money figures the knowledge base genuinely contains, so they are not stripped. */
-function allowedAmounts(knowledgeBase: string): Set<string> {
-  const allowed = new Set<string>();
-  const compact = (value: string) => value.toLowerCase().replace(/\s/g, "");
-
-  for (const regex of MONEY_REGEXES) {
-    const cloned = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : regex.flags + "g");
-    for (const match of knowledgeBase.match(cloned) ?? []) {
-      allowed.add(compact(match));
-    }
-  }
-
-  return allowed;
-}
-
 export { DOLLAR_AMOUNT, WORD_AMOUNT, WORD_BEFORE_AMOUNT, CURRENCY_BEFORE_AMOUNT, CURRENCY_BEFORE_NUMBER, WORD_BEFORE_NUMBER, MONEY_REGEXES };
 
 /**
