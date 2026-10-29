@@ -27,7 +27,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const d = $('Validar Payload').item.json;\nconst msg = `¡Gracias por tu visita! ¿Nos dejas una reseña rápida? Tu opinión nos ayuda a mejorar.`;\nreturn [{ json: { reply: msg, contactRef: d.contactRef, tenantId: d.tenantId } }];"
+        "functionCode": "const d = $('Validar Payload').first().json;\nconst msg = `¡Gracias por tu visita! ¿Nos dejas una reseña rápida? Tu opinión nos ayuda a mejorar.`;\nreturn [{ json: { reply: msg, contactRef: d.contactRef, tenantId: d.tenantId } }];"
       },
       "id": "build-review",
       "name": "Armar Solicitud",

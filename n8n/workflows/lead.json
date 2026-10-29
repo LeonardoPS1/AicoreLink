@@ -51,7 +51,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const lead = $('Validar Payload').item.json.lead || {};\nconst msg = `Hola, recibimos tu solicitud para ${lead.business || 'tu negocio'}. Te contactamos pronto por WhatsApp para coordinar el diagnostico de 15 minutos.\\n\\n- Nombre: ${lead.name || ''}\\n- WhatsApp: ${lead.whatsapp || ''}\\n- Rubro: ${lead.vertical || ''}`;\nreturn [{ json: { to: lead.whatsapp, body: msg } }];"
+        "functionCode": "const lead = $('Validar Payload').first().json.lead || {};\nconst msg = `Hola, recibimos tu solicitud para ${lead.business || 'tu negocio'}. Te contactamos pronto por WhatsApp para coordinar el diagnostico de 15 minutos.\\n\\n- Nombre: ${lead.name || ''}\\n- WhatsApp: ${lead.whatsapp || ''}\\n- Rubro: ${lead.vertical || ''}`;\nreturn [{ json: { to: lead.whatsapp, body: msg } }];"
       },
       "id": "build-message",
       "name": "Armar Mensaje",

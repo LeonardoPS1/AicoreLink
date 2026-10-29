@@ -51,7 +51,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const d = $('Validar Payload').item.json;\nconst msg = `Tu cita quedo agendada para el ${d.fecha} a las ${d.hora}. Te enviaremos un recordatorio antes. ¡Gracias!`;\nreturn [{ json: { reply: msg } }];"
+        "functionCode": "const d = $('Validar Payload').first().json;\nconst msg = `Tu cita quedo agendada para el ${d.fecha} a las ${d.hora}. Te enviaremos un recordatorio antes. ¡Gracias!`;\nreturn [{ json: { reply: msg } }];"
       },
       "id": "build-confirm",
       "name": "Armar Confirmacion",
