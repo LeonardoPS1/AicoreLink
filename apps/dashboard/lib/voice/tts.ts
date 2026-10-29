@@ -99,7 +99,7 @@ export async function textToSpeechGuarded(
   let guardedText = String(text ?? "");
   try {
     // Best-effort guardrail post-filter when a KB is supplied.
-    if (options?.knowledgeBase || options?.kb) {
+    if (options?.knowledgeBase != null || options?.kb != null) {
       const { applyGuardrails } = await import("@/lib/knowledge/guardrails");
       guardedText = applyGuardrails(guardedText, options.knowledgeBase ?? options.kb, options?.deflection);
     }

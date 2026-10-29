@@ -59,7 +59,15 @@ function toBuffer(v: any): Buffer | null {
   return null;
 }
 
-function mergeArgs(args: any[]): { data: Record<string, any>; tx: any } {
+function safeGet(obj: any, key: string): any {
+  try {
+    return obj == null ? undefined : obj[key];
+  } catch {
+    return undefined;
+  }
+}
+
+export function mergeArgs(args: any[]): { data: Record<string, any>; tx: any } {
   const data: Record<string, any> = {};
   let tx: any = null;
   const strings: string[] = [];
@@ -120,8 +128,15 @@ function mergeArgs(args: any[]): { data: Record<string, any>; tx: any } {
 
   // string interpretation
   if (strings.length === 1) {
-    if (data.transcript == null && data.text == null && data.message == null && data.question == null && data.query == null && data.input == null) {
-      data.transcript = strings[0];
+    const s = strings[0];
+    const tenantFieldsNull =
+      data.tenantId == null && data.tenant_id == null && data.tenant == null &&
+      data.ownerId == null && data.owner_id == null && data.accountId == null &&
+      data.account_id == null && data.clientId == null && data.client_id == null;
+    if (looksLikeTenantId(s) && tenantFieldsNull) {
+      data.tenantId = s;
+    } else if (data.transcript == null && data.text == null && data.message == null && data.question == null && data.query == null && data.input == null) {
+      data.transcript = s;
     }
   } else if (strings.length >= 2) {
     if (data.tenantId == null && data.tenant_id == null && data.tenant == null) {
@@ -209,17 +224,34 @@ function pickNotices(data: any): { ai: string; recording: string } {
 
 const SCHEDULING_KEYWORDS = [
   "agendar",
-  "agenda",
   "reservar",
-  "reserva",
   "cita",
   "turno",
-  "hora",
   "appointment",
   "book",
   "schedule",
   "programar",
+  "reservación",
+  "agendamiento",
 ];
+
+const ESCALATION_KEYWORDS = [
+  "escalado",
+  "queja",
+  "reclamo",
+  "urgente",
+  "emergencia",
+  "humano",
+  "agente",
+];
+
+function looksLikeTenantId(value: string): boolean {
+  const t = String(value ?? "").trim();
+  if (!t || /\s/.test(t)) return false;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) return true;
+  if (/^(tenant|org|account|client|owner)[-_]/i.test(t)) return true;
+  return false;
+}
 
 export function isSchedulingIntent(text: unknown): boolean {
   const t = String(text ?? "").toLowerCase();
@@ -248,6 +280,8 @@ export async function scheduleAppointment(...args: any[]): Promise<any> {
   const tenantId = pickTenant(data);
   const transcript = pickTranscript(data);
   const details = data.details ?? data.appointment ?? data.booking ?? extractAppointmentDetails(transcript);
+  const isEscalation = ESCALATION_KEYWORDS.some((k) => transcript.toLowerCase().includes(k)) ||
+    (typeof guardrails.shouldEscalate === "function" && guardrails.shouldEscalate(transcript, data.forbiddenTopics ?? data.forbidden) === true);
   const scheduler =
     data.scheduler ??
     data.schedule ??
@@ -268,8 +302,8 @@ export async function scheduleAppointment(...args: any[]): Promise<any> {
     confirmed: true,
     scheduled: true,
     automated: true,
-    humanIntervention: false,
-    noHumanIntervention: true,
+    humanIntervention: isEscalation,
+    noHumanIntervention: !isEscalation,
     details,
     transcript,
     createdAt: now,
@@ -307,8 +341,8 @@ export async function scheduleAppointment(...args: any[]): Promise<any> {
     ok: true,
     success: true,
     automated: true,
-    humanIntervention: false,
-    noHumanIntervention: true,
+    humanIntervention: isEscalation,
+    noHumanIntervention: !isEscalation,
     tenantId,
     tenant_id: tenantId,
   };
@@ -362,11 +396,21 @@ async function transcribe(input: any): Promise<{ text: string; raw: any }> {
 
   const sttModule = await resolveStt();
   const transcribeFn =
-    data.transcribe ?? data.transcribeAudio ?? data.stt ?? (sttModule ? sttModule.transcribeAudio : null);
+    data.transcribe ?? data.transcribeAudio ?? data.transcribeWithGuardrails ?? data.transcribeAudioGuarded ??
+    data.stt ?? (sttModule ? (safeGet(sttModule, "transcribeWithGuardrails") ?? safeGet(sttModule, "transcribeAudioGuarded") ?? safeGet(sttModule, "transcribeAudio")) : null);
   const transcribeFromUrlFn =
-    data.transcribeFromUrl ?? data.transcribeAudioFromUrl ?? (sttModule ? sttModule.transcribeAudioFromUrl : null);
+    data.transcribeFromUrl ?? data.transcribeAudioFromUrl ?? (sttModule ? safeGet(sttModule, "transcribeAudioFromUrl") : null);
 
+  const kb = pickKb(data);
+  const forbiddenTopics = pickForbidden(data);
   const opts = data.sttOptions ?? data.transcribeOptions ?? { language: data.language ?? "es" };
+  if (opts && typeof opts === "object") {
+    if (opts.knowledgeBase == null && opts.kb == null) {
+      opts.knowledgeBase = kb;
+      opts.kb = kb;
+    }
+    if (opts.forbiddenTopics == null && opts.forbidden_topics == null) opts.forbiddenTopics = forbiddenTopics;
+  }
 
   try {
     if (buf && typeof transcribeFn === "function") {
@@ -403,8 +447,18 @@ async function synthesize(text: string, input: any): Promise<{ audio: any; base6
   }
   const ttsModule = await resolveTts();
   const speakFn =
-    data.speak ?? data.textToSpeech ?? data.ttsFn ?? (ttsModule ? ttsModule.textToSpeech : null);
+    data.speak ?? data.textToSpeech ?? data.textToSpeechGuarded ?? data.ttsFn ??
+    (ttsModule ? (safeGet(ttsModule, "textToSpeechGuarded") ?? safeGet(ttsModule, "textToSpeechWithGuardrails") ?? safeGet(ttsModule, "textToSpeech")) : null);
   const opts = data.ttsOptions ?? data.speechOptions ?? {};
+  if (opts && typeof opts === "object") {
+    const kb = pickKb(data);
+    const forbiddenTopics = pickForbidden(data);
+    if (opts.knowledgeBase == null && opts.kb == null) {
+      opts.knowledgeBase = kb;
+      opts.kb = kb;
+    }
+    if (opts.forbiddenTopics == null && opts.forbidden_topics == null) opts.forbiddenTopics = forbiddenTopics;
+  }
 
   try {
     if (typeof speakFn === "function") {
@@ -462,7 +516,14 @@ export async function handleVoiceTurn(...args: any[]): Promise<any> {
 
   // 2. Guardrails / KB reply
   let reply: string;
-  const scheduling = isSchedulingIntent(transcript) || data.forceSchedule === true || data.schedule === true;
+  const isInj = typeof guardrails.isInjection === "function" ? guardrails.isInjection(transcript) : false;
+  const isForbidden = typeof guardrails.isForbiddenTopic === "function" ? guardrails.isForbiddenTopic(transcript, forbiddenTopics) : false;
+  const schedulingIntent = isSchedulingIntent(transcript) || data.forceSchedule === true || data.schedule === true;
+  const scheduling = !isInj && !isForbidden && schedulingIntent;
+
+  const isEscalation = ESCALATION_KEYWORDS.some((k) => transcript.toLowerCase().includes(k)) ||
+    (typeof guardrails.shouldEscalate === "function" && guardrails.shouldEscalate(transcript, forbiddenTopics) === true);
+  data._isEscalation = isEscalation;
 
   if (scheduling) {
     const sched = await scheduleAppointment({
@@ -550,8 +611,8 @@ export async function handleVoiceTurn(...args: any[]): Promise<any> {
     confirmation: scheduledResult?.confirmation ?? null,
     autoScheduled: !!scheduling,
     automated: !!scheduling,
-    humanIntervention: false,
-    noHumanIntervention: true,
+    humanIntervention: (scheduledResult?.humanIntervention ?? isEscalation) === true,
+    noHumanIntervention: !((scheduledResult?.humanIntervention ?? isEscalation) === true),
 
     // latency
     durationMs: elapsed,

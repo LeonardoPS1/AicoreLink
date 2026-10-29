@@ -98,7 +98,20 @@ export async function transcribeWithGuardrails(
   const res = await transcribeAudio(audioBuffer, options);
   try {
     res.text = String(res.text ?? "");
-    void (options?.knowledgeBase ?? options?.kb);
+    const kb = options?.knowledgeBase ?? options?.kb ?? options?.guardrails;
+    const forbidden = options?.forbiddenTopics ?? options?.forbidden_topics ?? options?.forbidden;
+    if (kb != null || forbidden != null) {
+      try {
+        const g = await import("@/lib/knowledge/guardrails");
+        if (kb != null) {
+          res.text = g.applyGuardrails(res.text, kb, options?.deflection);
+        }
+        try { g.isInjection(res.text); } catch { /* ignore */ }
+        try { g.isForbiddenTopic(res.text, forbidden); } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
+    }
   } catch {
     /* ignore */
   }
