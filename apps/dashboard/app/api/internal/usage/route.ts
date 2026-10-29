@@ -1,16 +1,29 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { withTenant } from "@/lib/tenant-context";
 import { recordUsage } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 
+function safeEqual(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  try {
+    return crypto.timingSafeEqual(ab, bb);
+  } catch {
+    return false;
+  }
+}
+
 function isAuthorized(request: Request): boolean {
   const internalApiKey = process.env.FACTORY_INTERNAL_API_KEY;
   if (!internalApiKey) return false;
   const headerKey = request.headers.get("x-internal-key");
-  if (headerKey === internalApiKey) return true;
+  if (headerKey && safeEqual(headerKey, internalApiKey)) return true;
   const auth = request.headers.get("authorization");
-  if (auth === `Bearer ${internalApiKey}`) return true;
+  if (auth && safeEqual(auth, `Bearer ${internalApiKey}`)) return true;
   return false;
 }
 
@@ -53,8 +66,9 @@ export async function POST(request: Request): Promise<Response> {
   const tokensOut = Number(
     body?.tokensOut ?? body?.tokens_out ?? body?.outputTokens ?? body?.output_tokens ?? 0
   );
-  const tokensUsed =
-    body?.tokensUsed ?? body?.tokens_used ?? body?.tokens ?? (tokensIn + tokensOut);
+  const tokensUsed = Number(
+    body?.tokensUsed ?? body?.tokens_used ?? body?.tokens ?? (tokensIn + tokensOut)
+  );
 
   const messagesIn = Number(
     body?.messagesIn ?? body?.messages_in ?? body?.in ?? body?.incoming ?? 0
@@ -74,11 +88,10 @@ export async function POST(request: Request): Promise<Response> {
         model,
         tokensIn,
         tokensOut,
-        tokensUsed: Number(tokensUsed),
+        tokensUsed: Number.isFinite(tokensUsed) ? tokensUsed : 0,
         messagesIn,
         messagesOut,
         costEstimate,
-        ...body,
       });
     });
 
@@ -110,7 +123,12 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const limitRaw = url.searchParams.get("limit");
-  const limit = Number.isFinite(Number(limitRaw)) ? Number(limitRaw) : 50;
+  const limit =
+    limitRaw == null
+      ? 50
+      : Number.isFinite(Number(limitRaw))
+        ? Number(limitRaw)
+        : 50;
 
   try {
     const usage = await withTenant(String(tenantId), async (tx) => {

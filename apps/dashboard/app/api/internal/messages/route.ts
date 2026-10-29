@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { withTenant } from "@/lib/tenant-context";
 import { mirrorMessage } from "@/lib/conversations/mirror";
@@ -5,13 +6,25 @@ import { conversationKey } from "@/lib/conversations/identity";
 
 export const dynamic = "force-dynamic";
 
+function safeEqual(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  try {
+    return crypto.timingSafeEqual(ab, bb);
+  } catch {
+    return false;
+  }
+}
+
 function isAuthorized(request: Request): boolean {
   const internalApiKey = process.env.FACTORY_INTERNAL_API_KEY;
   if (!internalApiKey) return false;
   const headerKey = request.headers.get("x-internal-key");
-  if (headerKey === internalApiKey) return true;
+  if (headerKey && safeEqual(headerKey, internalApiKey)) return true;
   const auth = request.headers.get("authorization");
-  if (auth === `Bearer ${internalApiKey}`) return true;
+  if (auth && safeEqual(auth, `Bearer ${internalApiKey}`)) return true;
   return false;
 }
 
@@ -50,7 +63,9 @@ export async function POST(request: Request): Promise<Response> {
 
   const direction = body?.direction ?? "out";
   const content = body?.content ?? body?.message ?? body?.text ?? "";
-  const aiGenerated = body?.aiGenerated ?? body?.ai_generated;
+  const aiGeneratedRaw = body?.aiGenerated ?? body?.ai_generated;
+  const aiGenerated =
+    aiGeneratedRaw === undefined ? undefined : Boolean(aiGeneratedRaw);
   const tokensUsed = body?.tokensUsed ?? body?.tokens_used ?? null;
   const audioUrl = body?.audioUrl ?? body?.audio_url;
 
@@ -70,7 +85,10 @@ export async function POST(request: Request): Promise<Response> {
       body.conversation_id;
     key = conversationKey(String(tenantId), cid);
   } else {
-    key = String(contactRef || `contact_${tenantId}`);
+    key = conversationKey(
+      String(tenantId),
+      String(contactRef || `contact_${tenantId}`)
+    );
   }
 
   const externalMessageId =
@@ -85,7 +103,17 @@ export async function POST(request: Request): Promise<Response> {
   const resolvedExternalId =
     externalMessageId != null && externalMessageId !== ""
       ? String(externalMessageId)
-      : `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      : `n8n_${String(tenantId)}_${String(direction)}_${crypto
+          .createHash("sha256")
+          .update(
+            JSON.stringify({
+              contactRef: String(contactRef ?? ""),
+              content: String(content ?? ""),
+              audioUrl: audioUrl ?? null,
+            })
+          )
+          .digest("hex")
+          .slice(0, 16)}`;
 
   const senderRef = body?.senderRef ?? body?.sender_ref ?? contactRef ?? "";
 
@@ -137,7 +165,12 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const limitRaw = url.searchParams.get("limit");
-  const limit = Number.isFinite(Number(limitRaw)) ? Number(limitRaw) : 50;
+  const limit =
+    limitRaw == null
+      ? 50
+      : Number.isFinite(Number(limitRaw))
+        ? Number(limitRaw)
+        : 50;
 
   try {
     const messages = await withTenant(String(tenantId), async (tx) => {
