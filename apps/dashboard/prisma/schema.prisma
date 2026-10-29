@@ -22,6 +22,8 @@ model Tenant {
   credentials      ChannelCredential[]
   businessProfiles BusinessProfile[]
   sites            Site[]
+  knowledgeBases   KnowledgeBase[]
+  knowledgeBaseConfig KnowledgeBaseConfig?
 
   @@map("tenants")
 }
@@ -78,6 +80,7 @@ model ChannelCredential {
   provider        String
   externalId      String?  @map("external_id")
   encryptedSecret String   @map("encrypted_secret")
+  enabled         Boolean  @default(true)
   createdAt       DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
@@ -86,14 +89,17 @@ model ChannelCredential {
 }
 
 model TenantUsage {
-  id           String   @id @default(uuid())
-  tenantId     String   @map("tenant_id")
-  channel      String
-  period       DateTime
-  messagesIn   Int      @default(0) @map("messages_in")
-  messagesOut  Int      @default(0) @map("messages_out")
-  tokensUsed   Int      @default(0) @map("tokens_used")
-  costEstimate Decimal  @default(0) @map("cost_estimate")
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  channel        String
+  period         DateTime
+  messagesIn     Int      @default(0) @map("messages_in")
+  messagesOut    Int      @default(0) @map("messages_out")
+  tokensUsed     Int      @default(0) @map("tokens_used")
+  costEstimate   Decimal  @default(0) @map("cost_estimate")
+  model          String?
+  version        String?
+  firstResponseMs Int?    @map("first_response_ms")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
@@ -122,35 +128,58 @@ model CostRate {
   @@map("cost_rates")
 }
 
+enum ThreadState {
+  open
+  escalated
+  closed
+}
+
 model Conversation {
-  id          String   @id @default(uuid())
-  tenantId    String   @map("tenant_id")
-  channel     String   @default("whatsapp_text")
-  contactRef  String   @map("contact_ref")
-  status      String   @default("abierta")
-  escalado    Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id             String      @id @default(uuid())
+  tenantId       String      @map("tenant_id")
+  externalId     String?     @map("external_id")
+  channel        String      @default("whatsapp_text")
+  contactRef     String      @map("contact_ref")
+  status         String      @default("abierta")
+  threadState    ThreadState @default(open) @map("thread_state")
+  escalado       Boolean     @default(false)
+  handoff        Boolean     @default(false)
+  summary        String?     @db.Text
+  escalatedAt    DateTime?   @map("escalated_at")
+  closedAt       DateTime?   @map("closed_at")
+  reactivatedAt  DateTime?   @map("reactivated_at")
+  model          String?
+  version        String?
+  firstResponseMs Int?       @map("first_response_ms")
+  createdAt      DateTime    @default(now()) @map("created_at")
 
   messages Message[]
 
+  @@unique([tenantId, externalId])
+  @@index([tenantId, threadState])
   @@map("conversations")
 }
 
 model Message {
-  id             String   @id @default(uuid())
-  conversationId String   @map("conversation_id")
-  tenantId       String   @map("tenant_id")
-  direction      String
-  content        String
-  aiGenerated    Boolean  @default(false) @map("ai_generated")
-  tokensUsed     Int?     @map("tokens_used")
-  createdAt      DateTime @default(now()) @map("created_at")
-  mediaType      String?  @default("text") @map("media_type")
-  audioUrl       String?  @map("audio_url")
-  transcript     String?
+  id                 String   @id @default(uuid())
+  conversationId      String   @map("conversation_id")
+  tenantId           String   @map("tenant_id")
+  direction          String
+  content            String
+  aiGenerated        Boolean  @default(false) @map("ai_generated")
+  tokensUsed         Int?     @map("tokens_used")
+  createdAt          DateTime @default(now()) @map("created_at")
+  mediaType          String?  @default("text") @map("media_type")
+  audioUrl           String?  @map("audio_url")
+  transcript         String?
+  externalMessageId  String?  @map("external_message_id")
+  model              String?
+  version            String?
+  firstResponseMs    Int?     @map("first_response_ms")
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
 
+  @@unique([tenantId, externalMessageId])
   @@map("messages")
 }
 
@@ -320,4 +349,38 @@ model PublishLog {
 
   @@index([siteId])
   @@map("publish_logs")
+}
+
+/// Structured knowledge base entries for a tenant (category, question, answer).
+/// The assistant may only cite facts present in these rows (E3 KB, RF-KB-01..05).
+model KnowledgeBase {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  category        String
+  question        String
+  answer          String   @db.Text
+  tone            String?  @map("tone")
+  forbiddenTopics String[] @default([]) @map("forbidden_topics")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, category])
+  @@map("knowledge_bases")
+}
+
+/// Per-tenant configuration for the knowledge base assistant (tone + forbidden topics).
+model KnowledgeBaseConfig {
+  id              String   @id @default(uuid())
+  tenantId        String   @unique @map("tenant_id")
+  tone            String   @default("amable")
+  forbiddenTopics String[] @default([]) @map("forbidden_topics")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_base_configs")
 }

@@ -1,0 +1,133 @@
+{
+  "name": "Respuesta - IA conversacional",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "respuesta",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-respuesta",
+      "name": "Webhook Respuesta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "respuesta-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = $json.body || $json;\nconst required = ['tenantId', 'contactRef', 'message', 'messageId'];\nfor (const k of required) {\n  if (!data[k]) throw new Error('Falta campo: ' + k);\n}\nreturn [{ json: data }];"
+      },
+      "id": "validate-respuesta",
+      "name": "Validar Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $('Validar Payload').item.json.tenantId }}\",\n  \"contactRef\": \"{{ $('Validar Payload').item.json.contactRef }}\",\n  \"message\": \"{{ $('Validar Payload').item.json.message }}\",\n  \"messageId\": \"{{ $('Validar Payload').item.json.messageId }}\"\n}"
+      },
+      "id": "call-aicorelink",
+      "name": "Llamar AicoreLink",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "functionCode": "const reply = ($json.reply || '').trim() || 'No tengo ese dato por ahora. ¿Te derivo con un asesor?';\nreturn [{ json: { reply } }];"
+      },
+      "id": "build-reply",
+      "name": "Armar Respuesta",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $('Validar Payload').item.json.tenantId }}\",\n  \"contactRef\": \"{{ $('Validar Payload').item.json.contactRef }}\",\n  \"messageId\": \"{{ $('Validar Payload').item.json.messageId }}-reply\",\n  \"direction\": \"out\",\n  \"content\": \"{{ $json.reply }}\",\n  \"aiGenerated\": true\n}"
+      },
+      "id": "log-reply",
+      "name": "Registrar Respuesta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/usage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $('Validar Payload').item.json.tenantId }}\",\n  \"model\": \"mistral\",\n  \"tokensIn\": 0,\n  \"tokensOut\": 0\n}"
+      },
+      "id": "record-usage",
+      "name": "Registrar Uso",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 300],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    }
+  ],
+  "connections": {
+    "Webhook Respuesta": {
+      "main": [[{ "node": "Validar Payload", "type": "main", "index": 0 }]]
+    },
+    "Validar Payload": {
+      "main": [[{ "node": "Llamar AicoreLink", "type": "main", "index": 0 }]]
+    },
+    "Llamar AicoreLink": {
+      "main": [[{ "node": "Armar Respuesta", "type": "main", "index": 0 }]]
+    },
+    "Armar Respuesta": {
+      "main": [[{ "node": "Registrar Respuesta", "type": "main", "index": 0 }]]
+    },
+    "Registrar Respuesta": {
+      "main": [[{ "node": "Registrar Uso", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "respuesta-workflow",
+  "tags": ["respuesta", "ia", "mensajeria", "e3"],
+  "meta": { "templateCredsSetupCompleted": true }
+}

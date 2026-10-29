@@ -1,0 +1,79 @@
+{
+  "name": "Lead - Notificacion de nuevo lead",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-lead",
+      "name": "Webhook Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "lead-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = $json.body || $json;\nif (!data.lead || !data.lead.id) {\n  throw new Error('Payload invalido: falta lead.id');\n}\nreturn [{ json: { lead: data.lead, event: data.event || 'landing.lead.created' } }];"
+      },
+      "id": "validate-lead",
+      "name": "Validar Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $json.lead.tenantId || 'default' }}\",\n  \"contactRef\": \"lead-{{ $json.lead.id }}\",\n  \"direction\": \"in\",\n  \"content\": \"Nuevo lead: {{ $json.lead.name }} ({{ $json.lead.business }})\",\n  \"aiGenerated\": false\n}"
+      },
+      "id": "log-lead",
+      "name": "Registrar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "functionCode": "const lead = $('Validar Payload').first().json.lead || {};\nconst msg = `Hola, recibimos tu solicitud para ${lead.business || 'tu negocio'}. Te contactamos pronto por WhatsApp para coordinar el diagnostico de 15 minutos.\\n\\n- Nombre: ${lead.name || ''}\\n- WhatsApp: ${lead.whatsapp || ''}\\n- Rubro: ${lead.vertical || ''}`;\nreturn [{ json: { to: lead.whatsapp, body: msg } }];"
+      },
+      "id": "build-message",
+      "name": "Armar Mensaje",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Lead": {
+      "main": [[{ "node": "Validar Payload", "type": "main", "index": 0 }]]
+    },
+    "Validar Payload": {
+      "main": [[{ "node": "Registrar Lead", "type": "main", "index": 0 }]]
+    },
+    "Registrar Lead": {
+      "main": [[{ "node": "Armar Mensaje", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "lead-workflow",
+  "tags": ["lead", "mensajeria", "e3"],
+  "meta": { "templateCredsSetupCompleted": true }
+}

@@ -1,3 +1,5 @@
+import { buildPrompt } from "@/lib/knowledge/prompt";
+
 export interface OllamaGenerateRequest {
   model: string;
   prompt: string;
@@ -60,11 +62,11 @@ export async function ollamaClassifyIntent(
   history: Array<{ role: string; content: string }>,
   baseUrl?: string
 ): Promise<{ intent: string; confidence: number }> {
-  const systemPrompt = `Eres un clasificador de intenciones para un asistente de clinica medica por WhatsApp.
-Clasifica el mensaje del paciente en UNA de estas categorias:
+  const systemPrompt = `Eres un clasificador de intenciones para un asistente virtual por WhatsApp.
+Clasifica el mensaje del cliente en UNA de estas categorias:
 - "simple": consultas basicas (horarios, ubicacion, servicios, saludos, gracias)
 - "agendamiento": solicitud de turno, cita, agendar, reprogramar, cancelar turno
-- "reclamo": queja, problema, insatisfaccion, error medico, facturacion incorrecta
+- "reclamo": queja, problema, insatisfaccion, facturacion incorrecta
 - "otro": todo lo que no encaje en lo anterior
 
 Responde SOLO con JSON valido: {"intent": "categoria", "confidence": 0.0-1.0}`;
@@ -77,7 +79,7 @@ Mensaje actual: "${message}"
 Clasifica:`;
 
   const response = await ollamaGenerate({
-    model: "gemma3:1b",
+    model: "mistral",
     system: systemPrompt,
     prompt,
     options: { temperature: 0.1, num_predict: 100 },
@@ -101,26 +103,25 @@ export async function ollamaGenerateResponse(
     tone: string;
     knowledgeBase: string;
     maxTokens: number;
+    businessHours?: string;
   },
   baseUrl?: string
 ): Promise<{ text: string; tokensUsed: number }> {
-  const systemPrompt = `Eres un asistente virtual de una clinica medica.
-Tono: ${config.tone}
-Base de conocimiento/FAQ:
-${config.knowledgeBase || "No hay informacion adicional."}
-
-Responde de forma util, breve y profesional. No inventes informacion medica.
-Si no sabes algo, di que un humano te contactara.`;
+  const systemPrompt = buildPrompt({
+    tone: config.tone,
+    knowledgeBase: config.knowledgeBase,
+    businessHours: config.businessHours,
+  });
 
   const prompt = `Historial:
 ${history.map((h) => `${h.role}: ${h.content}`).join("\n")}
 
-Paciente: ${message}
+Cliente: ${message}
 
 Asistente:`;
 
   const response = await ollamaGenerate({
-    model: "gemma3:1b",
+    model: "mistral",
     system: systemPrompt,
     prompt,
     options: { temperature: 0.7, num_predict: config.maxTokens },

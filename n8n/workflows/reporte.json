@@ -1,0 +1,64 @@
+{
+  "name": "Reporte - Reporte periodico",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * 1" }]
+        }
+      },
+      "id": "schedule-reporte",
+      "name": "Programador Semanal",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const now = new Date();\nconst week = now.toISOString().slice(0,10);\nreturn [{ json: { tenantId: 'default', period: week, summary: 'Reporte semanal de conversaciones y uso.' } }];"
+      },
+      "id": "build-report",
+      "name": "Armar Reporte",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $json.tenantId }}\",\n  \"contactRef\": \"report-{{ $json.period }}\",\n  \"direction\": \"out\",\n  \"content\": \"{{ $json.summary }}\",\n  \"aiGenerated\": false\n}"
+      },
+      "id": "log-report",
+      "name": "Registrar Reporte",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    }
+  ],
+  "connections": {
+    "Programador Semanal": {
+      "main": [[{ "node": "Armar Reporte", "type": "main", "index": 0 }]]
+    },
+    "Armar Reporte": {
+      "main": [[{ "node": "Registrar Reporte", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "reporte-workflow",
+  "tags": ["reporte", "mensajeria", "e3"],
+  "meta": { "templateCredsSetupCompleted": true }
+}

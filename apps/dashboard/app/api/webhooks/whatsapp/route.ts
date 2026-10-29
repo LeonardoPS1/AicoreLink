@@ -6,13 +6,22 @@ import { transcribeAudioFromUrl } from "@/lib/voice/stt";
 import { db } from "@/lib/db";
 import { ollamaClassifyIntent } from "@/lib/ai/ollama-client";
 import { openRouterClassifyIntent } from "@/lib/ai/openrouter-client";
+import { loadTenantWhatsAppConfig } from "@/lib/whatsapp/config";
+import { conversationKey } from "@/lib/conversations/identity";
 
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN ?? "";
 const N8N_WEBHOOK_URL = process.env.N8N_WHATSAPP_WEBHOOK_URL ?? "";
 const META_APP_SECRET = process.env.META_APP_SECRET ?? "";
 const META_CLOUD_API_TOKEN = process.env.META_CLOUD_API_TOKEN ?? "";
 
-const escalationKeywords: string[] = ["humano", "persona", "agente", "reclamo", "queja"];
+function isWhatsAppDirectEnabled(): boolean {
+  const flag = process.env.WHATSAPP_DIRECT_ENABLED;
+  if (flag === "true" || flag === "1") return true;
+  if (flag === "false" || flag === "0") return false;
+  // Retired from production by default; kept available for dev/test and for
+  // numbers that live outside Chatwoot when explicitly enabled.
+  return process.env.NODE_ENV !== "production";
+}
 
 interface MetaWebhookPayload {
   entry: Array<{
@@ -46,43 +55,6 @@ export async function GET(request: NextRequest) {
   return new NextResponse("Forbidden", { status: 403 });
 }
 
-async function persistMessage(
-  tenantId: string,
-  conversationId: string | null,
-  direction: "in" | "out",
-  content: string,
-  mediaType: "text" | "audio",
-  metadata?: { messageId?: string; aiGenerated?: boolean; tokensUsed?: number; audioId?: string; transcript?: string }
-) {
-  await db.conversation.upsert({
-    where: { id: conversationId ?? "" },
-    update: {},
-    create: {
-      id: conversationId ?? "",
-      tenantId,
-      channel: "whatsapp_text",
-      contactRef: `whatsapp:${String(metadata?.messageId)}`,
-      status: "abierta",
-      escalado: false,
-    },
-  });
-
-  await db.message.create({
-    data: {
-      id: metadata?.messageId ?? "",
-      conversationId: conversationId ?? "",
-      tenantId,
-      direction,
-      content,
-      aiGenerated: metadata?.aiGenerated ?? false,
-      tokensUsed: metadata?.tokensUsed,
-      mediaType,
-      ...(metadata?.audioId && { audioId: metadata.audioId }),
-      ...(metadata?.transcript && { transcript: metadata.transcript }),
-    },
-  });
-}
-
 async function processTextMessage(
   tenantId: string,
   phoneNumberId: string,
@@ -91,6 +63,9 @@ async function processTextMessage(
   timestamp: string,
   textBody: string
 ) {
+  const tenantConfig = await loadTenantWhatsAppConfig(tenantId);
+  const escalationKeywords = tenantConfig.escalationKeywords;
+
   const featureActive = await hasFeature(tenantId, "whatsapp_text");
   if (!featureActive) {
     return;
@@ -116,11 +91,15 @@ async function processTextMessage(
   const escalated = hasEscalationKeyword || classification.intent === "reclamo";
 
   // Step 4: Persistir conversación y mensaje con clasificación
-  const conversationId = await db.conversation.upsert({
-    where: { id: `temp_${tenantId}_${msgId}` },
-    update: {},
+  // Una sola conversación por contacto (contactRef estable), no por mensaje.
+  const conversationId = conversationKey(tenantId, from);
+  await db.conversation.upsert({
+    where: { id: conversationId },
+    update: {
+      escalado: escalated,
+    },
     create: {
-      id: `temp_${tenantId}_${msgId}`,
+      id: conversationId,
       tenantId,
       channel: "whatsapp_text",
       contactRef: from,
@@ -132,7 +111,7 @@ async function processTextMessage(
   await db.message.create({
     data: {
       id: msgId,
-      conversationId: conversationId.id,
+      conversationId,
       tenantId,
       direction: "in",
       content: textBody,
@@ -205,7 +184,7 @@ async function processAudioMessage(
           messageId: msgId,
           timestamp: parseInt(timestamp, 10) * 1000,
           mediaType: "audio",
-          audioId,
+          audioUrl: mediaInfo.url,
           audioMimeType,
           transcript,
         }),
@@ -217,6 +196,10 @@ async function processAudioMessage(
 }
 
 export async function POST(request: NextRequest) {
+  if (!isWhatsAppDirectEnabled()) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const body = await request.text();
   const signature = request.headers.get("x-hub-signature-256") ?? "";
 

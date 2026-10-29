@@ -1,3 +1,6 @@
+import type { Prisma } from "@prisma/client";
+import { withTenant } from "@/lib/tenant-context";
+
 export interface TenantWhatsAppConfig {
   // General
   tone: "formal" | "amable" | "empatico";
@@ -6,6 +9,9 @@ export interface TenantWhatsAppConfig {
   autoReplyEnabled: boolean;
   // IA
   preferLocalAi: boolean;
+  plan?: string | null;
+  planTier?: string | null;
+  tier?: string | null;
   maxTokensResponse: number;
   // Escalado
   escalationKeywords: string[];
@@ -41,6 +47,38 @@ export function mergeWhatsAppConfig(
     escalationNotify: stored.escalationNotify ?? DEFAULT_WHATSAPP_CONFIG.escalationNotify,
   } as TenantWhatsAppConfig;
 }
+
+/**
+ * Placeholder for E3.2: load a tenant's WhatsApp config (including KB) from
+ * persistence. Until E3.2 lands, returns the defaults merged with any stored
+ * channel config when it can be read; never throws.
+ */
+export async function loadTenantWhatsAppConfig(
+  tenantId: string,
+  tx?: Prisma.TransactionClient
+): Promise<TenantWhatsAppConfig> {
+  if (!tenantId) return DEFAULT_WHATSAPP_CONFIG;
+  try {
+    let channel: { config?: unknown } | null = null;
+    if (tx) {
+      channel = await (tx as any)?.tenantChannel?.findUnique?.({
+        where: { tenantId_channel: { tenantId, channel: "whatsapp_text" } },
+      });
+    } else {
+      channel = await withTenant(tenantId, async (scopedTx) => {
+        return (scopedTx as any)?.tenantChannel?.findUnique?.({
+          where: { tenantId_channel: { tenantId, channel: "whatsapp_text" } },
+        });
+      });
+    }
+    const stored = (channel?.config ?? null) as Record<string, unknown> | null;
+    return mergeWhatsAppConfig(stored);
+  } catch {
+    return DEFAULT_WHATSAPP_CONFIG;
+  }
+}
+
+export const getTenantWhatsAppConfig = loadTenantWhatsAppConfig;
 
 export function isWithinBusinessHours(businessHours: string): boolean {
   if (!businessHours || !businessHours.includes("-")) return true;

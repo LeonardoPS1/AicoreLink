@@ -1,5 +1,20 @@
 import { DEFAULT_WHATSAPP_CONFIG, type TenantWhatsAppConfig } from "@/lib/whatsapp/config";
 import type { DemoRubro } from "@/lib/demos/schema";
+import {
+  applyGuardrails as applyTenantGuardrails,
+  isInjection as isInjectionGuard,
+  normalize as normalizeGuard,
+  NO_DATA_REPLY,
+  MONEY_REGEXES,
+  DOLLAR_AMOUNT,
+  WORD_AMOUNT,
+  WORD_BEFORE_AMOUNT,
+  CURRENCY_BEFORE_AMOUNT,
+  CURRENCY_BEFORE_NUMBER,
+  WORD_BEFORE_NUMBER,
+} from "@/lib/knowledge/guardrails";
+
+const NO_DATA_FALLBACK = NO_DATA_REPLY;
 
 /**
  * Demo knowledge base and guardrails for the public live chat (SRD M7: "base de
@@ -114,14 +129,6 @@ export function demoConfigFor(rubro: DemoRubro): TenantWhatsAppConfig {
   };
 }
 
-/** Lowercases and strips diacritics so "cuánto" and "cuanto" behave the same. */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 /** Phrases that mean the visitor is asking for a price (ruling R20a). */
 const PRICE_PATTERNS: string[] = [
   "precio",
@@ -135,23 +142,13 @@ const PRICE_PATTERNS: string[] = [
   "cobran",
 ];
 
-/** Phrases that look like an attempt to extract the system prompt (ruling R20c). */
-const INJECTION_PATTERNS: string[] = [
-  "ignore",
-  "ignora",
-  "olvida tus instrucciones",
-  "system prompt",
-  "revela tus instrucciones",
-  "actua como",
-];
-
 /**
  * True when the message is a price request. Such messages never reach the model:
  * they are answered with the rubro's canonical deflection so the demo can neither
  * spend tokens nor invent a figure (ruling R20a).
  */
 export function isPriceRequest(message: string): boolean {
-  const normalized = normalize(message);
+  const normalized = normalizeGuard(message);
   return PRICE_PATTERNS.some((pattern) => normalized.includes(pattern));
 }
 
@@ -160,27 +157,10 @@ export function isPriceRequest(message: string): boolean {
  * Answered with the canonical deflection, never with the model (ruling R20c).
  */
 export function isInjection(message: string): boolean {
-  const normalized = normalize(message);
-  return INJECTION_PATTERNS.some((pattern) => normalized.includes(pattern));
+  return isInjectionGuard(message);
 }
 
-const DOLLAR_AMOUNT = /\$\s?\d[\d.,]*/g;
-const WORD_AMOUNT = /\b\d[\d.,]*\s?(?:pesos?|clp)\b/gi;
-
-/** Money figures the knowledge base genuinely contains, so they are not stripped. */
-function allowedAmounts(knowledgeBase: string): Set<string> {
-  const allowed = new Set<string>();
-  const compact = (value: string) => value.toLowerCase().replace(/\s/g, "");
-
-  for (const match of knowledgeBase.match(DOLLAR_AMOUNT) ?? []) {
-    allowed.add(compact(match));
-  }
-  for (const match of knowledgeBase.match(WORD_AMOUNT) ?? []) {
-    allowed.add(compact(match));
-  }
-
-  return allowed;
-}
+export { DOLLAR_AMOUNT, WORD_AMOUNT, WORD_BEFORE_AMOUNT, CURRENCY_BEFORE_AMOUNT, CURRENCY_BEFORE_NUMBER, WORD_BEFORE_NUMBER, MONEY_REGEXES };
 
 /**
  * Post-filter (ruling R20b): removes any monetary figure from a generated reply
@@ -188,19 +168,12 @@ function allowedAmounts(knowledgeBase: string): Set<string> {
  * fabricated price. When stripping leaves no content, the canonical deflection is
  * returned instead of an empty bubble.
  */
-export function applyGuardrails(reply: string, rubro: DemoRubro): string {
-  const business = DEMO_BUSINESSES[rubro];
-  const allowed = allowedAmounts(business.knowledgeBase);
-
-  const keepOrDrop = (match: string) =>
-    allowed.has(match.toLowerCase().replace(/\s/g, "")) ? match : " ";
-
-  const cleaned = reply
-    .replace(DOLLAR_AMOUNT, keepOrDrop)
-    .replace(WORD_AMOUNT, keepOrDrop)
-    .replace(/\s+([.,;:!?])/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return /[a-z0-9]/i.test(cleaned) ? cleaned : business.deflection;
+export function applyGuardrails(reply: string, rubro: DemoRubro | string): string {
+  // Consumer wrapper: resolve the demo business when a known rubro is passed,
+  // otherwise treat the second argument as a raw knowledge base string.
+  const business = (DEMO_BUSINESSES as Record<string, any>)[rubro as string];
+  if (business) {
+    return applyTenantGuardrails(reply, business.knowledgeBase, business.deflection);
+  }
+  return applyTenantGuardrails(reply, String(rubro ?? ""), NO_DATA_FALLBACK);
 }

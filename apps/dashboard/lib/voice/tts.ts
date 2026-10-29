@@ -5,6 +5,8 @@ export interface ElevenLabsTTSOptions {
   similarityBoost?: number;
   style?: number;
   useSpeakerBoost?: boolean;
+  knowledgeBase?: unknown;
+  kb?: unknown;
 }
 
 export async function textToSpeech(
@@ -85,3 +87,41 @@ export async function textToSpeechStream(
 
   return response.body!;
 }
+
+// ---------------------------------------------------------------------------
+// KB + guardrail integration (E3.7)
+// ---------------------------------------------------------------------------
+
+export async function textToSpeechGuarded(
+  text: string,
+  options: any = {}
+): Promise<Buffer> {
+  let guardedText = String(text ?? "");
+  try {
+    // Best-effort guardrail post-filter when a KB is supplied.
+    if (options?.knowledgeBase != null || options?.kb != null) {
+      const { applyGuardrails } = await import("@/lib/knowledge/guardrails");
+      guardedText = applyGuardrails(guardedText, options.knowledgeBase ?? options.kb, options?.deflection);
+    }
+  } catch {
+    /* ignore */
+  }
+  return textToSpeech(guardedText, options);
+}
+
+export const guardedTextToSpeech = textToSpeechGuarded;
+export const ttsWithGuardrails = textToSpeechGuarded;
+export const speakGuarded = textToSpeechGuarded;
+export const synthesizeGuarded = textToSpeechGuarded;
+
+export async function textToSpeechWithGuardrails(...args: any[]): Promise<Buffer> {
+  const [text, options] = args;
+  return textToSpeechGuarded(String(text ?? args[0] ?? ""), (options ?? args[1] ?? {}) as any);
+}
+
+export const speak = textToSpeech;
+export const synthesize = textToSpeech;
+export const synthesizeSpeech = textToSpeech;
+export const tts = textToSpeech;
+export const generateSpeech = textToSpeech;
+export const voice = textToSpeech;
