@@ -37,51 +37,73 @@ export const PRICE_PATTERNS: string[] = [
 ];
 
 export const INJECTION_PATTERNS: string[] = [
-  // Core verbs / phrases (contextual, not bare single words that false-positive).
-  "ignora",
-  "olvida",
-  "olvida tus instrucciones",
-  "olvida todo",
-  "forget",
-  "forget your instructions",
-  "forget everything",
-  "disregard",
-  "system prompt",
-  "system message",
-  "system instructions",
-  "revela tus instrucciones",
-  "revela tu prompt",
-  "revela tus reglas",
-  "muestra tu prompt",
-  "muestra tus instrucciones",
-  "print your instructions",
-  "show prompt",
-  "actua como",
-  "act as",
-  "actua como si",
-  "finge",
-  "ahora eres",
-  "you are now",
-  "new instructions",
-  "nuevas instrucciones",
-  "jailbreak",
-  "dan mode",
-  "do anything now",
-  "developer mode",
-  "modo desarrollador",
-  "prompt injection",
-  "reglas del sistema",
-  "saltate",
-  "salta tus reglas",
-  // Contextual phrases for previously bare, over-broad tokens.
-  "ignore previous",
-  "ignore all",
-  "ignore your",
+  // Direct instruction overrides (clear injection intent only).
+  "ignora tus instrucciones",
+  "ignora todas tus instrucciones",
+  "ignora todas las instrucciones",
+  "ignora las instrucciones anteriores",
+  "ignora las instrucciones previas",
+  "ignora instrucciones anteriores",
+  "ignora instrucciones previas",
+  "ignora todo lo anterior",
+  "ignora lo anterior",
+  "ignora el prompt",
+  "ignore previous instructions",
+  "ignore all instructions",
+  "ignore your instructions",
   "ignore the above",
   "ignore above",
   "ignore prior",
   "ignore instructions",
   "ignore everything",
+  "ignore previous",
+  "ignore all",
+  "ignore your",
+  "disregard previous",
+  "disregard all",
+  "disregard instructions",
+  "disregard",
+  "olvida tus instrucciones",
+  "olvida todo",
+  "olvida lo anterior",
+  "olvida las instrucciones",
+  "olvida las instrucciones anteriores",
+  "forget your instructions",
+  "forget everything",
+  "forget previous",
+  "forget all",
+  "new instructions",
+  "nuevas instrucciones",
+  "override your",
+  "override instructions",
+  "override rules",
+  "override system",
+  "override safety",
+  "bypass",
+  "saltate las reglas",
+  "saltate tus reglas",
+  "saltate los filtros",
+  "saltate las restricciones",
+  "salta tus reglas",
+  "salta las reglas",
+  // Prompt / rule revelation.
+  "system prompt",
+  "system message",
+  "system instructions",
+  "reglas del sistema",
+  "instrucciones del sistema",
+  "instrucciones internas",
+  "instrucciones secretas",
+  "instrucciones anteriores",
+  "instrucciones previas",
+  "revela tu prompt",
+  "revela tus instrucciones",
+  "revela tus reglas",
+  "revela el prompt",
+  "muestra tu prompt",
+  "muestra tus instrucciones",
+  "print your instructions",
+  "show prompt",
   "reveal your",
   "reveal the",
   "reveal prompt",
@@ -90,32 +112,26 @@ export const INJECTION_PATTERNS: string[] = [
   "reveal secret",
   "reveal rules",
   "reveal internal",
-  "pretend you",
-  "pretend to",
+  "prompt injection",
+  // Roleplay / jailbreak.
+  "actua como si",
+  "act as if",
+  "act as",
+  "ahora eres",
+  "you are now",
+  "pretende ser",
+  "pretend to be",
   "pretend you are",
   "pretend you're",
-  "override your",
-  "override instructions",
-  "override rules",
-  "override system",
-  "override safety",
-  "bypass your",
-  "bypass rules",
-  "bypass filters",
-  "bypass safety",
-  "bypass restrictions",
-  "bypass guardrails",
-  "tus instrucciones",
-  "mis instrucciones",
-  "las instrucciones",
-  "instrucciones del sistema",
-  "instrucciones internas",
-  "instrucciones anteriores",
-  "instrucciones previas",
-  "instrucciones secretas",
-  "your instructions",
-  "previous instructions",
-  "all instructions",
+  "pretend you",
+  "pretend to",
+  "finge ser",
+  "finge que eres",
+  "jailbreak",
+  "dan mode",
+  "do anything now",
+  "developer mode",
+  "modo desarrollador",
 ];
 
 export function isPriceRequest(message: string): boolean {
@@ -207,23 +223,28 @@ export const DEFAULT_DEFLECTION = NO_DATA_REPLY;
 // Money post-filter (generalized applyGuardrails)
 // ---------------------------------------------------------------------------
 
-const MONEY_REGEXES: RegExp[] = [
+export const MONEY_REGEXES: RegExp[] = [
   /(?:US\$|USD\$?|\$|CLP\$?|€|£)\s?\d+(?:[.,]\d+)*/gi,
   /\b(?:CLP|USD|EUR|ARS)\s*\$?\s?\d+(?:[.,]\d+)*/gi,
   /\b\d+(?:[.,]\d+)*\s?(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\b/gi,
+  /\b(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\s*\$?\s?\d+(?:[.,]\d+)*/gi,
 ];
 
 // Back-compat single regex aliases (used by callers/tests).
-const DOLLAR_AMOUNT = MONEY_REGEXES[0];
-const WORD_AMOUNT = MONEY_REGEXES[2];
+export const DOLLAR_AMOUNT = new RegExp(MONEY_REGEXES[0].source, MONEY_REGEXES[0].flags);
+export const WORD_AMOUNT = new RegExp(MONEY_REGEXES[2].source, MONEY_REGEXES[2].flags);
+
+function cloneRegex(regex: RegExp): RegExp {
+  return new RegExp(regex.source, regex.flags);
+}
 
 function allowedAmounts(knowledgeBase: string): Set<string> {
   const allowed = new Set<string>();
   const compact = (value: string) => value.toLowerCase().replace(/\s/g, "");
 
   for (const regex of MONEY_REGEXES) {
-    regex.lastIndex = 0;
-    for (const match of knowledgeBase.match(regex) ?? []) {
+    const cloned = cloneRegex(regex);
+    for (const match of knowledgeBase.match(cloned) ?? []) {
       allowed.add(compact(match));
     }
   }
@@ -305,8 +326,8 @@ export function applyGuardrails(
 
   let cleaned = String(reply ?? "");
   for (const regex of MONEY_REGEXES) {
-    regex.lastIndex = 0;
-    cleaned = cleaned.replace(regex, (match) => keepOrDrop(match));
+    const cloned = cloneRegex(regex);
+    cleaned = cleaned.replace(cloned, (match) => keepOrDrop(match));
   }
   cleaned = cleaned
     .replace(/\s+([.,;:!?])/g, "$1")
