@@ -129,6 +129,8 @@ export async function mirrorMessage(
     content,
     audioUrl,
     senderRef,
+    aiGenerated,
+    tokensUsed,
   }: {
     tenantId: string;
     conversationKey: string;
@@ -137,6 +139,8 @@ export async function mirrorMessage(
     content: string;
     audioUrl?: string;
     senderRef: string;
+    aiGenerated?: boolean;
+    tokensUsed?: number;
   }
 ): Promise<{ created: boolean }> {
   // Coerce to String so a numeric Chatwoot id matches the String? column and
@@ -185,7 +189,8 @@ export async function mirrorMessage(
     externalMessageId,
   };
   if (audioUrl !== undefined) data.audioUrl = audioUrl;
-
+  if (aiGenerated !== undefined) data.aiGenerated = aiGenerated;
+  if (tokensUsed !== undefined && tokensUsed !== null) data.tokensUsed = tokensUsed;
   if (tx?.message?.create) {
     try {
       await tx.message.create({ data });
