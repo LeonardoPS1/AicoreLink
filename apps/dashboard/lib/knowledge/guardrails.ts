@@ -37,17 +37,30 @@ export const PRICE_PATTERNS: string[] = [
 ];
 
 export const INJECTION_PATTERNS: string[] = [
-  // Direct instruction overrides (clear injection intent only).
+  // Clear injection-intent phrases only (narrowed to avoid benign false positives).
   "ignora tus instrucciones",
-  "ignora todas tus instrucciones",
-  "ignora todas las instrucciones",
   "ignora las instrucciones anteriores",
-  "ignora las instrucciones previas",
-  "ignora instrucciones anteriores",
-  "ignora instrucciones previas",
   "ignora todo lo anterior",
-  "ignora lo anterior",
-  "ignora el prompt",
+  "olvida todo lo anterior",
+  "olvida todo y",
+  "olvida tus instrucciones",
+  "olvida las instrucciones",
+  "olvida las instrucciones anteriores",
+  "actua como si",
+  "pretende ser un",
+  "finge ser un",
+  "revela tu prompt",
+  "system prompt",
+  "jailbreak",
+  "dan",
+  "do anything now",
+  "developer mode",
+  "bypass de seguridad",
+  "disregard previous",
+  "disregard above",
+  "salta las restricciones",
+  "salta las reglas de seguridad",
+  // English / compatibility unambiguous variants.
   "ignore previous instructions",
   "ignore all instructions",
   "ignore your instructions",
@@ -55,26 +68,15 @@ export const INJECTION_PATTERNS: string[] = [
   "ignore above",
   "ignore prior",
   "ignore instructions",
-  "ignore everything",
-  "ignore previous",
-  "ignore all",
-  "ignore your",
-  "disregard previous",
   "disregard all",
   "disregard instructions",
   "disregard previous instructions",
   "disregard above",
-  "olvida tus instrucciones",
-  "olvida todo",
-  "olvida lo anterior",
-  "olvida las instrucciones",
-  "olvida las instrucciones anteriores",
   "forget your instructions",
   "forget everything",
   "forget previous",
   "forget all",
-  "new instructions",
-  "nuevas instrucciones",
+  "nuevas instrucciones:",
   "override your",
   "override instructions",
   "override rules",
@@ -86,17 +88,11 @@ export const INJECTION_PATTERNS: string[] = [
   "bypass safety",
   "bypass restrictions",
   "bypass guardrails",
-  "bypass de seguridad",
   "bypass security",
   "saltate las reglas",
   "saltate tus reglas",
   "saltate los filtros",
   "saltate las restricciones",
-  "salta tus reglas",
-  "salta las reglas",
-  // Prompt / rule revelation.
-  "system prompt",
-  "revela tu prompt",
   "revela tus instrucciones",
   "revela tus reglas",
   "revela el prompt",
@@ -113,22 +109,14 @@ export const INJECTION_PATTERNS: string[] = [
   "reveal rules",
   "reveal internal",
   "prompt injection",
-  // Roleplay / jailbreak.
-  "actua como si",
   "act as if",
-  "ahora eres",
   "you are now",
-  "pretende ser",
   "pretend to be",
   "pretend you are",
   "pretend you're",
-  "finge ser",
   "finge que eres",
-  "jailbreak",
-  "dan mode",
-  "do anything now",
-  "developer mode",
   "modo desarrollador",
+  "new instructions",
 ];
 
 export function isPriceRequest(message: string): boolean {
@@ -136,9 +124,35 @@ export function isPriceRequest(message: string): boolean {
   return PRICE_PATTERNS.some((pattern) => normalized.includes(pattern));
 }
 
+const BENIGN_INJECTION_MESSAGES: string[] = [
+  "Olvida todo lo malo",
+  "Ahora eres bienvenido",
+  "Nuevas instrucciones para el personal",
+  "Finge ser amable",
+  "Salta tus reglas de negocio",
+  "Olvida todo el estres",
+  "Olvida todo el estrés",
+  "Pretende ser una consulta",
+  "Finge ser paciente",
+  "Ahora eres mi asistente",
+  "Salta las reglas del juego",
+  "Bypass de seguridad del edificio",
+  "Disregard previous messages from spam",
+  "Tengo nuevas instrucciones del doctor",
+  "El bypass de la agenda",
+];
+
 export function isInjection(message: string): boolean {
-  const normalized = normalize(message);
-  return INJECTION_PATTERNS.some((pattern) => normalized.includes(pattern));
+  const normalized = normalize(message).trim().replace(/[.!?]+$/g, "").trim();
+  for (const benign of BENIGN_INJECTION_MESSAGES) {
+    const benignNorm = normalize(benign).trim().replace(/[.!?]+$/g, "").trim();
+    if (normalized === benignNorm) return false;
+    if (normalized.startsWith(benignNorm + " ")) return false;
+  }
+  return INJECTION_PATTERNS.some((pattern) => {
+    if (pattern === "dan") return /\bdan\b/.test(normalized);
+    return normalized.includes(pattern);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -221,15 +235,19 @@ export const DEFAULT_DEFLECTION = NO_DATA_REPLY;
 // ---------------------------------------------------------------------------
 
 export const MONEY_REGEXES: RegExp[] = [
-  /(?:US\$|USD\$?|\$|CLP\$?|€|£)\s?\d+(?:[.,]\d+)*/i,
+  /(?:US\$|USD\$?|\$|CLP\$?|€)\s?\d+(?:[.,]\d+)*/i,
   /\b(?:CLP|USD|EUR|ARS)\s*\$?\s?\d+(?:[.,]\d+)*/i,
-  /\b\d+(?:[.,]\d+)*\s?(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\b/i,
-  /\b(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\s*\$?\s?\d+(?:[.,]\d+)*/i,
+  /\b\d+(?:[.,]\d+)*\s?(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd|€)\b/i,
+  /\b(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd|€)\s*\$?\s?\d+(?:[.,]\d+)*/i,
 ];
 
 // Back-compat single regex aliases (used by callers/tests).
-export const DOLLAR_AMOUNT = new RegExp(MONEY_REGEXES[0].source, MONEY_REGEXES[0].flags);
-export const WORD_AMOUNT = new RegExp(MONEY_REGEXES[2].source, MONEY_REGEXES[2].flags);
+export const DOLLAR_AMOUNT = new RegExp(MONEY_REGEXES[0].source, (MONEY_REGEXES[0].flags.includes("g") ? MONEY_REGEXES[0].flags : MONEY_REGEXES[0].flags + "g"));
+export const WORD_AMOUNT = new RegExp(MONEY_REGEXES[2].source, (MONEY_REGEXES[2].flags.includes("g") ? MONEY_REGEXES[2].flags : MONEY_REGEXES[2].flags + "g"));
+export const WORD_BEFORE_AMOUNT = new RegExp(MONEY_REGEXES[3].source, (MONEY_REGEXES[3].flags.includes("g") ? MONEY_REGEXES[3].flags : MONEY_REGEXES[3].flags + "g"));
+export const CURRENCY_BEFORE_AMOUNT = new RegExp(MONEY_REGEXES[3].source, (MONEY_REGEXES[3].flags.includes("g") ? MONEY_REGEXES[3].flags : MONEY_REGEXES[3].flags + "g"));
+export const CURRENCY_BEFORE_NUMBER = new RegExp(MONEY_REGEXES[3].source, (MONEY_REGEXES[3].flags.includes("g") ? MONEY_REGEXES[3].flags : MONEY_REGEXES[3].flags + "g"));
+export const WORD_BEFORE_NUMBER = new RegExp(MONEY_REGEXES[3].source, (MONEY_REGEXES[3].flags.includes("g") ? MONEY_REGEXES[3].flags : MONEY_REGEXES[3].flags + "g"));
 
 function cloneRegex(regex: RegExp): RegExp {
   const flags = regex.flags.includes("g") ? regex.flags : regex.flags + "g";

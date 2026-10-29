@@ -5,8 +5,11 @@ import {
   isInjection as isInjectionGuard,
   normalize as normalizeGuard,
   NO_DATA_REPLY,
+  MONEY_REGEXES,
   DOLLAR_AMOUNT,
   WORD_AMOUNT,
+  WORD_BEFORE_AMOUNT,
+  CURRENCY_BEFORE_AMOUNT,
 } from "@/lib/knowledge/guardrails";
 
 const NO_DATA_FALLBACK = NO_DATA_REPLY;
@@ -160,7 +163,7 @@ function allowedAmounts(knowledgeBase: string): Set<string> {
   const allowed = new Set<string>();
   const compact = (value: string) => value.toLowerCase().replace(/\s/g, "");
 
-  for (const regex of [DOLLAR_AMOUNT, WORD_AMOUNT]) {
+  for (const regex of MONEY_REGEXES) {
     const cloned = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : regex.flags + "g");
     for (const match of knowledgeBase.match(cloned) ?? []) {
       allowed.add(compact(match));
@@ -170,7 +173,7 @@ function allowedAmounts(knowledgeBase: string): Set<string> {
   return allowed;
 }
 
-export { DOLLAR_AMOUNT, WORD_AMOUNT };
+export { DOLLAR_AMOUNT, WORD_AMOUNT, WORD_BEFORE_AMOUNT, CURRENCY_BEFORE_AMOUNT, MONEY_REGEXES };
 
 /**
  * Post-filter (ruling R20b): removes any monetary figure from a generated reply
