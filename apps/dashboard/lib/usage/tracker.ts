@@ -41,6 +41,17 @@ export interface UsageRecordInput {
   model?: string;
   modelUsed?: string;
   modelName?: string;
+  version?: string;
+  modelVersion?: string;
+  versionName?: string;
+  appVersion?: string;
+  firstResponseMs?: number;
+  first_response_ms?: number;
+  firstResponse?: number;
+  responseTime?: number;
+  responseMs?: number;
+  timeToFirstResponse?: number;
+  ttf?: number;
   provider?: string;
   engine?: string;
   route?: string;
@@ -180,6 +191,36 @@ export async function recordUsage(...args: any[]): Promise<any> {
   const provider =
     data.provider ?? data.engine ?? data.route ?? null;
 
+  const model =
+    data.model ?? data.modelUsed ?? data.model_used ?? data.modelName ?? data.model_name ?? null;
+
+  const version =
+    data.version ??
+    data.modelVersion ??
+    data.model_version ??
+    data.versionName ??
+    data.version_name ??
+    data.appVersion ??
+    data.app_version ??
+    null;
+
+  const firstResponseMsRaw =
+    data.firstResponseMs ??
+    data.first_response_ms ??
+    data.firstResponse ??
+    data.first_response ??
+    data.responseTime ??
+    data.response_time ??
+    data.responseMs ??
+    data.response_ms ??
+    data.timeToFirstResponse ??
+    data.time_to_first_response ??
+    data.ttf;
+  const firstResponseMs =
+    firstResponseMsRaw == null || !Number.isFinite(Number(firstResponseMsRaw))
+      ? null
+      : Number(firstResponseMsRaw);
+
   const hasProvidedCost =
     costEstimate != null && Number(costEstimate) !== 0;
 
@@ -241,6 +282,9 @@ export async function recordUsage(...args: any[]): Promise<any> {
     tokensUsed,
     costEstimate,
   };
+  if (model) payload.model = model;
+  if (version) payload.version = version;
+  if (firstResponseMs != null) payload.firstResponseMs = firstResponseMs;
 
   if (!tx?.tenantUsage) {
     return { created: false, ...payload };

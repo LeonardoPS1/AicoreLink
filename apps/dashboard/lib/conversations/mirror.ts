@@ -131,6 +131,16 @@ export async function mirrorMessage(
     senderRef,
     aiGenerated,
     tokensUsed,
+    model,
+    modelUsed,
+    modelName,
+    version,
+    modelVersion,
+    firstResponseMs,
+    first_response_ms,
+    firstResponse,
+    responseTime,
+    responseMs,
   }: {
     tenantId: string;
     conversationKey: string;
@@ -141,6 +151,16 @@ export async function mirrorMessage(
     senderRef: string;
     aiGenerated?: boolean;
     tokensUsed?: number;
+    model?: string;
+    modelUsed?: string;
+    modelName?: string;
+    version?: string;
+    modelVersion?: string;
+    firstResponseMs?: number;
+    first_response_ms?: number;
+    firstResponse?: number;
+    responseTime?: number;
+    responseMs?: number;
   }
 ): Promise<{ created: boolean }> {
   // Coerce to String so a numeric Chatwoot id matches the String? column and
@@ -191,6 +211,23 @@ export async function mirrorMessage(
   if (audioUrl !== undefined) data.audioUrl = audioUrl;
   if (aiGenerated !== undefined) data.aiGenerated = aiGenerated;
   if (tokensUsed !== undefined && tokensUsed !== null) data.tokensUsed = tokensUsed;
+  const resolvedModel = model ?? modelUsed ?? modelName;
+  if (resolvedModel !== undefined && resolvedModel !== null) data.model = resolvedModel;
+  const resolvedVersion = version ?? modelVersion;
+  if (resolvedVersion !== undefined && resolvedVersion !== null) data.version = resolvedVersion;
+  const resolvedFirstResponseMs =
+    firstResponseMs ??
+    first_response_ms ??
+    firstResponse ??
+    responseTime ??
+    responseMs;
+  if (
+    resolvedFirstResponseMs !== undefined &&
+    resolvedFirstResponseMs !== null &&
+    Number.isFinite(Number(resolvedFirstResponseMs))
+  ) {
+    data.firstResponseMs = Number(resolvedFirstResponseMs);
+  }
   if (tx?.message?.create) {
     try {
       await tx.message.create({ data });

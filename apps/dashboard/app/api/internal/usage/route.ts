@@ -59,7 +59,20 @@ export async function POST(request: Request): Promise<Response> {
 
   const channel = body?.channel ?? body?.channelName ?? body?.channel_name ?? "whatsapp_text";
   const model = body?.model ?? body?.modelUsed ?? body?.modelName ?? body?.model_name;
-
+  const version =
+    body?.version ??
+    body?.modelVersion ??
+    body?.model_version ??
+    body?.versionName ??
+    body?.version_name ??
+    body?.appVersion ??
+    body?.app_version;
+  const firstResponseMs =
+    body?.firstResponseMs ??
+    body?.first_response_ms ??
+    body?.firstResponse ??
+    body?.responseTime ??
+    body?.responseMs;
   const tokensIn = Number(
     body?.tokensIn ?? body?.tokens_in ?? body?.inputTokens ?? body?.input_tokens ?? 0
   );
@@ -86,6 +99,8 @@ export async function POST(request: Request): Promise<Response> {
         tenantId: String(tenantId),
         channel: String(channel),
         model,
+        version,
+        firstResponseMs,
         tokensIn,
         tokensOut,
         tokensUsed: Number.isFinite(tokensUsed) ? tokensUsed : 0,

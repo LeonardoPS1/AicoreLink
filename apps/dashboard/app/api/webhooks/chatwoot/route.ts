@@ -91,7 +91,28 @@ async function readPersistedThread(tx: any, tenantId: string, key: string): Prom
   return null;
 }
 
+function responseModel(): string {
+  return (
+    process.env.AI_MODEL ||
+    process.env.OLLAMA_MODEL ||
+    process.env.MODEL_NAME ||
+    process.env.MODEL ||
+    "ollama"
+  );
+}
+
+function responseVersion(): string {
+  return (
+    process.env.APP_VERSION ||
+    process.env.npm_package_version ||
+    process.env.GIT_COMMIT ||
+    process.env.VERSION ||
+    "1.0.0"
+  );
+}
+
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   const rawBody = await request.text();
 
   const timestamp =
@@ -218,6 +239,9 @@ export async function POST(request: NextRequest) {
             messagesOut: 1,
             tokensUsed: 0,
             costEstimate: 0,
+            model: responseModel(),
+            version: responseVersion(),
+            firstResponseMs: Date.now() - startedAt,
           });
         } catch (err) {
           console.error("[chatwoot/webhook] usage registration failed:", err);
@@ -289,6 +313,9 @@ export async function POST(request: NextRequest) {
             messagesOut: 1,
             tokensUsed: 0,
             costEstimate: 0,
+            model: responseModel(),
+            version: responseVersion(),
+            firstResponseMs: Date.now() - startedAt,
           });
         } catch (err) {
           console.error("[chatwoot/webhook] usage registration failed:", err);

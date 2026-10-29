@@ -89,14 +89,17 @@ model ChannelCredential {
 }
 
 model TenantUsage {
-  id           String   @id @default(uuid())
-  tenantId     String   @map("tenant_id")
-  channel      String
-  period       DateTime
-  messagesIn   Int      @default(0) @map("messages_in")
-  messagesOut  Int      @default(0) @map("messages_out")
-  tokensUsed   Int      @default(0) @map("tokens_used")
-  costEstimate Decimal  @default(0) @map("cost_estimate")
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  channel        String
+  period         DateTime
+  messagesIn     Int      @default(0) @map("messages_in")
+  messagesOut    Int      @default(0) @map("messages_out")
+  tokensUsed     Int      @default(0) @map("tokens_used")
+  costEstimate   Decimal  @default(0) @map("cost_estimate")
+  model          String?
+  version        String?
+  firstResponseMs Int?    @map("first_response_ms")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
@@ -145,6 +148,9 @@ model Conversation {
   escalatedAt    DateTime?   @map("escalated_at")
   closedAt       DateTime?   @map("closed_at")
   reactivatedAt  DateTime?   @map("reactivated_at")
+  model          String?
+  version        String?
+  firstResponseMs Int?       @map("first_response_ms")
   createdAt      DateTime    @default(now()) @map("created_at")
 
   messages Message[]
@@ -167,6 +173,9 @@ model Message {
   audioUrl           String?  @map("audio_url")
   transcript         String?
   externalMessageId  String?  @map("external_message_id")
+  model              String?
+  version            String?
+  firstResponseMs    Int?     @map("first_response_ms")
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
 
