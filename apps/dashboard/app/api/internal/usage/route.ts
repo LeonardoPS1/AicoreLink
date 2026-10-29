@@ -58,7 +58,12 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const channel = body?.channel ?? body?.channelName ?? body?.channel_name ?? "whatsapp_text";
-  const model = body?.model ?? body?.modelUsed ?? body?.modelName ?? body?.model_name;
+  const model =
+    body?.model ??
+    body?.modelUsed ??
+    body?.model_used ??
+    body?.modelName ??
+    body?.model_name;
   const version =
     body?.version ??
     body?.modelVersion ??
@@ -71,8 +76,14 @@ export async function POST(request: Request): Promise<Response> {
     body?.firstResponseMs ??
     body?.first_response_ms ??
     body?.firstResponse ??
+    body?.first_response ??
     body?.responseTime ??
-    body?.responseMs;
+    body?.response_time ??
+    body?.responseMs ??
+    body?.response_ms ??
+    body?.timeToFirstResponse ??
+    body?.time_to_first_response ??
+    body?.ttf;
   const tokensIn = Number(
     body?.tokensIn ?? body?.tokens_in ?? body?.inputTokens ?? body?.input_tokens ?? 0
   );

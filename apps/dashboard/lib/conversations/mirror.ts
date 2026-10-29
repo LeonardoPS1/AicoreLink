@@ -24,13 +24,14 @@ async function resolveConversation(
   tx: any,
   tenantId: string,
   conversationKey: string,
-  senderRef: string
+  senderRef: string,
+  fields?: { model?: any; version?: any; firstResponseMs?: any }
 ): Promise<any> {
   if (!tx?.conversation) {
     return { id: conversationKey };
   }
   try {
-    return await findOrCreateConversation(tx, tenantId, conversationKey, senderRef ?? "");
+    return await findOrCreateConversation(tx, tenantId, conversationKey, senderRef ?? "", fields);
   } catch {
     // Best-effort fallbacks for mocks that only expose findFirst/findUnique.
     if (tx?.conversation?.findUnique) {
@@ -133,14 +134,27 @@ export async function mirrorMessage(
     tokensUsed,
     model,
     modelUsed,
+    model_used,
     modelName,
+    model_name,
     version,
     modelVersion,
+    model_version,
+    versionName,
+    version_name,
+    appVersion,
+    app_version,
     firstResponseMs,
     first_response_ms,
     firstResponse,
+    first_response,
     responseTime,
+    response_time,
     responseMs,
+    response_ms,
+    timeToFirstResponse,
+    time_to_first_response,
+    ttf,
   }: {
     tenantId: string;
     conversationKey: string;
@@ -153,14 +167,27 @@ export async function mirrorMessage(
     tokensUsed?: number;
     model?: string;
     modelUsed?: string;
+    model_used?: string;
     modelName?: string;
+    model_name?: string;
     version?: string;
     modelVersion?: string;
+    model_version?: string;
+    versionName?: string;
+    version_name?: string;
+    appVersion?: string;
+    app_version?: string;
     firstResponseMs?: number;
     first_response_ms?: number;
     firstResponse?: number;
+    first_response?: number;
     responseTime?: number;
+    response_time?: number;
     responseMs?: number;
+    response_ms?: number;
+    timeToFirstResponse?: number;
+    time_to_first_response?: number;
+    ttf?: number;
   }
 ): Promise<{ created: boolean }> {
   // Coerce to String so a numeric Chatwoot id matches the String? column and
@@ -192,7 +219,36 @@ export async function mirrorMessage(
     return { created: false };
   }
 
-  const conversation = await resolveConversation(tx, tenantId, conversationKey, senderRef);
+  const resolvedModel = model ?? modelUsed ?? model_used ?? modelName ?? model_name;
+  const resolvedVersion =
+    version ??
+    modelVersion ??
+    model_version ??
+    versionName ??
+    version_name ??
+    appVersion ??
+    app_version;
+  const resolvedFirstResponseMs =
+    firstResponseMs ??
+    first_response_ms ??
+    firstResponse ??
+    first_response ??
+    responseTime ??
+    response_time ??
+    responseMs ??
+    response_ms ??
+    timeToFirstResponse ??
+    time_to_first_response ??
+    ttf;
+
+  const conversation = await resolveConversation(tx, tenantId, conversationKey, senderRef, {
+    model: resolvedModel,
+    version: resolvedVersion,
+    firstResponseMs:
+      resolvedFirstResponseMs != null && Number.isFinite(Number(resolvedFirstResponseMs))
+        ? Number(resolvedFirstResponseMs)
+        : undefined,
+  });
   const conversationId = conversation?.id ?? conversationKey;
 
   const existing = await findExistingMessage(tx, tenantId, externalMessageId);
@@ -211,16 +267,8 @@ export async function mirrorMessage(
   if (audioUrl !== undefined) data.audioUrl = audioUrl;
   if (aiGenerated !== undefined) data.aiGenerated = aiGenerated;
   if (tokensUsed !== undefined && tokensUsed !== null) data.tokensUsed = tokensUsed;
-  const resolvedModel = model ?? modelUsed ?? modelName;
   if (resolvedModel !== undefined && resolvedModel !== null) data.model = resolvedModel;
-  const resolvedVersion = version ?? modelVersion;
   if (resolvedVersion !== undefined && resolvedVersion !== null) data.version = resolvedVersion;
-  const resolvedFirstResponseMs =
-    firstResponseMs ??
-    first_response_ms ??
-    firstResponse ??
-    responseTime ??
-    responseMs;
   if (
     resolvedFirstResponseMs !== undefined &&
     resolvedFirstResponseMs !== null &&

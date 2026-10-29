@@ -21,13 +21,29 @@ export async function findOrCreateConversation(
   tx: any,
   tenantId: string,
   key: string,
-  contactRef: string
+  contactRef: string,
+  fields?: { model?: any; version?: any; firstResponseMs?: any }
 ): Promise<any> {
+  const f = fields ?? {};
+  const createData: Record<string, any> = { tenantId, externalId: key, contactRef };
+  if (f.model != null) createData.model = f.model;
+  if (f.version != null) createData.version = f.version;
+  if (f.firstResponseMs != null && Number.isFinite(Number(f.firstResponseMs))) {
+    createData.firstResponseMs = Number(f.firstResponseMs);
+  }
+
+  const updateData: Record<string, any> = {};
+  if (f.model != null) updateData.model = f.model;
+  if (f.version != null) updateData.version = f.version;
+  if (f.firstResponseMs != null && Number.isFinite(Number(f.firstResponseMs))) {
+    updateData.firstResponseMs = Number(f.firstResponseMs);
+  }
+
   if (tx?.conversation?.upsert) {
     return tx.conversation.upsert({
       where: { tenantId_externalId: { tenantId, externalId: key } },
-      create: { tenantId, externalId: key, contactRef },
-      update: {},
+      create: createData,
+      update: updateData,
     });
   }
 
@@ -40,9 +56,18 @@ export async function findOrCreateConversation(
       where: { tenantId, externalId: key },
     }));
 
-  if (existing) return existing;
+  if (existing) {
+    if (Object.keys(updateData).length && tx?.conversation?.update) {
+      try {
+        await tx.conversation.update({ where: { id: existing.id }, data: updateData });
+      } catch {
+        /* best-effort */
+      }
+    }
+    return existing;
+  }
 
   return tx.conversation.create({
-    data: { tenantId, externalId: key, contactRef },
+    data: createData,
   });
 }

@@ -230,23 +230,6 @@ export async function POST(request: NextRequest) {
           console.error("[chatwoot/webhook] thread state read failed:", err);
         }
 
-        // Register per-conversation usage/cost for this turn (best-effort).
-        try {
-          await recordUsage(tx, {
-            tenantId,
-            channel: "whatsapp_text",
-            messagesIn: 1,
-            messagesOut: 1,
-            tokensUsed: 0,
-            costEstimate: 0,
-            model: responseModel(),
-            version: responseVersion(),
-            firstResponseMs: Date.now() - startedAt,
-          });
-        } catch (err) {
-          console.error("[chatwoot/webhook] usage registration failed:", err);
-        }
-
         // Evaluate quota (80% warning / 100% handoff).
         try {
           const plan = await tenantPlan(tx, tenantId);
@@ -304,23 +287,6 @@ export async function POST(request: NextRequest) {
       created = result?.created ?? false;
 
       if (created) {
-        // Register per-conversation usage/cost for this turn (best-effort).
-        try {
-          await recordUsage({
-            tenantId,
-            channel: "whatsapp_text",
-            messagesIn: 1,
-            messagesOut: 1,
-            tokensUsed: 0,
-            costEstimate: 0,
-            model: responseModel(),
-            version: responseVersion(),
-            firstResponseMs: Date.now() - startedAt,
-          });
-        } catch (err) {
-          console.error("[chatwoot/webhook] usage registration failed:", err);
-        }
-
         try {
           const limit = planDefinition("starter").conversationsPerMonth;
           quotaExhausted = false;
@@ -383,6 +349,26 @@ export async function POST(request: NextRequest) {
       console.error("[chatwoot/webhook] sendChatwootMessage failed:", err);
       // Best-effort; do not fail the webhook.
     }
+  }
+
+  // Register per-conversation usage/cost for this turn after the reply has been
+  // sent, so firstResponseMs reflects the actual first-response time (RF-QLT-04).
+  try {
+    await withTenant(tenantId, async (tx) => {
+      await recordUsage(tx, {
+        tenantId,
+        channel: "whatsapp_text",
+        messagesIn: 1,
+        messagesOut: 1,
+        tokensUsed: 0,
+        costEstimate: 0,
+        model: responseModel(),
+        version: responseVersion(),
+        firstResponseMs: Date.now() - startedAt,
+      });
+    });
+  } catch (err) {
+    console.error("[chatwoot/webhook] usage registration failed:", err);
   }
 
   return new NextResponse("OK", { status: 200 });

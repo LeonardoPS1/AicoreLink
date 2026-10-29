@@ -68,10 +68,32 @@ export async function POST(request: Request): Promise<Response> {
     aiGeneratedRaw === undefined ? undefined : Boolean(aiGeneratedRaw);
   const tokensUsed = body?.tokensUsed ?? body?.tokens_used ?? null;
   const audioUrl = body?.audioUrl ?? body?.audio_url;
-  const model = body?.model ?? body?.modelUsed ?? body?.modelName ?? body?.model_name;
-  const version = body?.version ?? body?.modelVersion ?? body?.model_version ?? body?.versionName;
+  const model =
+    body?.model ??
+    body?.modelUsed ??
+    body?.model_used ??
+    body?.modelName ??
+    body?.model_name;
+  const version =
+    body?.version ??
+    body?.modelVersion ??
+    body?.model_version ??
+    body?.versionName ??
+    body?.version_name ??
+    body?.appVersion ??
+    body?.app_version;
   const firstResponseMs =
-    body?.firstResponseMs ?? body?.first_response_ms ?? body?.firstResponse ?? body?.responseTime ?? body?.responseMs;
+    body?.firstResponseMs ??
+    body?.first_response_ms ??
+    body?.firstResponse ??
+    body?.first_response ??
+    body?.responseTime ??
+    body?.response_time ??
+    body?.responseMs ??
+    body?.response_ms ??
+    body?.timeToFirstResponse ??
+    body?.time_to_first_response ??
+    body?.ttf;
 
   let key: string;
   if (body?.conversationKey || body?.conversation_key || body?.key) {

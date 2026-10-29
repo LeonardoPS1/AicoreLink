@@ -294,17 +294,22 @@ export async function recordUsage(...args: any[]): Promise<any> {
     tenantId_channel_period: { tenantId, channel, period },
   };
 
+  const updatePayload: Record<string, any> = {
+    messagesIn: { increment: messagesIn },
+    messagesOut: { increment: messagesOut },
+    tokensUsed: { increment: tokensUsed },
+    costEstimate: { increment: costEstimate },
+  };
+  if (model) updatePayload.model = model;
+  if (version) updatePayload.version = version;
+  if (firstResponseMs != null) updatePayload.firstResponseMs = firstResponseMs;
+
   if (tx.tenantUsage.upsert) {
     try {
       return await tx.tenantUsage.upsert({
         where,
         create: payload,
-        update: {
-          messagesIn: { increment: messagesIn },
-          messagesOut: { increment: messagesOut },
-          tokensUsed: { increment: tokensUsed },
-          costEstimate: { increment: costEstimate },
-        },
+        update: updatePayload,
       });
     } catch (err) {
       // Fall through to findUnique/create.
@@ -316,14 +321,18 @@ export async function recordUsage(...args: any[]): Promise<any> {
     try {
       const existing = await tx.tenantUsage.findUnique({ where });
       if (existing) {
+        const updateData: Record<string, any> = {
+          messagesIn: { increment: messagesIn },
+          messagesOut: { increment: messagesOut },
+          tokensUsed: { increment: tokensUsed },
+          costEstimate: { increment: costEstimate },
+        };
+        if (model) updateData.model = model;
+        if (version) updateData.version = version;
+        if (firstResponseMs != null) updateData.firstResponseMs = firstResponseMs;
         return tx.tenantUsage.update({
           where: { id: existing.id },
-          data: {
-            messagesIn: { increment: messagesIn },
-            messagesOut: { increment: messagesOut },
-            tokensUsed: { increment: tokensUsed },
-            costEstimate: { increment: costEstimate },
-          },
+          data: updateData,
         });
       }
     } catch {
