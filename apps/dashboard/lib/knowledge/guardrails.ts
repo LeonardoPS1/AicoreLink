@@ -62,7 +62,8 @@ export const INJECTION_PATTERNS: string[] = [
   "disregard previous",
   "disregard all",
   "disregard instructions",
-  "disregard",
+  "disregard previous instructions",
+  "disregard above",
   "olvida tus instrucciones",
   "olvida todo",
   "olvida lo anterior",
@@ -79,7 +80,14 @@ export const INJECTION_PATTERNS: string[] = [
   "override rules",
   "override system",
   "override safety",
-  "bypass",
+  "bypass your",
+  "bypass rules",
+  "bypass filters",
+  "bypass safety",
+  "bypass restrictions",
+  "bypass guardrails",
+  "bypass de seguridad",
+  "bypass security",
   "saltate las reglas",
   "saltate tus reglas",
   "saltate los filtros",
@@ -88,14 +96,6 @@ export const INJECTION_PATTERNS: string[] = [
   "salta las reglas",
   // Prompt / rule revelation.
   "system prompt",
-  "system message",
-  "system instructions",
-  "reglas del sistema",
-  "instrucciones del sistema",
-  "instrucciones internas",
-  "instrucciones secretas",
-  "instrucciones anteriores",
-  "instrucciones previas",
   "revela tu prompt",
   "revela tus instrucciones",
   "revela tus reglas",
@@ -116,15 +116,12 @@ export const INJECTION_PATTERNS: string[] = [
   // Roleplay / jailbreak.
   "actua como si",
   "act as if",
-  "act as",
   "ahora eres",
   "you are now",
   "pretende ser",
   "pretend to be",
   "pretend you are",
   "pretend you're",
-  "pretend you",
-  "pretend to",
   "finge ser",
   "finge que eres",
   "jailbreak",
@@ -224,10 +221,10 @@ export const DEFAULT_DEFLECTION = NO_DATA_REPLY;
 // ---------------------------------------------------------------------------
 
 export const MONEY_REGEXES: RegExp[] = [
-  /(?:US\$|USD\$?|\$|CLP\$?|€|£)\s?\d+(?:[.,]\d+)*/gi,
-  /\b(?:CLP|USD|EUR|ARS)\s*\$?\s?\d+(?:[.,]\d+)*/gi,
-  /\b\d+(?:[.,]\d+)*\s?(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\b/gi,
-  /\b(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\s*\$?\s?\d+(?:[.,]\d+)*/gi,
+  /(?:US\$|USD\$?|\$|CLP\$?|€|£)\s?\d+(?:[.,]\d+)*/i,
+  /\b(?:CLP|USD|EUR|ARS)\s*\$?\s?\d+(?:[.,]\d+)*/i,
+  /\b\d+(?:[.,]\d+)*\s?(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\b/i,
+  /\b(?:pesos?|clp|d[oó]lares?|d[oó]lar|dollars?|dollar|euros?|euro|usd)\s*\$?\s?\d+(?:[.,]\d+)*/i,
 ];
 
 // Back-compat single regex aliases (used by callers/tests).
@@ -235,7 +232,8 @@ export const DOLLAR_AMOUNT = new RegExp(MONEY_REGEXES[0].source, MONEY_REGEXES[0
 export const WORD_AMOUNT = new RegExp(MONEY_REGEXES[2].source, MONEY_REGEXES[2].flags);
 
 function cloneRegex(regex: RegExp): RegExp {
-  return new RegExp(regex.source, regex.flags);
+  const flags = regex.flags.includes("g") ? regex.flags : regex.flags + "g";
+  return new RegExp(regex.source, flags);
 }
 
 function allowedAmounts(knowledgeBase: string): Set<string> {
