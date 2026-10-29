@@ -15,7 +15,17 @@ export interface KnowledgeBaseRow {
   category: string;
   question: string;
   answer: string;
+  /**
+   * @deprecated Source of truth for tone is `KnowledgeBaseConfig` (see
+   * `getTone`/`setTone`). This column is retained for backward compatibility
+   * and is no longer read by application logic.
+   */
   tone?: string | null;
+  /**
+   * @deprecated Source of truth for forbidden topics is `KnowledgeBaseConfig`
+   * (see `getForbiddenTopics`/`setForbiddenTopics`). This column is retained
+   * for backward compatibility and is no longer read by application logic.
+   */
   forbiddenTopics?: string[];
   createdAt: Date;
   updatedAt: Date;

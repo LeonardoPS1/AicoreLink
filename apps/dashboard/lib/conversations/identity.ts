@@ -8,9 +8,15 @@
 
 export function conversationKey(
   tenantId: string,
-  chatwootConversationId: string | number
+  chatwootConversationId: string | number | null | undefined
 ): string {
-  return `cw_${tenantId}_${chatwootConversationId}`;
+  // Guard against missing/undefined conversation ids so we never persist a
+  // literal "undefined" segment (which would collapse distinct contacts).
+  const id =
+    chatwootConversationId == null || chatwootConversationId === ""
+      ? "unknown"
+      : String(chatwootConversationId);
+  return `cw_${tenantId}_${id}`;
 }
 
 /**

@@ -28,17 +28,20 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.OLLAMA_URL || 'http://ollama:11434' }}/api/generate",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/reply",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"mistral\",\n  \"prompt\": \"Responde en espanol chileno, tuteando, de forma breve y util: {{ $json.message }}\",\n  \"stream\": false\n}"
+        "jsonBody": "={\n  \"tenantId\": \"{{ $('Validar Payload').item.json.tenantId }}\",\n  \"contactRef\": \"{{ $('Validar Payload').item.json.contactRef }}\",\n  \"message\": \"{{ $('Validar Payload').item.json.message }}\",\n  \"messageId\": \"{{ $('Validar Payload').item.json.messageId }}\"\n}"
       },
-      "id": "call-ollama",
-      "name": "Llamar Ollama",
+      "id": "call-aicorelink",
+      "name": "Llamar AicoreLink",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [680, 300],
@@ -48,7 +51,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const reply = ($json.response || '').trim() || 'No tengo ese dato por ahora. ¿Te derivo con un asesor?';\nreturn [{ json: { reply } }];"
+        "functionCode": "const reply = ($json.reply || '').trim() || 'No tengo ese dato por ahora. ¿Te derivo con un asesor?';\nreturn [{ json: { reply } }];"
       },
       "id": "build-reply",
       "name": "Armar Respuesta",
@@ -110,9 +113,9 @@
       "main": [[{ "node": "Validar Payload", "type": "main", "index": 0 }]]
     },
     "Validar Payload": {
-      "main": [[{ "node": "Llamar Ollama", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Llamar AicoreLink", "type": "main", "index": 0 }]]
     },
-    "Llamar Ollama": {
+    "Llamar AicoreLink": {
       "main": [[{ "node": "Armar Respuesta", "type": "main", "index": 0 }]]
     },
     "Armar Respuesta": {

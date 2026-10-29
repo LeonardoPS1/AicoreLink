@@ -4,6 +4,13 @@ import { findOrCreateConversation } from "./identity";
 // `${tenantId}:${externalMessageId}` (coerced). Tracks ids mirrored within
 // this process instance so replays stay idempotent even when each call uses
 // a brand-new transaction object.
+//
+// Cross-process limitation: this in-memory set does NOT survive process
+// restarts or horizontal scaling. In a new process, a replayed message may
+// report `created: true` unless the caller performs a DB-level findUnique
+// pre-check (see app/api/webhooks/chatwoot/route.ts fallback path) or relies
+// on the (tenant_id, external_message_id) unique constraint enforced by
+// Postgres. The DB-level pre-check is the durable source of truth.
 const mirroredMessageIds = new Map<string, true>();
 
 // Test-only: clear the process-global seen set so tests using the same

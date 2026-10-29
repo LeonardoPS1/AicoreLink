@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyN8nWebhookSignature } from "@/lib/n8n/signature";
+import { conversationKey } from "@/lib/conversations/identity";
 
 interface N8nWebhookPayload {
   tenantId: string;
@@ -56,13 +57,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Persistir la clasificación IA en la conversación
+    const conversationId = conversationKey(payload.tenantId, payload.contactRef);
     await db.conversation.upsert({
-      where: { id: payload.contactRef },
+      where: { id: conversationId },
       update: {
         escalado: payload.escalated ?? false,
       },
       create: {
-        id: payload.contactRef,
+        id: conversationId,
         tenantId: payload.tenantId,
         channel: "whatsapp_text",
         contactRef: payload.contactRef,
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
     await db.message.create({
       data: {
         id: payload.messageId,
-        conversationId: payload.contactRef,
+        conversationId,
         tenantId: payload.tenantId,
         direction: "in",
         content: payload.message,

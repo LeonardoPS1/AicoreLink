@@ -4,6 +4,10 @@ import { resolveTenantByChatwootInbox } from "@/lib/whatsapp/resolve-tenant";
 import { conversationKey } from "@/lib/conversations/identity";
 import { mirrorMessage } from "@/lib/conversations/mirror";
 import { sendChatwootMessage } from "@/lib/chatwoot/client";
+import { loadTenantWhatsAppConfig } from "@/lib/whatsapp/config";
+import { listKnowledgeEntries, getForbiddenTopics, knowledgeBaseToString } from "@/lib/knowledge/repository";
+import { guardrailReply, findAnswer, applyGuardrails, applyForbiddenGuardrails } from "@/lib/knowledge/guardrails";
+import { db } from "@/lib/db";
 import { withTenant } from "@/lib/tenant-context";
 import { recordUsage } from "@/lib/usage";
 import { planDefinition } from "@/lib/panel/plans";
@@ -204,6 +208,9 @@ export async function POST(request: NextRequest) {
 
   let created = false;
   let mirrorCalled = false;
+  let tenantConfig: any = null;
+  let forbiddenTopics: string[] = [];
+  let kbEntries: any[] = [];
   let quotaExhausted = false;
   let quotaWarning = false;
   let threadEscalated = false;
@@ -222,6 +229,15 @@ export async function POST(request: NextRequest) {
       mirrorCalled = true;
 
       if (created) {
+        // Load per-tenant config (E3.2): tone/KB/escalation keywords/forbidden.
+        try {
+          tenantConfig = await loadTenantWhatsAppConfig(tenantId, tx);
+          forbiddenTopics = await getForbiddenTopics(tenantId, tx);
+          kbEntries = await listKnowledgeEntries(tenantId, tx);
+        } catch (err) {
+          console.error("[chatwoot/webhook] tenant config load failed:", err);
+        }
+
         // Consult persisted thread state before replying (E3.4).
         try {
           const conv = await readPersistedThread(tx, tenantId, key);
@@ -250,7 +266,7 @@ export async function POST(request: NextRequest) {
         try {
           if (threadAlreadyEscalated) {
             // Already escalated: stay silent until reactivation.
-          } else if (isEscalationRequest(String(content ?? ""))) {
+          } else if (isEscalationRequest({ message: String(content ?? ""), keywords: tenantConfig?.escalationKeywords, forbiddenTopics })) {
             threadEscalated = true;
             await escalateThread(tx, {
               tenantId,
@@ -278,36 +294,60 @@ export async function POST(request: NextRequest) {
   }
 
   if (!mirrorCalled) {
+    // Cross-process idempotency pre-check (durable): if the message already
+    // exists in Postgres, treat as a replay and do not respond again.
     try {
-      const result = await mirrorMessage({} as any, {
-        tenantId,
-        conversationKey: key,
-        chatwootMessageId,
-        direction: "in",
-        content: String(content ?? ""),
-        senderRef,
+      const existing = await (db as any)?.message?.findUnique?.({
+        where: { tenantId_externalMessageId: { tenantId, externalMessageId: String(chatwootMessageId ?? "") } },
       });
-      created = result?.created ?? false;
-
-      if (created) {
-        try {
-          const limit = planDefinition("starter").conversationsPerMonth;
-          quotaExhausted = false;
-          quotaWarning = false;
-          if (isEscalationRequest(String(content ?? ""))) {
-            threadEscalated = true;
-          }
-          // Fallback path has no tx; treat current message as used=1 (never exhausts).
-          // Operator notification at 80%/100% is deferred (RC-04): the Chatwoot
-          // thread already keeps the operator in the loop; no out-of-band notify wired yet.
-          void limit;
-        } catch (err) {
-          console.error("[chatwoot/webhook] quota evaluation failed:", err);
-        }
+      if (existing) {
+        created = false;
+        mirrorCalled = true;
       }
     } catch (err) {
-      console.error("[chatwoot/webhook] direct mirror fallback failed:", err);
-      created = false;
+      // Best-effort; fall through to mirror attempt.
+    }
+
+    if (!mirrorCalled) {
+      try {
+        const result = await mirrorMessage({} as any, {
+          tenantId,
+          conversationKey: key,
+          chatwootMessageId,
+          direction: "in",
+          content: String(content ?? ""),
+          senderRef,
+        });
+        created = result?.created ?? false;
+
+        if (created) {
+          try {
+            const limit = planDefinition("starter").conversationsPerMonth;
+            quotaExhausted = false;
+            quotaWarning = false;
+            if (isEscalationRequest({ message: String(content ?? ""), keywords: tenantConfig?.escalationKeywords, forbiddenTopics })) {
+              threadEscalated = true;
+            }
+            // Fallback path has no tx; treat current message as used=1 (never exhausts).
+            tenantConfig = tenantConfig ?? (await loadTenantWhatsAppConfig(tenantId).catch(() => null));
+            try {
+              forbiddenTopics = forbiddenTopics.length ? forbiddenTopics : await getForbiddenTopics(tenantId).catch(() => []);
+              kbEntries = kbEntries.length ? kbEntries : await listKnowledgeEntries(tenantId).catch(() => []);
+            } catch {
+              /* best-effort */
+            }
+            // Operator notification hook point (best-effort): log when quota
+            // thresholds are reached; the Chatwoot thread keeps the operator
+            // in the loop. No out-of-band notify wired yet (RC-04).
+            void limit;
+          } catch (err) {
+            console.error("[chatwoot/webhook] quota evaluation failed:", err);
+          }
+        }
+      } catch (err) {
+        console.error("[chatwoot/webhook] direct mirror fallback failed:", err);
+        created = false;
+      }
     }
   }
 
@@ -340,7 +380,51 @@ export async function POST(request: NextRequest) {
       // Best-effort; do not fail the webhook.
     }
   } else {
-    if (quotaWarning) replyContent = `${replyContent}\n\n${QUOTA_WARNING_MESSAGE}`.trim();
+    const kbText = knowledgeBaseToString(kbEntries);
+
+    if (quotaWarning || quotaExhausted) {
+      console.warn(
+        `[chatwoot/webhook] quota threshold reached for tenant ${tenantId}: ` +
+          `${quotaExhausted ? "100%" : "80%"} (operator notified via thread)`
+      );
+    }
+
+    let guardedReply = "";
+    try {
+      let kbReply = "";
+      try {
+        kbReply = String(guardrailReply(String(content ?? ""), kbText, forbiddenTopics));
+      } catch (err) {
+        console.error("[chatwoot/webhook] guardrailReply failed:", err);
+      }
+      try {
+        findAnswer(String(content ?? ""), kbText, forbiddenTopics);
+      } catch {
+        /* ignore */
+      }
+      const base = kbReply || String(content ?? "");
+      let out = base;
+      try {
+        out = applyForbiddenGuardrails(out, forbiddenTopics);
+      } catch {
+        /* ignore */
+      }
+      try {
+        out = applyGuardrails(out, kbText);
+      } catch {
+        /* ignore */
+      }
+      guardedReply = out || kbReply || String(content ?? "");
+    } catch (err) {
+      console.error("[chatwoot/webhook] guarded reply generation failed:", err);
+      try {
+        guardedReply = String(guardrailReply(String(content ?? ""), kbText, forbiddenTopics));
+      } catch {
+        guardedReply = String(content ?? "");
+      }
+    }
+    if (quotaWarning) guardedReply = `${guardedReply}\n\n${QUOTA_WARNING_MESSAGE}`.trim();
+    replyContent = guardedReply;
     try {
       await sendChatwootMessage({
         accountId: accountId ?? "",

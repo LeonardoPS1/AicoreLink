@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { ollamaClassifyIntent } from "@/lib/ai/ollama-client";
 import { openRouterClassifyIntent } from "@/lib/ai/openrouter-client";
 import { loadTenantWhatsAppConfig } from "@/lib/whatsapp/config";
+import { conversationKey } from "@/lib/conversations/identity";
 
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN ?? "";
 const N8N_WEBHOOK_URL = process.env.N8N_WHATSAPP_WEBHOOK_URL ?? "";
@@ -91,13 +92,14 @@ async function processTextMessage(
 
   // Step 4: Persistir conversación y mensaje con clasificación
   // Una sola conversación por contacto (contactRef estable), no por mensaje.
+  const conversationId = conversationKey(tenantId, from);
   await db.conversation.upsert({
-    where: { id: from },
+    where: { id: conversationId },
     update: {
       escalado: escalated,
     },
     create: {
-      id: from,
+      id: conversationId,
       tenantId,
       channel: "whatsapp_text",
       contactRef: from,
@@ -109,7 +111,7 @@ async function processTextMessage(
   await db.message.create({
     data: {
       id: msgId,
-      conversationId: from,
+      conversationId,
       tenantId,
       direction: "in",
       content: textBody,
