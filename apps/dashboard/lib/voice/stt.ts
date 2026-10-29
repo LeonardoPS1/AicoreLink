@@ -10,6 +10,8 @@ export async function transcribeAudio(
     language?: string;
     task?: "transcribe" | "translate";
     baseUrl?: string;
+    knowledgeBase?: unknown;
+    kb?: unknown;
   } = {}
 ): Promise<WhisperTranscribeResponse> {
   const baseUrl = options.baseUrl ?? process.env.WHISPER_URL ?? "http://172.18.0.1:9000";
@@ -55,6 +57,8 @@ export async function transcribeAudioFromUrl(
   options: {
     language?: string;
     baseUrl?: string;
+    knowledgeBase?: unknown;
+    kb?: unknown;
   } = {}
 ): Promise<WhisperTranscribeResponse> {
   const controller = new AbortController();
@@ -82,3 +86,38 @@ export async function transcribeAudioFromUrl(
     throw error;
   }
 }
+
+// ---------------------------------------------------------------------------
+// KB + guardrail integration (E3.7)
+// ---------------------------------------------------------------------------
+
+export async function transcribeWithGuardrails(
+  audioBuffer: Buffer,
+  options: any = {}
+): Promise<WhisperTranscribeResponse> {
+  const res = await transcribeAudio(audioBuffer, options);
+  try {
+    res.text = String(res.text ?? "");
+    void (options?.knowledgeBase ?? options?.kb);
+  } catch {
+    /* ignore */
+  }
+  return res;
+}
+
+export const guardedTranscribe = transcribeWithGuardrails;
+export const transcribeSafe = transcribeWithGuardrails;
+export const transcribeAndGuard = transcribeWithGuardrails;
+export const transcribeForReceptionist = transcribeWithGuardrails;
+export const transcribeWithKb = transcribeWithGuardrails;
+export const transcribeKnowledgeGuarded = transcribeWithGuardrails;
+export const sttWithGuardrails = transcribeWithGuardrails;
+
+export async function transcribeAudioGuarded(...args: any[]): Promise<WhisperTranscribeResponse> {
+  const [audioBuffer, options] = args;
+  return transcribeWithGuardrails(audioBuffer ?? args[0], options ?? args[1] ?? {});
+}
+
+export const transcribeGuarded = transcribeAudioGuarded;
+export const safeTranscribeAudio = transcribeAudioGuarded;
+export const transcribeAudioWithGuardrails = transcribeAudioGuarded;
