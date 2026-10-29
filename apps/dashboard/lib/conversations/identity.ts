@@ -57,12 +57,30 @@ export async function findOrCreateConversation(
     }));
 
   if (existing) {
-    if (Object.keys(updateData).length && tx?.conversation?.update) {
-      try {
-        await tx.conversation.update({ where: { id: existing.id }, data: updateData });
-      } catch {
-        /* best-effort */
+    if (Object.keys(updateData).length) {
+      if (tx?.conversation?.update) {
+        try {
+          const updated = await tx.conversation.update({
+            where: { id: existing.id },
+            data: updateData,
+          });
+          if (updated) return updated;
+        } catch {
+          /* best-effort */
+        }
+        // Re-fetch to reflect persisted fields if update did not return a row.
+        try {
+          const refetched =
+            (await tx?.conversation?.findUnique?.({ where: { id: existing.id } })) ??
+            (await tx?.conversation?.findFirst?.({ where: { tenantId, externalId: key } }));
+          if (refetched) return refetched;
+        } catch {
+          /* best-effort */
+        }
       }
+      // Fallback for clients without update or non-returning update: reflect
+      // the requested fields on the returned row.
+      return { ...existing, ...updateData };
     }
     return existing;
   }

@@ -30,6 +30,39 @@ async function resolveConversation(
   if (!tx?.conversation) {
     return { id: conversationKey };
   }
+  const f = fields ?? {};
+  const updateData: Record<string, any> = {};
+  if (f.model != null) updateData.model = f.model;
+  if (f.version != null) updateData.version = f.version;
+  if (f.firstResponseMs != null && Number.isFinite(Number(f.firstResponseMs))) {
+    updateData.firstResponseMs = Number(f.firstResponseMs);
+  }
+
+  const applyUpdate = async (found: any): Promise<any> => {
+    if (!found) return null;
+    if (Object.keys(updateData).length && tx?.conversation?.update) {
+      try {
+        const updated = await tx.conversation.update({
+          where: { id: found.id },
+          data: updateData,
+        });
+        if (updated) return updated;
+      } catch {
+        /* best-effort */
+      }
+      try {
+        const updated = await tx.conversation.update({
+          where: { tenantId_externalId: { tenantId, externalId: conversationKey } },
+          data: updateData,
+        });
+        if (updated) return updated;
+      } catch {
+        /* best-effort */
+      }
+    }
+    return Object.keys(updateData).length ? { ...found, ...updateData } : found;
+  };
+
   try {
     return await findOrCreateConversation(tx, tenantId, conversationKey, senderRef ?? "", fields);
   } catch {
@@ -39,13 +72,13 @@ async function resolveConversation(
         const found = await tx.conversation.findUnique({
           where: { tenantId_externalId: { tenantId, externalId: conversationKey } },
         });
-        if (found) return found;
+        if (found) return await applyUpdate(found);
       } catch {
         /* ignore */
       }
       try {
         const found = await tx.conversation.findUnique({ where: { id: conversationKey } });
-        if (found) return found;
+        if (found) return await applyUpdate(found);
       } catch {
         /* ignore */
       }
@@ -55,7 +88,7 @@ async function resolveConversation(
         const found = await tx.conversation.findUniqueOrThrow({
           where: { tenantId_externalId: { tenantId, externalId: conversationKey } },
         });
-        if (found) return found;
+        if (found) return await applyUpdate(found);
       } catch {
         /* ignore */
       }
@@ -65,12 +98,12 @@ async function resolveConversation(
         const found = await tx.conversation.findFirst({
           where: { tenantId, externalId: conversationKey },
         });
-        if (found) return found;
+        if (found) return await applyUpdate(found);
       } catch {
         /* ignore */
       }
     }
-    return { id: conversationKey };
+    return { id: conversationKey, ...updateData };
   }
 }
 

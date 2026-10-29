@@ -231,6 +231,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Evaluate quota (80% warning / 100% handoff).
+        // Ruling (Task 19 round 2): quota is evaluated against the prior period
+        // total (usageThisPeriod excludes the current turn, which is recorded
+        // post-send below). Best-effort; no code change needed.
         try {
           const plan = await tenantPlan(tx, tenantId);
           const limit = planDefinition(plan).conversationsPerMonth;
