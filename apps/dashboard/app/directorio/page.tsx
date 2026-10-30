@@ -52,11 +52,18 @@ export default function DirectorioPage() {
     <div className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="mb-8 text-3xl font-bold text-navy">Directorio de negocios</h1>
 
-      {/* Map placeholder */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-slate-100 p-4 text-center">
-        <p className="text-sm text-slate-500">
-          📍 Mapa interactivo próximamente — los negocios se mostrarán en el mapa de Santiago
-        </p>
+      {/* Map embed */}
+      <div className="mb-6 overflow-hidden rounded-xl border border-slate-200">
+        <iframe
+          title="Mapa de negocios"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d106545.78!2d-70.65!3d-33.45!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662c5410425af2f%3A0x8477d4df3f2936a2!2sSantiago%2C%20Regi%C3%B3n%20Metropolitana!5e0!3m2!1ses!2scl!4v1700000000000"
+          width="100%"
+          height="300"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
       </div>
 
       {/* Filters */}

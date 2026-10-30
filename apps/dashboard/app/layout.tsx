@@ -28,7 +28,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${figtree.variable} ${instrumentSerif.variable}`}>
-      <body className="bg-slate-50 font-sans text-slate-900 antialiased">{children}</body>
+      <body className="bg-slate-50 font-sans text-slate-900 antialiased">
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }`,
+          }}
+        />
+      </body>
     </html>
   );
 }
