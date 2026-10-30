@@ -29,6 +29,7 @@ model Tenant {
   pilotOnboardings PilotOnboarding[]
   pilotFollowups   PilotFollowup[]
   testimonials     Testimonial[]
+  billings         TenantBilling[]
 
   @@map("tenants")
 }
@@ -487,4 +488,26 @@ model Testimonial {
   @@index([tenantId])
   @@index([approved, published])
   @@map("testimonials")
+}
+
+/// Billing record for a tenant (subscription, invoices, payment status).
+model TenantBilling {
+  id            String    @id @default(cuid())
+  tenantId      String    @unique @map("tenant_id")
+  plan          String
+  amount        Decimal   @default(0)
+  currency      String    @default("CLP")
+  status        String    @default("active") // active | past_due | suspended | cancelled
+  billingActive Boolean   @default(true) @map("billing_active")
+  invoiceNumber String?   @map("invoice_number")
+  invoiceUrl    String?   @map("invoice_url")
+  lastPaymentAt DateTime? @map("last_payment_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("tenant_billings")
 }
