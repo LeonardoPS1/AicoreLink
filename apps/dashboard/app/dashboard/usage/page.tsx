@@ -129,7 +129,7 @@ async function loadUsage(): Promise<UsageResult> {
       }
 
       const { planDefinition } = await import("@/lib/panel/plans");
-      const revenue = toNumber(planDefinition(tenant?.plan).priceCLP, 19990) || 19990;
+      const revenue = toNumber(planDefinition(tenant?.plan).priceCLP) || 19990;
       const cost = agg.cost;
       const marginPct = revenue > 0 ? ((revenue - cost) / revenue) * 100 : 0;
 

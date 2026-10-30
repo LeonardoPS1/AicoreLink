@@ -369,7 +369,6 @@ export const autoBook = scheduleAppointment;
 
 async function resolveStt(): Promise<any> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return await import("@/lib/voice/stt");
   } catch {
     return null;

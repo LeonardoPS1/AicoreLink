@@ -144,7 +144,7 @@ export async function GET(req?: NextRequest) {
       { messagesIn: 0, messagesOut: 0, tokensUsed: 0, cost: 0, model: null, version: null }
     );
 
-    const revenue = toNumber(planDefinition(tenant?.plan).priceCLP, 19990);
+    const revenue = toNumber(planDefinition(tenant?.plan).priceCLP) || 19990;
     const cost = agg.cost;
     const marginPct = revenue > 0 ? ((revenue - cost) / revenue) * 100 : 0;
 
