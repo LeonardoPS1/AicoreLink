@@ -52,6 +52,13 @@ export default function DirectorioPage() {
     <div className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="mb-8 text-3xl font-bold text-navy">Directorio de negocios</h1>
 
+      {/* Map placeholder */}
+      <div className="mb-6 rounded-xl border border-slate-200 bg-slate-100 p-4 text-center">
+        <p className="text-sm text-slate-500">
+          📍 Mapa interactivo próximamente — los negocios se mostrarán en el mapa de Santiago
+        </p>
+      </div>
+
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-3">
         <input
