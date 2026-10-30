@@ -40,9 +40,12 @@ export async function POST(req: NextRequest) {
   });
   const greeting = assistant?.greeting ?? "Hola, gracias por llamar. ¿En qué puedo ayudarle?";
 
-  // If there's a recording, transcribe and respond
+  // Check for transcription result
+  const transcriptionText = formData.get("TranscriptionText")?.toString();
+  const transcriptionStatus = formData.get("TranscriptionStatus")?.toString();
+
+  // If there's a recording, store voice note
   if (recordingUrl) {
-    // Store voice note as message
     const conversation = await db.conversation.findFirst({
       where: { tenantId, contactRef: from, channel: "whatsapp_voice" },
     });
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
           conversationId: conversation.id,
           tenantId,
           direction: "in",
-          content: `[Voice note] ${recordingUrl}`,
+          content: transcriptionText ? `[Voice note transcribed] ${transcriptionText}` : `[Voice note] ${recordingUrl}`,
           mediaType: "voice",
           audioUrl: recordingUrl,
         },
