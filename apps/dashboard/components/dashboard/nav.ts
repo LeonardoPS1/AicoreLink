@@ -32,7 +32,7 @@ const STAFF_NAV: NavItem[] = [
   { href: "/dashboard/admin/fabrica", label: "Fábrica" },
   { href: "/dashboard/admin/embudo", label: "Embudo" },
   { href: "/dashboard/admin/metricas", label: "Métricas" },
-  { href: "/dashboard/admin/pilots", label: "Pilotos", soon: true },
+  { href: "/dashboard/admin/pilots", label: "Pilotos" },
   { href: "/dashboard/admin/infraestructura", label: "Infraestructura" },
   { href: "/dashboard/admin/usuarios", label: "Usuarios", soon: true },
 ];

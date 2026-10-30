@@ -26,6 +26,9 @@ model Tenant {
   knowledgeBaseConfig KnowledgeBaseConfig?
   leads            Lead[]
   appointments     Appointment[]
+  pilotOnboardings PilotOnboarding[]
+  pilotFollowups   PilotFollowup[]
+  testimonials     Testimonial[]
 
   @@map("tenants")
 }
@@ -428,4 +431,60 @@ model Appointment {
   @@index([tenantId])
   @@index([tenantId, status])
   @@map("appointments")
+}
+
+/// Onboarding record for a pilot (Founder) tenant. Tracks provisioning checklist.
+model PilotOnboarding {
+  id                String    @id @default(cuid())
+  tenantId          String    @unique @map("tenant_id")
+  status            String    @default("pending") // pending | in_progress | completed | cancelled
+  founderAgreement  Boolean   @default(false) @map("founder_agreement")
+  checklist         Json      @default("{}") // { whatsapp_connected, kb_loaded, site_published, billing_active }
+  assignedTo        String?   @map("assigned_to")
+  startedAt         DateTime  @default(now()) @map("started_at")
+  completedAt       DateTime? @map("completed_at")
+  notes             String?   @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("pilot_onboardings")
+}
+
+/// Follow-up record for pilot tenants (d1, d7, d14, d30).
+model PilotFollowup {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  day         Int       // 1, 7, 14, 30
+  sentAt      DateTime? @map("sent_at")
+  respondedAt DateTime? @map("responded_at")
+  score       Int?      // 1-5 (NPS-like)
+  feedback    String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, day])
+  @@map("pilot_followups")
+}
+
+/// Testimonial captured from a client tenant, approved/published by admin.
+model Testimonial {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  authorName  String   @map("author_name")
+  authorRole  String?  @map("author_role")
+  content     String   @db.Text
+  rating      Int      // 1-5
+  approved    Boolean  @default(false)
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([approved, published])
+  @@map("testimonials")
 }
