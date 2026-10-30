@@ -29,7 +29,7 @@ const CLIENT_NAV: NavItem[] = [
 const STAFF_NAV: NavItem[] = [
   { href: "/dashboard", label: "Menú principal" },
   { href: "/dashboard/admin/tenants", label: "Clientes" },
-  { href: "/dashboard/admin/onboarding", label: "Onboarding", soon: true },
+  { href: "/dashboard/admin/onboarding", label: "Onboarding" },
   { href: "/dashboard/admin/fabrica", label: "Fábrica" },
   { href: "/dashboard/admin/embudo", label: "Embudo" },
   { href: "/dashboard/admin/metricas", label: "Métricas" },
@@ -37,7 +37,7 @@ const STAFF_NAV: NavItem[] = [
   { href: "/dashboard/admin/sedes", label: "Sedes" },
   { href: "/dashboard/admin/pilots", label: "Pilotos" },
   { href: "/dashboard/admin/infraestructura", label: "Infraestructura" },
-  { href: "/dashboard/admin/usuarios", label: "Usuarios", soon: true },
+  { href: "/dashboard/admin/usuarios", label: "Usuarios" },
 ];
 
 /** The role, not the route, decides the menu. */

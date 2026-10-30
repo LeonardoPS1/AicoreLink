@@ -13,7 +13,9 @@ describe("buildNav", () => {
       "/dashboard",
       "/dashboard/leads",
       "/dashboard/conversaciones",
-      "/dashboard/citas",
+      "/dashboard/appointments",
+      "/dashboard/usage",
+      "/dashboard/testimonio",
       "/dashboard/resenas",
       "/dashboard/sitio",
       "/dashboard/reportes",
@@ -32,8 +34,6 @@ describe("buildNav", () => {
   it("marks every menu entry that has no screen yet as coming soon", () => {
     const soon = buildNav("cliente").filter((i) => i.soon).map((i) => i.href);
     expect(soon).toEqual([
-      "/dashboard/leads",
-      "/dashboard/citas",
       "/dashboard/resenas",
       "/dashboard/sitio",
       "/dashboard/reportes",
