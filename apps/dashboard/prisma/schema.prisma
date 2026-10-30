@@ -31,6 +31,10 @@ model Tenant {
   pilotFollowups   PilotFollowup[]
   testimonials     Testimonial[]
   billings         TenantBilling[]
+  assistantConfig  AssistantConfig?
+  correctionLogs   CorrectionLog[]
+  branches         Branch[]
+  reactivationCampaigns ReactivationCampaign[]
 
   @@map("tenants")
 }
@@ -39,9 +43,6 @@ model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String?  @map("password_hash")
-  // Rol interno de Aicore (dev_aicore | operador | soporte). Es global, no por
-  // tenant: es lo que decide el panel, y tenant_id no alcanza para un rol
-  // cross-tenant. Un usuario comun lo tiene en null y su rol sale de TenantUser.
   staffRole    String?  @map("staff_role")
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -70,7 +71,7 @@ model TenantUser {
   id        String   @id @default(uuid())
   tenantId  String   @map("tenant_id")
   userId    String   @map("user_id")
-  role      String   @default("cliente") // rol del usuario dentro del tenant: cliente | operador
+  role      String   @default("cliente")
   createdAt DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
@@ -83,7 +84,7 @@ model TenantUser {
 model TenantChannel {
   id          String    @id @default(uuid())
   tenantId    String    @map("tenant_id")
-  channel     String    // whatsapp_text | whatsapp_voice | email | social
+  channel     String
   enabled     Boolean   @default(false)
   config      Json      @default("{}")
   descripcion String?   @map("descripcion")
@@ -142,8 +143,8 @@ model AuditLog {
 
 model CostRate {
   id        String   @id @default(uuid())
-  provider  String   // openrouter | meta_cloud_api | elevenlabs | whisper
-  unit      String   // token | message | minute
+  provider  String
+  unit      String
   rate      Decimal
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -206,8 +207,6 @@ model Message {
   @@map("messages")
 }
 
-/// Pre-sale enquiries submitted from the public landing page.
-/// Tenant-less by design: these are not customer data, so no tenant_id and no RLS.
 model LandingLead {
   id        String   @id @default(uuid())
   name      String
@@ -233,11 +232,10 @@ model LandingLead {
   @@map("landing_leads")
 }
 
-/// Business profile for a tenant's site — contains all the business-specific content.
 model BusinessProfile {
   id          String   @id @default(uuid())
   tenantId    String   @unique @map("tenant_id")
-  rubro       String   // barberia | taller | profesional | clinica | inmobiliaria | domicilio
+  rubro       String
   name        String
   slug        String   @unique @map("slug")
   phone       String?
@@ -246,11 +244,11 @@ model BusinessProfile {
   description String?  @db.Text
   logoUrl     String?  @map("logo_url")
   images      String[] @default([]) @map("images")
-  hours       Json     @default("{}") // { lunes: {open, close}, ... }
-  team        Json     @default("[]") // [{name, role, bio, photoUrl}]
-  services    Json     @default("[]") // [{name, description, priceCLP?, durationMin}]
-  faqs        Json     @default("[]") // [{question, answer}]
-  social      Json     @default("{}") // {instagram, facebook, tiktok, web}
+  hours       Json     @default("{}")
+  team        Json     @default("[]")
+  services    Json     @default("[]")
+  faqs        Json     @default("[]")
+  social      Json     @default("{}")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -260,16 +258,15 @@ model BusinessProfile {
   @@map("business_profiles")
 }
 
-/// A generated site for a tenant, linked to a template and optionally a business profile.
 model Site {
   id                String   @id @default(uuid())
   tenantId          String   @map("tenant_id")
   businessProfileId String?  @unique @map("business_profile_id")
   templateId        String   @map("template_id")
   name              String
-  subdomain         String   @unique @map("subdomain") // e.g., "peluqueria-maria"
+  subdomain         String   @unique @map("subdomain")
   customDomain      String?  @unique @map("custom_domain")
-  status            String   @default("draft") // draft | generating | review | approved | published | unpublished
+  status            String   @default("draft")
   currentVersionId  String?  @map("current_version_id")
   publishedAt       DateTime? @map("published_at")
   createdAt         DateTime @default(now()) @map("created_at")
@@ -287,15 +284,14 @@ model Site {
   @@map("sites")
 }
 
-/// A page within a site, with portable JSON content (blocks).
 model SitePage {
   id              String   @id @default(uuid())
   siteId          String   @map("site_id")
   templatePageId  String?  @map("template_page_id")
-  path            String   // e.g., "/", "/servicios", "/equipo", "/contacto", "/reservar"
+  path            String
   title           String
-  content         Json     // { blocks: [...] } — portable content (not HTML)
-  meta            Json     @default("{}") // {title, description, ogImage, noindex}
+  content         Json
+  meta            Json     @default("{}")
   order           Int      @default(0)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -306,14 +302,13 @@ model SitePage {
   @@map("site_pages")
 }
 
-/// Template definition per rubro + plan tier.
 model SiteTemplate {
   id          String   @id @default(uuid())
-  rubro       String   // barberia | taller | profesional
+  rubro       String
   name        String
-  planTier    String   // starter | growth | elite
-  pageCount   Int      // 3, 5, or 10
-  structure   Json     // [{path, title, blocksTemplate, requiredVariables}]
+  planTier    String
+  pageCount   Int
+  structure   Json
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -324,13 +319,12 @@ model SiteTemplate {
   @@map("site_templates")
 }
 
-/// Page template within a SiteTemplate, with placeholder blocks.
 model SiteTemplatePage {
   id                 String   @id @default(uuid())
   templateId         String   @map("template_id")
   path               String
   title              String
-  blocksTemplate     Json     // template with {{variable}} placeholders
+  blocksTemplate     Json
   requiredVariables  String[] @map("required_variables")
   order              Int      @default(0)
 
@@ -340,14 +334,13 @@ model SiteTemplatePage {
   @@map("site_template_pages")
 }
 
-/// Version snapshot of a site's pages.
 model SiteVersion {
   id        String   @id @default(uuid())
   siteId    String   @map("site_id")
   version   Int
-  pages     Json     // full snapshot of pages at this version
+  pages     Json
   changelog String?  @map("changelog")
-  createdBy String   @map("created_by") // userId
+  createdBy String   @map("created_by")
   createdAt DateTime @default(now()) @map("created_at")
 
   site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
@@ -356,14 +349,13 @@ model SiteVersion {
   @@map("site_versions")
 }
 
-/// Audit log for publish/unpublish/rollback/domain change actions.
 model PublishLog {
   id        String   @id @default(uuid())
   siteId    String   @map("site_id")
   version   Int
-  action    String   // publish | unpublish | rollback | domain_change
-  target    String   // subdomain or custom domain
-  status    String   // success | failed | pending
+  action    String
+  target    String
+  status    String
   error     String?  @db.Text
   meta      Json     @default("{}")
   createdAt DateTime @default(now()) @map("created_at")
@@ -374,8 +366,6 @@ model PublishLog {
   @@map("publish_logs")
 }
 
-/// Structured knowledge base entries for a tenant (category, question, answer).
-/// The assistant may only cite facts present in these rows (E3 KB, RF-KB-01..05).
 model KnowledgeBase {
   id              String   @id @default(uuid())
   tenantId        String   @map("tenant_id")
@@ -394,7 +384,6 @@ model KnowledgeBase {
   @@map("knowledge_bases")
 }
 
-/// Per-tenant configuration for the knowledge base assistant (tone + forbidden topics).
 model KnowledgeBaseConfig {
   id              String   @id @default(uuid())
   tenantId        String   @unique @map("tenant_id")
@@ -408,7 +397,6 @@ model KnowledgeBaseConfig {
   @@map("knowledge_base_configs")
 }
 
-/// Lead captured for a tenant (conversations, appointments). Tenant-scoped (RLS).
 model Lead {
   id          String   @id @default(uuid())
   tenantId    String   @map("tenant_id")
@@ -430,7 +418,6 @@ model Lead {
   @@map("leads")
 }
 
-/// Appointment scheduled for a tenant, optionally linked to a conversation and lead.
 model Appointment {
   id             String   @id @default(uuid())
   tenantId       String   @map("tenant_id")
@@ -466,13 +453,12 @@ model AvailabilityBlock {
   @@map("availability_blocks")
 }
 
-/// Onboarding record for a pilot (Founder) tenant. Tracks provisioning checklist.
 model PilotOnboarding {
   id                String    @id @default(cuid())
   tenantId          String    @unique @map("tenant_id")
-  status            String    @default("pending") // pending | in_progress | completed | cancelled
+  status            String    @default("pending")
   founderAgreement  Boolean   @default(false) @map("founder_agreement")
-  checklist         Json      @default("{}") // { whatsapp_connected, kb_loaded, site_published, billing_active }
+  checklist         Json      @default("{}")
   assignedTo        String?   @map("assigned_to")
   startedAt         DateTime  @default(now()) @map("started_at")
   completedAt       DateTime? @map("completed_at")
@@ -485,14 +471,13 @@ model PilotOnboarding {
   @@map("pilot_onboardings")
 }
 
-/// Follow-up record for pilot tenants (d1, d7, d14, d30).
 model PilotFollowup {
   id          String    @id @default(cuid())
   tenantId    String    @map("tenant_id")
-  day         Int       // 1, 7, 14, 30
+  day         Int
   sentAt      DateTime? @map("sent_at")
   respondedAt DateTime? @map("responded_at")
-  score       Int?      // 1-5 (NPS-like)
+  score       Int?
   feedback    String?   @db.Text
   createdAt   DateTime  @default(now()) @map("created_at")
 
@@ -503,14 +488,13 @@ model PilotFollowup {
   @@map("pilot_followups")
 }
 
-/// Testimonial captured from a client tenant, approved/published by admin.
 model Testimonial {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
   authorName  String   @map("author_name")
   authorRole  String?  @map("author_role")
   content     String   @db.Text
-  rating      Int      // 1-5
+  rating      Int
   approved    Boolean  @default(false)
   published   Boolean  @default(false)
   createdAt   DateTime @default(now()) @map("created_at")
@@ -522,14 +506,13 @@ model Testimonial {
   @@map("testimonials")
 }
 
-/// Billing record for a tenant (subscription, invoices, payment status).
 model TenantBilling {
   id            String    @id @default(cuid())
   tenantId      String    @unique @map("tenant_id")
   plan          String
   amount        Decimal   @default(0)
   currency      String    @default("CLP")
-  status        String    @default("active") // active | past_due | suspended | cancelled
+  status        String    @default("active")
   billingActive Boolean   @default(true) @map("billing_active")
   invoiceNumber String?   @map("invoice_number")
   invoiceUrl    String?   @map("invoice_url")
@@ -542,4 +525,70 @@ model TenantBilling {
   @@index([tenantId])
   @@index([status])
   @@map("tenant_billings")
+}
+
+model AssistantConfig {
+  id            String   @id @default(uuid())
+  tenantId      String   @unique @map("tenant_id")
+  name          String   @default("Aicore Assistant")
+  tone          String   @default("amable")
+  language      String   @default("es")
+  greeting      String?  @db.Text
+  forbiddenTopics String[] @default([]) @map("forbidden_topics")
+  autoReply     Boolean  @default(true) @map("auto_reply")
+  handoffKeywords String[] @default([]) @map("handoff_keywords")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("assistant_configs")
+}
+
+model CorrectionLog {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  original      String   @db.Text
+  correction    String   @db.Text
+  context       String?  @db.Text
+  applied       Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("correction_logs")
+}
+
+model Branch {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  address   String?
+  phone     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("branches")
+}
+
+model ReactivationCampaign {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  audience    String   // all | inactive_30d | inactive_90d | custom
+  message     String   @db.Text
+  status      String   @default("draft") // draft | scheduled | running | completed
+  scheduledAt DateTime? @map("scheduled_at")
+  sentCount   Int      @default(0) @map("sent_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("reactivation_campaigns")
 }
