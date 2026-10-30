@@ -69,6 +69,15 @@ export default function LoginPage() {
         >
           {loading ? "Ingresando..." : "Ingresar"}
         </button>
+
+        <div className="mt-4 flex justify-between text-sm">
+          <a href="/register" className="text-brand hover:underline">
+            Crear cuenta
+          </a>
+          <a href="/forgot-password" className="text-slate-500 hover:underline">
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
       </form>
     </div>
   );

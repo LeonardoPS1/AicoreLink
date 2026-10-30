@@ -45,9 +45,24 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   tenantLinks TenantUser[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([staffRole])
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model TenantUser {
