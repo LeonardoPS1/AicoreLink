@@ -18,11 +18,11 @@ const CLIENT_NAV: NavItem[] = [
   { href: "/dashboard/appointments", label: "Citas" },
   { href: "/dashboard/usage", label: "Uso" },
   { href: "/dashboard/testimonio", label: "Testimonio" },
-  { href: "/dashboard/resenas", label: "Reseñas", soon: true },
-  { href: "/dashboard/sitio", label: "Mi sitio", soon: true },
-  { href: "/dashboard/reportes", label: "Reportes", soon: true },
-  { href: "/dashboard/soporte", label: "Soporte", soon: true },
-  { href: "/dashboard/mi-cuenta", label: "Mi cuenta", soon: true },
+  { href: "/dashboard/resenas", label: "Reseñas" },
+  { href: "/dashboard/sitio", label: "Mi sitio" },
+  { href: "/dashboard/reportes", label: "Reportes" },
+  { href: "/dashboard/soporte", label: "Soporte" },
+  { href: "/dashboard/mi-cuenta", label: "Mi cuenta" },
 ];
 
 /** Menu of the Aicore staff, in the order of the design (§4.3). */

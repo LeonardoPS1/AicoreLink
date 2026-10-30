@@ -35,6 +35,7 @@ model Tenant {
   correctionLogs   CorrectionLog[]
   branches         Branch[]
   reactivationCampaigns ReactivationCampaign[]
+  supportTickets       SupportTicket[]
 
   @@map("tenants")
 }
@@ -591,4 +592,22 @@ model ReactivationCampaign {
 
   @@index([tenantId])
   @@map("reactivation_campaigns")
+}
+
+model SupportTicket {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  subject     String
+  description String    @db.Text
+  status      String    @default("open")
+  priority    String    @default("normal")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  resolvedAt  DateTime? @map("resolved_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("support_tickets")
 }

@@ -33,13 +33,7 @@ describe("buildNav", () => {
 
   it("marks every menu entry that has no screen yet as coming soon", () => {
     const soon = buildNav("cliente").filter((i) => i.soon).map((i) => i.href);
-    expect(soon).toEqual([
-      "/dashboard/resenas",
-      "/dashboard/sitio",
-      "/dashboard/reportes",
-      "/dashboard/soporte",
-      "/dashboard/mi-cuenta",
-    ]);
+    expect(soon).toEqual([]);
   });
 
   it.each(["cliente", "dev_aicore"])(
