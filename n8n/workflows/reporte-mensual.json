@@ -1,0 +1,64 @@
+{
+  "name": "Reporte - Reporte mensual",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 1 * *" }]
+        }
+      },
+      "id": "schedule-mensual",
+      "name": "Programador Mensual",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const now = new Date();\nconst fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago', year: 'numeric', month: '2-digit' });\nconst parts = fmt.formatToParts(now);\nconst y = Number(parts.find((p) => p.type === 'year').value);\nconst m = Number(parts.find((p) => p.type === 'month').value);\nlet py = y;\nlet pm = m - 1;\nif (pm === 0) { pm = 12; py -= 1; }\nconst period = py + '-' + String(pm).padStart(2, '0');\nreturn [{ json: { tenantId: 'default', period } }];"
+      },
+      "id": "build-period",
+      "name": "Armar Periodo",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTAUTH_URL }}/api/internal/report",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-internal-key", "value": "={{ $env.FACTORY_INTERNAL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenantId\": \"{{ $json.tenantId }}\",\n  \"period\": \"{{ $json.period }}\"\n}"
+      },
+      "id": "call-report",
+      "name": "Registrar Reporte",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Programador Mensual": {
+      "main": [[{ "node": "Armar Periodo", "type": "main", "index": 0 }]]
+    },
+    "Armar Periodo": {
+      "main": [[{ "node": "Registrar Reporte", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "America/Santiago" },
+  "id": "reporte-mensual-workflow",
+  "tags": ["reporte", "mensual", "panel", "e4"],
+  "meta": { "templateCredsSetupCompleted": true }
+}

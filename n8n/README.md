@@ -12,7 +12,7 @@ per tenant via environment variables and internal API calls.
 - `workflows/recordatorio.json` - Daily appointment reminders.
 - `workflows/resena.json` - Post-visit review request.
 - `workflows/reporte.json` - Weekly summary report.
-
+- `workflows/reporte-mensual.json` - Monthly report (1st of month, 9am America/Santiago) calling `/api/internal/report`.
 ## Import
 
 1. Open n8n -> Workflows -> Import from File.
@@ -42,5 +42,4 @@ per tenant via environment variables and internal API calls.
 
 - Workflows are cloned per tenant by changing parameters only; business logic lives
   in the dashboard (`/api/internal/*`).
-- `recordatorio.json` and `reporte.json` hardcode the `'default'` tenant for v1;
-  parameterize the tenant list when cloning per tenant.
+- `recordatorio.json`, `reporte.json` and `reporte-mensual.json` hardcode the `'default'` tenant for v1;  parameterize the tenant list when cloning per tenant.
