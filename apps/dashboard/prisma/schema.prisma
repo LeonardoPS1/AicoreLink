@@ -25,8 +25,9 @@ model Tenant {
   knowledgeBases   KnowledgeBase[]
   knowledgeBaseConfig KnowledgeBaseConfig?
   leads            Lead[]
-  appointments     Appointment[]
-  pilotOnboardings PilotOnboarding[]
+  appointments         Appointment[]
+  availabilityBlocks   AvailabilityBlock[]
+  pilotOnboardings     PilotOnboarding[]
   pilotFollowups   PilotFollowup[]
   testimonials     Testimonial[]
   billings         TenantBilling[]
@@ -435,7 +436,9 @@ model Appointment {
   tenantId       String   @map("tenant_id")
   conversationId String?  @map("conversation_id")
   leadId         String?  @map("lead_id")
+  professional   String?  @map("professional")
   scheduledAt    DateTime @map("scheduled_at")
+  duration       Int      @default(30) @map("duration_minutes")
   status         String   @default("pendiente")
   notes          String?  @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
@@ -447,6 +450,20 @@ model Appointment {
   @@index([tenantId])
   @@index([tenantId, status])
   @@map("appointments")
+}
+
+model AvailabilityBlock {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  startAt   DateTime @map("start_at")
+  endAt     DateTime @map("end_at")
+  reason    String?  @map("reason")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("availability_blocks")
 }
 
 /// Onboarding record for a pilot (Founder) tenant. Tracks provisioning checklist.
