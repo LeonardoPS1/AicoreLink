@@ -32,6 +32,17 @@ export const leadSchema = z.object({
   rubro: z.string().trim().min(1, "Elige tu rubro"),
   mensaje: z.string().trim().max(600, "Usa como máximo 600 caracteres").optional(),
   utm: utmSchema.optional(),
+  // Top-level UTM fields (aliases accepted from body/query).
+  utmSource: z.string().trim().max(100).optional(),
+  utmMedium: z.string().trim().max(100).optional(),
+  utmCampaign: z.string().trim().max(100).optional(),
+  utmContent: z.string().trim().max(100).optional(),
+  utmTerm: z.string().trim().max(100).optional(),
+  utm_source: z.string().trim().max(100).optional(),
+  utm_medium: z.string().trim().max(100).optional(),
+  utm_campaign: z.string().trim().max(100).optional(),
+  utm_content: z.string().trim().max(100).optional(),
+  utm_term: z.string().trim().max(100).optional(),
   consent: z.literal(true, { message: "Debes aceptar el tratamiento de datos" }),
 });
 

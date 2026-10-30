@@ -774,7 +774,6 @@ export const stripInventedNumbers = applyGuardrails;
 
 // Re-export prompt builder for convenience (circular-safe, best-effort).
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
 } catch {}
 export { buildPrompt, buildSystemPrompt } from "./prompt";
 

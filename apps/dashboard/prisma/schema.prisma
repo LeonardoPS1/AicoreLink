@@ -24,6 +24,8 @@ model Tenant {
   sites            Site[]
   knowledgeBases   KnowledgeBase[]
   knowledgeBaseConfig KnowledgeBaseConfig?
+  leads            Lead[]
+  appointments     Appointment[]
 
   @@map("tenants")
 }
@@ -153,7 +155,8 @@ model Conversation {
   firstResponseMs Int?       @map("first_response_ms")
   createdAt      DateTime    @default(now()) @map("created_at")
 
-  messages Message[]
+  messages     Message[]
+  appointments Appointment[]
 
   @@unique([tenantId, externalId])
   @@index([tenantId, threadState])
@@ -383,4 +386,46 @@ model KnowledgeBaseConfig {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("knowledge_base_configs")
+}
+
+/// Lead captured for a tenant (conversations, appointments). Tenant-scoped (RLS).
+model Lead {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  email       String?
+  phone       String?
+  source      String
+  utmSource   String?  @map("utm_source")
+  utmMedium   String?  @map("utm_medium")
+  utmCampaign String?  @map("utm_campaign")
+  status      String   @default("nuevo")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  appointments Appointment[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("leads")
+}
+
+/// Appointment scheduled for a tenant, optionally linked to a conversation and lead.
+model Appointment {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  conversationId String?  @map("conversation_id")
+  leadId         String?  @map("lead_id")
+  scheduledAt    DateTime @map("scheduled_at")
+  status         String   @default("pendiente")
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  lead         Lead?         @relation(fields: [leadId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("appointments")
 }
