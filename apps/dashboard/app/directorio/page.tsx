@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+interface Review {
+  author: string;
+  content: string;
+  rating: number;
+}
+
 interface DirectoryEntry {
   id: string;
   name: string;
@@ -11,6 +17,7 @@ interface DirectoryEntry {
   description?: string;
   testimonials: number;
   rating: number | null;
+  reviews?: Review[];
 }
 
 const RUBROS = ["peluqueria", "clinica_dental", "restaurante", "taller_mecanico", "gimnasio", "veterinaria", "fotografia", "otro"];
@@ -96,6 +103,17 @@ export default function DirectorioPage() {
                   <span className="text-xs text-slate-400">
                     {entry.rating.toFixed(1)} ({entry.testimonials} reseñas)
                   </span>
+                </div>
+              )}
+              {entry.reviews && entry.reviews.length > 0 && (
+                <div className="mt-3 border-t border-slate-100 pt-3 space-y-2">
+                  {entry.reviews.map((r, i) => (
+                    <div key={i} className="text-xs text-slate-600">
+                      <span className="font-medium">{r.author}</span>
+                      <span className="text-amber-500 ml-1">{"⭐".repeat(r.rating)}</span>
+                      <p className="mt-0.5 italic">&ldquo;{r.content}&rdquo;</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

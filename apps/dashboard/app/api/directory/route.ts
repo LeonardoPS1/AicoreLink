@@ -49,6 +49,11 @@ export async function GET(req: NextRequest) {
           rating: t.testimonials.length > 0
             ? t.testimonials.reduce((sum, tt) => sum + (tt.rating || 5), 0) / t.testimonials.length
             : null,
+          reviews: t.testimonials.slice(0, 3).map((tt) => ({
+            author: tt.authorName,
+            content: tt.content,
+            rating: tt.rating,
+          })),
         };
       });
 
