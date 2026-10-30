@@ -34,6 +34,7 @@ const STAFF_NAV: NavItem[] = [
   { href: "/dashboard/admin/embudo", label: "Embudo" },
   { href: "/dashboard/admin/metricas", label: "Métricas" },
   { href: "/dashboard/admin/asistente", label: "Asistente" },
+  { href: "/dashboard/admin/asistente-chat", label: "Chat IA" },
   { href: "/dashboard/admin/aprendizaje", label: "Aprendizaje" },
   { href: "/dashboard/admin/sedes", label: "Sedes" },
   { href: "/dashboard/admin/reactivacion", label: "Reactivación" },
