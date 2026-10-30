@@ -388,6 +388,18 @@ Bloquea todo: **E1.0** (copy/precios) — el resto de E1 depende de la fuente de
 
 ---
 
+### E10 · Gestión de usuarios en login (Plan F9 · semanas 37-40)
+**Objetivo:** permitir que desde la pantalla de login se pueda crear un usuario y cambiar la contraseña, impactando directamente en la base de datos correspondiente (User, TenantUser, Tenant).
+**Entregables:**
+1. **Registro de usuario**: formulario en `/login` (o `/register`) con email, contraseña, nombre del negocio, rubro. Crea `Tenant` + `User` + `TenantUser` en una transacción. Envía correo de verificación (opcional).
+2. **Cambio de contraseña**: flujo "Olvidé mi contraseña" → envío de token por correo → formulario de nueva contraseña → actualiza `User.passwordHash`.
+3. **Validación**: Zod para todos los inputs; hash con bcrypt; rate limit en endpoints de auth.
+4. **RLS**: el nuevo tenant se crea con aislamiento RLS desde el primer momento.
+**Criterio de salida:** un usuario nuevo se registra y accede al panel; puede cambiar su contraseña; la base de datos refleja los cambios.
+**Trazabilidad:** Plan P9.1–P9.4 · SRD M9 (alta de tenant) · RF-ADM-*.
+
+---
+
 ## 9. Criterio de "terminado" por etapa (resumen)
 
 | Etapa | Criterio de salida verificable |
