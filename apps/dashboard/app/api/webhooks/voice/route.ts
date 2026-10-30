@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
   const to = formData.get("To")?.toString() ?? "";
   const recordingUrl = formData.get("RecordingUrl")?.toString();
   const speechResult = formData.get("SpeechResult")?.toString();
+  const transcriptionText = formData.get("TranscriptionText")?.toString();
+  const callStatus = formData.get("CallStatus")?.toString() ?? "";
 
   // Find tenant by phone number
   const cred = await db.channelCredential.findFirst({
@@ -24,7 +26,6 @@ export async function POST(req: NextRequest) {
   const tenantId = cred?.tenantId;
 
   if (!tenantId) {
-    // Default TwiML response
     return new NextResponse(
       `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -40,11 +41,26 @@ export async function POST(req: NextRequest) {
   });
   const greeting = assistant?.greeting ?? "Hola, gracias por llamar. ¿En qué puedo ayudarle?";
 
-  // Check for transcription result
-  const transcriptionText = formData.get("TranscriptionText")?.toString();
-  const transcriptionStatus = formData.get("TranscriptionStatus")?.toString();
+  // Handle missed call
+  if (callStatus === "no-answer" || callStatus === "busy" || callStatus === "failed") {
+    await db.auditLog.create({
+      data: {
+        tenantId,
+        action: "missed_call",
+        meta: { callSid, from, to, callStatus },
+      },
+    });
+    return new NextResponse(
+      `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="es-ES">No podemos atender su llamada en este momento. Le enviaremos un mensaje por WhatsApp. Adiós.</Say>
+  <Hangup/>
+</Response>`,
+      { headers: { "Content-Type": "text/xml" } }
+    );
+  }
 
-  // If there's a recording, store voice note
+  // If there's a recording, store voice note and attempt transcription
   if (recordingUrl) {
     const conversation = await db.conversation.findFirst({
       where: { tenantId, contactRef: from, channel: "whatsapp_voice" },
@@ -55,11 +71,45 @@ export async function POST(req: NextRequest) {
           conversationId: conversation.id,
           tenantId,
           direction: "in",
-          content: transcriptionText ? `[Voice note transcribed] ${transcriptionText}` : `[Voice note] ${recordingUrl}`,
+          content: transcriptionText
+            ? `[Voice note transcribed] ${transcriptionText}`
+            : `[Voice note] ${recordingUrl}`,
           mediaType: "voice",
           audioUrl: recordingUrl,
         },
       });
+    }
+
+    // If transcription available, generate AI response via Ollama
+    if (transcriptionText) {
+      try {
+        const ollamaRes = await fetch("http://localhost:11434/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "mistral",
+            messages: [
+              { role: "system", content: `Eres un asistente de voz para un negocio. Responde de forma concisa y amable. Máximo 2 oraciones. Saludo: ${greeting}` },
+              { role: "user", content: transcriptionText },
+            ],
+            temperature: 0.7,
+          }),
+        });
+        if (ollamaRes.ok) {
+          const data = await ollamaRes.json();
+          const aiResponse = data.choices?.[0]?.message?.content ?? "Gracias por su mensaje. Le responderemos pronto.";
+          return new NextResponse(
+            `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="es-ES">${aiResponse}</Say>
+  <Hangup/>
+</Response>`,
+            { headers: { "Content-Type": "text/xml" } }
+          );
+        }
+      } catch {
+        // Fall through to default response
+      }
     }
 
     return new NextResponse(
@@ -72,8 +122,41 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // If speech result (speech-to-text), process it
+  // If speech result (speech-to-text), process with AI
   if (speechResult) {
+    try {
+      const ollamaRes = await fetch("http://localhost:11434/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "mistral",
+          messages: [
+            { role: "system", content: `Eres un asistente de voz para un negocio. Responde de forma concisa y amable. Máximo 2 oraciones. Saludo: ${greeting}` },
+            { role: "user", content: speechResult },
+          ],
+          temperature: 0.7,
+        }),
+      });
+      if (ollamaRes.ok) {
+        const data = await ollamaRes.json();
+        const aiResponse = data.choices?.[0]?.message?.content ?? "Entendido. Le responderemos pronto.";
+        return new NextResponse(
+          `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="es-ES">${aiResponse}</Say>
+  <Gather input="speech" timeout="5" action="/api/webhooks/voice">
+    <Say language="es-ES">¿Hay algo más en lo que pueda ayudarle?</Say>
+  </Gather>
+  <Say language="es-ES">Gracias por llamar. Adiós.</Say>
+  <Hangup/>
+</Response>`,
+          { headers: { "Content-Type": "text/xml" } }
+        );
+      }
+    } catch {
+      // Fall through
+    }
+
     return new NextResponse(
       `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
