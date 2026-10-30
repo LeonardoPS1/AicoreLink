@@ -17,6 +17,7 @@ const CLIENT_NAV: NavItem[] = [
   { href: "/dashboard/conversaciones", label: "Conversaciones" },
   { href: "/dashboard/appointments", label: "Citas" },
   { href: "/dashboard/usage", label: "Uso" },
+  { href: "/dashboard/billing", label: "Facturación" },
   { href: "/dashboard/testimonio", label: "Testimonio" },
   { href: "/dashboard/resenas", label: "Reseñas" },
   { href: "/dashboard/sitio", label: "Mi sitio" },
