@@ -36,6 +36,7 @@ const STAFF_NAV: NavItem[] = [
   { href: "/dashboard/admin/asistente", label: "Asistente" },
   { href: "/dashboard/admin/aprendizaje", label: "Aprendizaje" },
   { href: "/dashboard/admin/sedes", label: "Sedes" },
+  { href: "/dashboard/admin/reactivacion", label: "Reactivación" },
   { href: "/dashboard/admin/pilots", label: "Pilotos" },
   { href: "/dashboard/admin/infraestructura", label: "Infraestructura" },
   { href: "/dashboard/admin/usuarios", label: "Usuarios" },
