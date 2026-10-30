@@ -22,6 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Dashboard",
   description: "Plataforma multitenant para gestión de canales conversacionales",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
