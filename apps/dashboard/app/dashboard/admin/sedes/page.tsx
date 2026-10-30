@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Branch {
   id: string;
@@ -8,98 +8,121 @@ interface Branch {
   address: string | null;
   phone: string | null;
   active: boolean;
+  createdAt: string;
 }
 
-export default function BranchesPage() {
+export default function SedesPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", address: "", phone: "" });
-
-  // Get tenantId from session - for now use a placeholder
-  const tenantId = "default";
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenantId}/branches`)
+    fetch("/api/tenants")
       .then((r) => r.json())
-      .then((data) => {
-        setBranches(Array.isArray(data) ? data : []);
-        setLoading(false);
+      .then((tenants) => {
+        if (Array.isArray(tenants) && tenants.length > 0) {
+          const tid = tenants[0].id;
+          setTenantId(tid);
+          fetch(`/api/tenants/${tid}/branches`)
+            .then((r) => r.json())
+            .then((d) => {
+              setBranches(Array.isArray(d) ? d : []);
+              setLoading(false);
+            });
+        } else {
+          setLoading(false);
+        }
       })
       .catch(() => setLoading(false));
-  }, [tenantId]);
+  }, []);
 
   const handleCreate = async () => {
+    if (!tenantId) return;
     const res = await fetch(`/api/tenants/${tenantId}/branches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
     if (res.ok) {
-      const newBranch = await res.json();
-      setBranches([...branches, newBranch]);
+      const created = await res.json();
+      setBranches([...branches, created]);
       setShowForm(false);
       setForm({ name: "", address: "", phone: "" });
+    }
+  };
+
+  const handleToggle = async (branch: Branch) => {
+    if (!tenantId) return;
+    const res = await fetch(`/api/tenants/${tenantId}/branches/${branch.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !branch.active }),
+    });
+    if (res.ok) {
+      setBranches(branches.map((b) => (b.id === branch.id ? { ...b, active: !b.active } : b)));
     }
   };
 
   if (loading) return <div className="p-6">Cargando...</div>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Multi-sede</h1>
-
-      <button
-        onClick={() => setShowForm(!showForm)}
-        className="mb-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        {showForm ? "Cancelar" : "Agregar sede"}
-      </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-navy">Multi-sede</h1>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
+        >
+          {showForm ? "Cancelar" : "Agregar sede"}
+        </button>
+      </div>
 
       {showForm && (
-        <div className="mb-6 border rounded p-4 space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
           <input
             placeholder="Nombre de la sede"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full border rounded px-3 py-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
           <input
             placeholder="Dirección"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="w-full border rounded px-3 py-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
           <input
             placeholder="Teléfono"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="w-full border rounded px-3 py-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button
-            onClick={handleCreate}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Crear sede
+          <button onClick={handleCreate} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white">
+            Guardar sede
           </button>
         </div>
       )}
 
-      <div className="space-y-3">
-        {branches.map((b) => (
-          <div key={b.id} className="border rounded p-4 flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold">{b.name}</h3>
-              <p className="text-sm text-slate-600">{b.address ?? "Sin dirección"}</p>
-              <p className="text-sm text-slate-500">{b.phone ?? "Sin teléfono"}</p>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {branches.map((branch) => (
+          <div key={branch.id} className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-navy">{branch.name}</h3>
+              <button
+                onClick={() => handleToggle(branch)}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${branch.active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-500"}`}
+              >
+                {branch.active ? "Activa" : "Inactiva"}
+              </button>
             </div>
-            <span className={`px-2 py-1 rounded text-xs ${b.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-              {b.active ? "Activa" : "Inactiva"}
-            </span>
+            {branch.address && <p className="text-sm text-slate-500">{branch.address}</p>}
+            {branch.phone && <p className="text-sm text-slate-500">{branch.phone}</p>}
           </div>
         ))}
         {branches.length === 0 && (
-          <p className="text-center text-slate-500">No hay sedes registradas.</p>
+          <p className="text-center text-slate-400 col-span-full py-8">No hay sedes registradas.</p>
         )}
       </div>
     </div>
