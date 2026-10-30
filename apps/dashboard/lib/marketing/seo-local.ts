@@ -73,6 +73,66 @@ export const VERTICALS: VerticalInfo[] = [
       "Confirmación y recordatorio de citas",
     ],
   },
+  {
+    slug: "peluqueria",
+    name: "Peluquería",
+    tagline: "Tu peluquería gestiona citas por WhatsApp",
+    painPoints: [
+      "Los clientes no recuerdan sus citas",
+      "Pierdes tiempo respondiendo consultas repetitivas",
+      "No tienes control de tu agenda",
+    ],
+    features: [
+      "Agenda de citas por WhatsApp",
+      "Recordatorios automáticos",
+      "Respuestas sobre precios y servicios",
+    ],
+  },
+  {
+    slug: "restaurante",
+    name: "Restaurante",
+    tagline: "Tu restaurante recibe reservas por WhatsApp",
+    painPoints: [
+      "Las llamadas interrumpen el servicio",
+      "No hay seguimiento de reservas",
+      "Los clientes no confirman asistencia",
+    ],
+    features: [
+      "Reservas por WhatsApp",
+      "Confirmación y recordatorio",
+      "Menú digital automático",
+    ],
+  },
+  {
+    slug: "gimnasio",
+    name: "Gimnasio",
+    tagline: "Tu gimnasio gestiona membresías por WhatsApp",
+    painPoints: [
+      "Los socios olvidan pagar",
+      "No hay seguimiento de asistencia",
+      "Las consultas sobre horarios saturan recepción",
+    ],
+    features: [
+      "Recordatorios de pago",
+      "Información de horarios y clases",
+      "Seguimiento de membresías",
+    ],
+  },
+  {
+    slug: "veterinaria",
+    name: "Veterinaria",
+    tagline: "Tu veterinaria atiende consultas por WhatsApp",
+    painPoints: [
+      "Los dueños de mascotas llaman constantemente",
+      "No hay recordatorio de vacunas",
+      "Se pierden citas por falta de confirmación",
+    ],
+    features: [
+      "Agenda de citas por WhatsApp",
+      "Recordatorios de vacunas y controles",
+      "Respuestas sobre servicios y horarios",
+    ],
+  },
 ];
 
 export const COMUNAS: ComunaInfo[] = [
@@ -84,6 +144,13 @@ export const COMUNAS: ComunaInfo[] = [
   { slug: "maipu", name: "Maipú", region: "Metropolitana" },
   { slug: "la-florida", name: "La Florida", region: "Metropolitana" },
   { slug: "puente-alto", name: "Puente Alto", region: "Metropolitana" },
+  { slug: "san-miguel", name: "San Miguel", region: "Metropolitana" },
+  { slug: "macul", name: "Macul", region: "Metropolitana" },
+  { slug: "penalolen", name: "Peñalolén", region: "Metropolitana" },
+  { slug: "la-reina", name: "La Reina", region: "Metropolitana" },
+  { slug: "recoleta", name: "Recoleta", region: "Metropolitana" },
+  { slug: "independencia", name: "Independencia", region: "Metropolitana" },
+  { slug: "conchali", name: "Conchalí", region: "Metropolitana" },
 ];
 
 export function getVertical(slug: string): VerticalInfo | undefined {
