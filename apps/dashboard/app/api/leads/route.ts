@@ -133,7 +133,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { nombre, negocio, whatsapp, rubro, mensaje, utm, consent } = parsed.data;
+  const {
+    nombre,
+    negocio,
+    whatsapp,
+    rubro,
+    mensaje,
+    utm,
+    utmSource,
+    utmMedium,
+    utmCampaign,
+    utmContent,
+    utmTerm,
+    utm_source,
+    utm_medium,
+    utm_campaign,
+    utm_content,
+    utm_term,
+    consent,
+  } = parsed.data;
   const userAgent = request.headers.get("user-agent")?.slice(0, 300) ?? null;
 
   // Extract UTM from referer (fallback 1) and request URL query params (fallback 2)
@@ -142,17 +160,38 @@ export async function POST(request: NextRequest) {
   const queryUtm = extractUtmFromUrl(request.url);
 
   // Body UTM (already validated by schema)
-  const bodyUtm = utm
-    ? {
-        utm_source: utm.source,
-        utm_medium: utm.medium,
-        utm_campaign: utm.campaign,
-        utm_content: utm.content,
-        utm_term: utm.term,
-      }
-    : undefined;
+  const bodyUtm = {
+    utm_source:
+      utmSource ??
+      utm_source ??
+      utm?.source ??
+      undefined,
+    utm_medium:
+      utmMedium ??
+      utm_medium ??
+      utm?.medium ??
+      undefined,
+    utm_campaign:
+      utmCampaign ??
+      utm_campaign ??
+      utm?.campaign ??
+      undefined,
+    utm_content:
+      utmContent ??
+      utm_content ??
+      utm?.content ??
+      undefined,
+    utm_term:
+      utmTerm ??
+      utm_term ??
+      utm?.term ??
+      undefined,
+  };
 
-  const mergedUtm = mergeUtm(bodyUtm, refererUtm, queryUtm);
+  const hasBodyUtm = Object.values(bodyUtm).some((v) => v !== undefined);
+  const bodyUtmOrUndefined = hasBodyUtm ? bodyUtm : undefined;
+
+  const mergedUtm = mergeUtm(bodyUtmOrUndefined, refererUtm, queryUtm);
 
   const lead = await db.landingLead.create({
     data: {
