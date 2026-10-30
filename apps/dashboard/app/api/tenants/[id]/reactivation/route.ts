@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const campaigns = await prisma.reactivationCampaign.findMany({
+  const campaigns = await db.reactivationCampaign.findMany({
     where: { tenantId: params.id },
     orderBy: { createdAt: "desc" },
   });
@@ -17,7 +17,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const body = await req.json();
-  const campaign = await prisma.reactivationCampaign.create({
+  const campaign = await db.reactivationCampaign.create({
     data: {
       tenantId: params.id,
       name: body.name,

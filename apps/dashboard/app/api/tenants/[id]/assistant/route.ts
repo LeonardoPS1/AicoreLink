@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const config = await prisma.assistantConfig.findUnique({
+  const config = await db.assistantConfig.findUnique({
     where: { tenantId: params.id },
   });
   return NextResponse.json(config ?? { tenantId: params.id, name: "Aicore Assistant", tone: "amable", language: "es", autoReply: true });
@@ -16,7 +16,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const body = await req.json();
-  const config = await prisma.assistantConfig.upsert({
+  const config = await db.assistantConfig.upsert({
     where: { tenantId: params.id },
     update: {
       name: body.name,

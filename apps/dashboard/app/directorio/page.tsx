@@ -1,9 +1,9 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function DirectorioPage() {
-  const entries = await prisma.testimonial.findMany({
+  const entries = await db.testimonial.findMany({
     where: { approved: true, published: true },
     include: { tenant: { include: { businessProfiles: true } } },
     orderBy: { createdAt: "desc" },

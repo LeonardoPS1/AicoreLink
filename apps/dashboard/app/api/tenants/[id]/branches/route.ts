@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const branches = await prisma.branch.findMany({
+  const branches = await db.branch.findMany({
     where: { tenantId: params.id },
     orderBy: { createdAt: "asc" },
   });
@@ -17,7 +17,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const body = await req.json();
-  const branch = await prisma.branch.create({
+  const branch = await db.branch.create({
     data: {
       tenantId: params.id,
       name: body.name,

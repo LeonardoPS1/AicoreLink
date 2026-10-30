@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
@@ -10,9 +10,9 @@ export async function POST(
 
   // Gather context: daily summary + recent leads + appointments
   const [leads, appointments, usage] = await Promise.all([
-    prisma.lead.findMany({ where: { tenantId: params.id }, orderBy: { createdAt: "desc" }, take: 10 }),
-    prisma.appointment.findMany({ where: { tenantId: params.id }, orderBy: { scheduledAt: "desc" }, take: 10 }),
-    prisma.tenantUsage.findMany({ where: { tenantId: params.id }, orderBy: { period: "desc" }, take: 5 }),
+    db.lead.findMany({ where: { tenantId: params.id }, orderBy: { createdAt: "desc" }, take: 10 }),
+    db.appointment.findMany({ where: { tenantId: params.id }, orderBy: { scheduledAt: "desc" }, take: 10 }),
+    db.tenantUsage.findMany({ where: { tenantId: params.id }, orderBy: { period: "desc" }, take: 5 }),
   ]);
 
   const context = {

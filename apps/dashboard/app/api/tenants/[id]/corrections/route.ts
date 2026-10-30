@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const body = await req.json();
-  const correction = await prisma.correctionLog.create({
+  const correction = await db.correctionLog.create({
     data: {
       tenantId: params.id,
       original: body.original,
@@ -21,7 +21,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const corrections = await prisma.correctionLog.findMany({
+  const corrections = await db.correctionLog.findMany({
     where: { tenantId: params.id },
     orderBy: { createdAt: "desc" },
     take: 50,
