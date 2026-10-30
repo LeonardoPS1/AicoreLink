@@ -13,9 +13,10 @@ export interface NavItem {
  */
 const CLIENT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Resumen" },
-  { href: "/dashboard/leads", label: "Leads", soon: true },
+  { href: "/dashboard/leads", label: "Leads" },
   { href: "/dashboard/conversaciones", label: "Conversaciones" },
-  { href: "/dashboard/citas", label: "Citas", soon: true },
+  { href: "/dashboard/appointments", label: "Citas" },
+  { href: "/dashboard/usage", label: "Uso" },
   { href: "/dashboard/resenas", label: "Reseñas", soon: true },
   { href: "/dashboard/sitio", label: "Mi sitio", soon: true },
   { href: "/dashboard/reportes", label: "Reportes", soon: true },
@@ -31,6 +32,7 @@ const STAFF_NAV: NavItem[] = [
   { href: "/dashboard/admin/fabrica", label: "Fábrica" },
   { href: "/dashboard/admin/embudo", label: "Embudo" },
   { href: "/dashboard/admin/metricas", label: "Métricas" },
+  { href: "/dashboard/admin/pilots", label: "Pilotos", soon: true },
   { href: "/dashboard/admin/infraestructura", label: "Infraestructura" },
   { href: "/dashboard/admin/usuarios", label: "Usuarios", soon: true },
 ];
