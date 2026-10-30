@@ -55,7 +55,7 @@ function resolveTenantId(session: any, requested: string | null): string | null 
   return sessionTenant;
 }
 
-export async function GET(req?: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   try {
     requireRole(session?.user as any, ["cliente", "operador", "dev_aicore"]);

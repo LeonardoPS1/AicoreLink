@@ -116,5 +116,4 @@ export async function GET(request: NextRequest) {
   });
 }
 
-// Re-export for callers/tests that import from the route module.
-export { verifyN8nWebhookSignature } from "@/lib/n8n/signature";
+// verifyN8nWebhookSignature is available from "@/lib/n8n/signature" directly.
