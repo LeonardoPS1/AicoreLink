@@ -1,16 +1,15 @@
+import { db } from "@/lib/db";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import {
-  getVertical,
-  getComuna,
-  generateStaticParams as genParams,
-} from "@/lib/marketing/seo-local";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
-export function generateStaticParams() {
-  return genParams();
+const RUBROS = ["clinica", "gimnasio", "salon", "veterinaria"];
+const COMUNAS = ["santiago", "providencia", "las-condes", "vitacura", "nunoa", "maipu", "la-florida", "puente-alto"];
+
+export async function generateStaticParams() {
+  return RUBROS.flatMap((rubro) =>
+    COMUNAS.map((comuna) => ({ rubro, comuna }))
+  );
 }
 
 export async function generateMetadata({
@@ -18,75 +17,93 @@ export async function generateMetadata({
 }: {
   params: { rubro: string; comuna: string };
 }): Promise<Metadata> {
-  const vertical = getVertical(params.rubro);
-  const comuna = getComuna(params.comuna);
-  if (!vertical || !comuna) return {};
-
-  const title = `${vertical.name} en ${comuna.name} — AicoreLink`;
-  const description = `${vertical.tagline}. Sitio web con IA para ${vertical.name.toLowerCase()}s en ${comuna.name}, ${comuna.region}. Responde WhatsApp, agenda citas y atiende 24/7.`;
-
+  const rubroName = params.rubro.charAt(0).toUpperCase() + params.rubro.slice(1);
+  const comunaName = params.comuna
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
   return {
-    title,
-    description,
-    openGraph: { title, description },
+    title: `${rubroName} en ${comunaName} | Aicore`,
+    description: `Automatiza tu ${rubroName.toLowerCase()} en ${comunaName} con IA. Agenda, WhatsApp, recordatorios y más.`,
   };
 }
 
-export default function SolucionLocalPage({
+export default async function SolucionPage({
   params,
 }: {
   params: { rubro: string; comuna: string };
 }) {
-  const vertical = getVertical(params.rubro);
-  const comuna = getComuna(params.comuna);
-  if (!vertical || !comuna) notFound();
+  const rubroName = params.rubro.charAt(0).toUpperCase() + params.rubro.slice(1);
+  const comunaName = params.comuna
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  // Get testimonials for this rubro/comuna if any
+  let testimonials: any[] = [];
+  try {
+    testimonials = await db.testimonial.findMany({
+      where: { approved: true, published: true },
+      take: 3,
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    // DB not available at build time
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <h1 className="mb-4 text-3xl font-bold text-navy">
-        {vertical.name} en {comuna.name}
+      <h1 className="text-3xl font-bold text-navy">
+        {rubroName} en {comunaName}
       </h1>
-      <p className="mb-8 text-lg text-slate-600">{vertical.tagline}</p>
+      <p className="mt-4 text-lg text-slate-600">
+        Automatiza tu {rubroName.toLowerCase()} en {comunaName} con inteligencia artificial.
+        Agenda online, WhatsApp automático, recordatorios y más.
+      </p>
 
-      <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-navy">Problemas comunes</h2>
-        <ul className="space-y-2">
-          {vertical.painPoints.map((p, i) => (
-            <li key={i} className="flex items-start gap-2 text-slate-700">
-              <span className="mt-1 text-red-500">✗</span>
-              {p}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">Agenda online 24/7</h3>
+          <p className="text-sm text-slate-600">Tus clientes agendan solos, sin llamadas.</p>
+        </div>
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">WhatsApp automático</h3>
+          <p className="text-sm text-slate-600">Confirmaciones, recordatorios y seguimiento.</p>
+        </div>
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">Asistente IA</h3>
+          <p className="text-sm text-slate-600">Responde consultas frecuentes al instante.</p>
+        </div>
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">Reportes y métricas</h3>
+          <p className="text-sm text-slate-600">Controla tu negocio en tiempo real.</p>
+        </div>
+      </div>
 
-      <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-navy">Lo que incluye</h2>
-        <ul className="space-y-2">
-          {vertical.features.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-slate-700">
-              <span className="mt-1 text-green-500">✓</span>
-              {f}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {testimonials.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-navy mb-4">Lo que dicen nuestros clientes</h2>
+          <div className="space-y-4">
+            {testimonials.map((t) => (
+              <blockquote key={t.id} className="rounded-lg border p-4">
+                <p className="italic text-slate-700">&ldquo;{t.content}&rdquo;</p>
+                <footer className="mt-2 text-sm text-slate-500">
+                  {t.authorName} — {t.rating}/5 estrellas
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <section className="mb-8 rounded-lg bg-slate-50 p-6">
-        <h2 className="mb-3 text-xl font-semibold text-navy">
-          ¿Tienes una {vertical.name.toLowerCase()} en {comuna.name}?
-        </h2>
-        <p className="mb-4 text-slate-600">
-          AicoreLink crea tu sitio web con IA que atiende por WhatsApp, agenda citas y
-          responde consultas las 24 horas. Sin código, sin complicaciones.
-        </p>
-        <Link
-          href="/herramientas/calculadora"
-          className="inline-block rounded-lg bg-brand px-6 py-3 text-sm font-medium text-white"
+      <div className="mt-12 text-center">
+        <a
+          href="/#contacto"
+          className="inline-block rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700"
         >
-          Calcula cuánto pierdes por no responder
-        </Link>
-      </section>
+          Solicitar demo gratis
+        </a>
+      </div>
     </div>
   );
 }

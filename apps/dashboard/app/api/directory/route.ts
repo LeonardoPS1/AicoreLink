@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/directory?rubro=...&comuna=...&page=1&limit=20
  * Public directory of businesses on AicoreLink.
