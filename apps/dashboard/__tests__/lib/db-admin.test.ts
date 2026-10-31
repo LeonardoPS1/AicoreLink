@@ -67,7 +67,6 @@ describe("escalateToAdminRole()", () => {
     const { escalateToAdminRole } = await import("@/lib/db-admin");
     const { calls, tx } = recordingTx();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await escalateToAdminRole(tx as any);
 
     expect(calls).toHaveLength(1);
@@ -80,7 +79,6 @@ describe("escalateToAdminRole()", () => {
     const { escalateToAdminRole } = await import("@/lib/db-admin");
     const { calls, tx } = recordingTx();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await escalateToAdminRole(tx as any, "other_role");
 
     expect(calls[0].args).toEqual(["other_role"]);
@@ -90,7 +88,6 @@ describe("escalateToAdminRole()", () => {
     const { escalateToAdminRole } = await import("@/lib/db-admin");
     const { calls, tx } = recordingTx();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await expect(escalateToAdminRole(tx as any, role)).rejects.toThrowError(/rol invalido/);
     expect(calls).toHaveLength(0);
   });

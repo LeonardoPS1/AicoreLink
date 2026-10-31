@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const branches = await db.branch.findMany({
     where: { tenantId: params.id },
     orderBy: { createdAt: "asc" },
@@ -14,8 +15,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const body = await req.json();
   const branch = await db.branch.create({
     data: {

@@ -6,8 +6,9 @@ import { withTenant } from "@/lib/tenant-context";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   try {
     requireRole(session?.user as any, ["cliente", "operador", "dev_aicore"]);

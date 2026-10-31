@@ -10,7 +10,8 @@ const createTicketSchema = z.object({
   priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   const user = session?.user as { tenantId?: string | null } | undefined;
   if (!user?.tenantId || user.tenantId !== params.id) {
@@ -31,7 +32,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   const user = session?.user as { tenantId?: string | null } | undefined;
   if (!user?.tenantId || user.tenantId !== params.id) {

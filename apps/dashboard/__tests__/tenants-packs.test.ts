@@ -23,7 +23,7 @@ beforeEach(() => {
 
 describe("GET /api/tenants/[id]/packs", () => {
   it("returns packs for clinica rubro", async () => {
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/packs"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/packs"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.rubro).toBe("clinica");
@@ -33,7 +33,7 @@ describe("GET /api/tenants/[id]/packs", () => {
 
   it("defaults to clinica when no business profile", async () => {
     h.tenant.findUnique.mockResolvedValue({ id: "t1", businessProfiles: [] });
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/packs"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/packs"), { params: Promise.resolve({ id: "t1" }) });
     const body = await res.json();
     expect(body.rubro).toBe("clinica");
   });
@@ -43,7 +43,7 @@ describe("GET /api/tenants/[id]/packs", () => {
       id: "t2",
       businessProfiles: [{ rubro: "gimnasio" }],
     });
-    const res = await GET(makeReq("http://localhost/api/tenants/t2/packs"), { params: { id: "t2" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t2/packs"), { params: Promise.resolve({ id: "t2" }) });
     const body = await res.json();
     expect(body.rubro).toBe("gimnasio");
     expect(body.packs[0].services).toContain("Reservas de clases");

@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const body = await req.json();
   const correction = await db.correctionLog.create({
     data: {
@@ -19,8 +20,9 @@ export async function POST(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const corrections = await db.correctionLog.findMany({
     where: { tenantId: params.id },
     orderBy: { createdAt: "desc" },

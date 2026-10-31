@@ -11,8 +11,9 @@ const updateSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; leadId: string } }
+  ctx: { params: Promise<{ id: string; leadId: string }> }
 ) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   try {
     requireRole(session?.user as any, ["cliente", "operador", "dev_aicore"]);

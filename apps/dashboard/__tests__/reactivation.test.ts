@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe("GET /api/tenants/[id]/reactivation", () => {
   it("returns campaigns", async () => {
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/reactivation"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/reactivation"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -53,7 +53,7 @@ describe("POST /api/tenants/[id]/reactivation", () => {
   it("creates a campaign", async () => {
     const res = await POST(
       makeReq("http://localhost/api/tenants/t1/reactivation", { name: "Campaign 2", audience: "inactive_30", message: "Come back!" }, "POST"),
-      { params: { id: "t1" } }
+      { params: Promise.resolve({ id: "t1" }) }
     );
     expect(res.status).toBe(201);
     const body = await res.json();

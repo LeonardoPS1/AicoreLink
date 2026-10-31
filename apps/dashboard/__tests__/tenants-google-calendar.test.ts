@@ -28,7 +28,7 @@ beforeEach(() => {
 
 describe("GET /api/tenants/[id]/google-calendar", () => {
   it("returns not connected when no credential", async () => {
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/google-calendar"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/google-calendar"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.connected).toBe(false);
@@ -36,7 +36,7 @@ describe("GET /api/tenants/[id]/google-calendar", () => {
 
   it("returns connected when credential exists", async () => {
     h.channelCredential.findFirst.mockResolvedValue({ externalId: "primary" });
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/google-calendar"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/google-calendar"), { params: Promise.resolve({ id: "t1" }) });
     const body = await res.json();
     expect(body.connected).toBe(true);
     expect(body.calendarId).toBe("primary");
@@ -44,7 +44,7 @@ describe("GET /api/tenants/[id]/google-calendar", () => {
 
   it("returns 404 for unknown tenant", async () => {
     h.tenant.findUnique.mockResolvedValue(null);
-    const res = await GET(makeReq("http://localhost/api/tenants/unknown/google-calendar"), { params: { id: "unknown" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/unknown/google-calendar"), { params: Promise.resolve({ id: "unknown" }) });
     expect(res.status).toBe(404);
   });
 });
@@ -53,7 +53,7 @@ describe("POST /api/tenants/[id]/google-calendar", () => {
   it("connects with accessToken", async () => {
     const res = await POST(
       makeReq("http://localhost/api/tenants/t1/google-calendar", { accessToken: "token123", calendarId: "primary" }, "POST"),
-      { params: { id: "t1" } }
+      { params: Promise.resolve({ id: "t1" }) }
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -63,7 +63,7 @@ describe("POST /api/tenants/[id]/google-calendar", () => {
   it("rejects without accessToken", async () => {
     const res = await POST(
       makeReq("http://localhost/api/tenants/t1/google-calendar", {}, "POST"),
-      { params: { id: "t1" } }
+      { params: Promise.resolve({ id: "t1" }) }
     );
     expect(res.status).toBe(400);
   });
@@ -71,7 +71,7 @@ describe("POST /api/tenants/[id]/google-calendar", () => {
 
 describe("DELETE /api/tenants/[id]/google-calendar", () => {
   it("disconnects", async () => {
-    const res = await DELETE(makeReq("http://localhost/api/tenants/t1/google-calendar"), { params: { id: "t1" } });
+    const res = await DELETE(makeReq("http://localhost/api/tenants/t1/google-calendar"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);

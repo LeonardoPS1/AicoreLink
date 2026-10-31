@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const config = await db.assistantConfig.findUnique({
     where: { tenantId: params.id },
   });
@@ -13,8 +14,9 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const body = await req.json();
   const config = await db.assistantConfig.upsert({
     where: { tenantId: params.id },

@@ -27,8 +27,9 @@ const PACKS: Record<string, { name: string; services: string[]; price: number }[
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const tenant = await db.tenant.findUnique({
     where: { id: params.id },
     include: { businessProfiles: true },

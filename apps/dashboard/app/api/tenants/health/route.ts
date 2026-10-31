@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, connection } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { withTenant } from "@/lib/tenant-context";
 import { db } from "@/lib/db";
 
-// Session- and header-scoped: never prerender at build time.
-export const dynamic = "force-dynamic";
-
 export async function GET(req: NextRequest) {
+  // Request-time API: never prerendered at build time.
+  await connection();
   try {
     const session = await getServerSession(authOptions);
     const tenantId = (session?.user as any)?.tenantId;

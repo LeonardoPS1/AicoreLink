@@ -18,7 +18,8 @@ const bookSchema = z.object({
  * POST /api/tenants/[id]/book
  * Creates an appointment with double-booking prevention.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   try {
     const tenantId = params.id;
     const body = await req.json();

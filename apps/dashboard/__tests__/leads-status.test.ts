@@ -46,7 +46,7 @@ describe("PATCH /api/tenants/[id]/leads/[leadId]/status", () => {
   it("updates lead status", async () => {
     const res = await PATCH(
       makeReq("http://localhost/api/tenants/t1/leads/l1/status", { status: "contactado" }),
-      { params: { id: "t1", leadId: "l1" } }
+      { params: Promise.resolve({ id: "t1", leadId: "l1" }) }
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -59,7 +59,7 @@ describe("PATCH /api/tenants/[id]/leads/[leadId]/status", () => {
   it("rejects invalid body", async () => {
     const res = await PATCH(
       makeReq("http://localhost/api/tenants/t1/leads/l1/status", {}),
-      { params: { id: "t1", leadId: "l1" } }
+      { params: Promise.resolve({ id: "t1", leadId: "l1" }) }
     );
     expect(res.status).toBe(400);
   });
@@ -68,7 +68,7 @@ describe("PATCH /api/tenants/[id]/leads/[leadId]/status", () => {
     h.getServerSession.mockResolvedValue(null);
     const res = await PATCH(
       makeReq("http://localhost/api/tenants/t1/leads/l1/status", { status: "contactado" }),
-      { params: { id: "t1", leadId: "l1" } }
+      { params: Promise.resolve({ id: "t1", leadId: "l1" }) }
     );
     expect(res.status).toBe(403);
   });

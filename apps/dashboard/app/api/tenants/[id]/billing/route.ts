@@ -5,8 +5,9 @@ import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   const tenantId = params.id;
 
