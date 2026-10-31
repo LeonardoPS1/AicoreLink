@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { withTenant } from "@/lib/tenant-context";
 import { db } from "@/lib/db";
 
+// Session- and header-scoped: never prerender at build time.
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
