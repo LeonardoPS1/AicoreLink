@@ -15,6 +15,7 @@ describe("buildNav", () => {
       "/dashboard/conversaciones",
       "/dashboard/appointments",
       "/dashboard/usage",
+      "/dashboard/billing",
       "/dashboard/testimonio",
       "/dashboard/resenas",
       "/dashboard/sitio",
