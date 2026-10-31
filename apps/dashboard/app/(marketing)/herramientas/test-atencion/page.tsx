@@ -40,11 +40,12 @@ function parseAmountCLP(value: string | string[] | undefined): number | undefine
   return Number.isFinite(amount) && amount > 0 ? amount : undefined;
 }
 
-export default function TestAtencionPage({
+export default async function TestAtencionPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const sp = await searchParams;
   return (
     <section id="test-atencion" className="bg-white">
       <div className="mx-auto max-w-3xl px-4 py-20 md:py-28">
@@ -60,7 +61,7 @@ export default function TestAtencionPage({
         </Reveal>
 
         <Reveal delay={90} className="mt-10">
-          <AttentionTest initialAmountCLP={parseAmountCLP(searchParams?.monto)} />
+          <AttentionTest initialAmountCLP={parseAmountCLP(sp?.monto)} />
         </Reveal>
 
         <div className="mt-8 text-center">

@@ -11,7 +11,8 @@ const noteSchema = z.object({
  * POST /api/tenants/[id]/leads/[leadId]/notes
  * Adds a note/tag to a lead (CRM light).
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string; leadId: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string; leadId: string }> }) {
+  const params = await ctx.params;
   try {
     const tenantId = params.id;
     const leadId = params.leadId;

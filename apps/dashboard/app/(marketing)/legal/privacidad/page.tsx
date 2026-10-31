@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Reveal } from "@/components/ui/reveal";
 import { copy } from "@/lib/marketing/copy";
@@ -53,9 +54,9 @@ export default function PrivacyPage() {
         </Reveal>
 
         <div className="mt-8 text-center">
-          <a href="/" className="text-sm font-medium text-brand hover:underline">
+          <Link href="/" className="text-sm font-medium text-brand hover:underline">
             ← Volver al inicio
-          </a>
+          </Link>
         </div>
       </div>
     </section>

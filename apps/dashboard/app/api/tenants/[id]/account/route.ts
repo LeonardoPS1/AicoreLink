@@ -9,7 +9,8 @@ const updateProfileSchema = z.object({
   email: z.string().email().optional(),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   const user = session?.user as { tenantId?: string | null } | undefined;
   if (!user?.tenantId || user.tenantId !== params.id) {
@@ -50,7 +51,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   const user = session?.user as { tenantId?: string | null } | undefined;
   if (!user?.tenantId || user.tenantId !== params.id) {

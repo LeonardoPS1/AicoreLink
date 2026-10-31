@@ -10,7 +10,8 @@ const passwordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await getServerSession(authOptions);
   const user = session?.user as { tenantId?: string | null; id?: string } | undefined;
   if (!user?.tenantId || user.tenantId !== params.id || !user.id) {

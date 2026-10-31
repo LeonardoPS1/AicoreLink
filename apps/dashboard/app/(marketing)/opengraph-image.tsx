@@ -12,21 +12,15 @@ import { SITE_NAME, SITE_URL } from "@/lib/marketing/site";
  *   the one thing that could render as tofu.
  * - Everything is an inline-styled div: satori has no CSS engine and supports no
  *   Tailwind classes.
+ * - No `runtime = "edge"`: Next 16 resolves next/og's bundled font and wasm
+ *   platform-safely on Node, so the image is prerendered to a static PNG during
+ *   the build (it used to need the edge runtime to sidestep a Windows-only
+ *   `TypeError: Invalid URL` in Next 14).
  */
 
 export const alt = "AicoreLink — sitios web con IA para negocios de servicios";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-
-/**
- * The edge runtime is required, not preferred: @vercel/og's Node build resolves
- * its bundled font and wasm with `fileURLToPath(join(import.meta.url, ...))` at
- * module scope, and `path.join` emits backslashes on Windows, so importing it
- * throws `TypeError: Invalid URL` during `next build`. The edge build uses
- * `new URL("./font.ttf", import.meta.url)` instead, which is platform-safe.
- * The image is prerendered to a static PNG, so this changes nothing at runtime.
- */
-export const runtime = "edge";
 
 const HOST = SITE_URL.replace(/^https?:\/\//, "");
 

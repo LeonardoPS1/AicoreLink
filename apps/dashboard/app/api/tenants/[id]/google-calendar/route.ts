@@ -7,8 +7,9 @@ import { db } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const tenant = await db.tenant.findUnique({
     where: { id: params.id },
     select: { id: true, name: true },
@@ -28,8 +29,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   const body = await req.json();
   const { accessToken, refreshToken, calendarId } = body;
 
@@ -60,8 +62,9 @@ export async function POST(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const params = await ctx.params;
   await db.channelCredential.deleteMany({
     where: { tenantId: params.id, channel: "google_calendar" },
   });

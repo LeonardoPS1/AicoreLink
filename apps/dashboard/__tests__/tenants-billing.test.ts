@@ -40,7 +40,7 @@ beforeEach(() => {
 
 describe("GET /api/tenants/[id]/billing", () => {
   it("returns billing records", async () => {
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/billing"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/billing"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -50,7 +50,7 @@ describe("GET /api/tenants/[id]/billing", () => {
 
   it("returns empty array on no records", async () => {
     h.db.tenantBilling.findMany.mockResolvedValue([]);
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/billing"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/billing"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(0);

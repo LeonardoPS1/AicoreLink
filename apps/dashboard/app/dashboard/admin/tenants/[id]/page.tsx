@@ -13,10 +13,11 @@ async function toggleChannel(tenantId: string, channel: Channel, enabled: boolea
   revalidatePath(`/dashboard/admin/tenants/${tenantId}`);
 }
 
-export default async function TenantDetailPage({ params }: { params: { id: string } }) {
+export default async function TenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const tenant = await asAdmin((tx) =>
     tx.tenant.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { channels: true },
     })
   );

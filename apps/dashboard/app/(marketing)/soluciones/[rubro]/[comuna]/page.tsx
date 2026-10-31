@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,11 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { rubro: string; comuna: string };
+  params: Promise<{ rubro: string; comuna: string }>;
 }): Promise<Metadata> {
-  const rubroName = params.rubro.charAt(0).toUpperCase() + params.rubro.slice(1);
-  const comunaName = params.comuna
+  const { rubro, comuna } = await params;
+  const rubroName = rubro.charAt(0).toUpperCase() + rubro.slice(1);
+  const comunaName = comuna
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
@@ -31,10 +33,11 @@ export async function generateMetadata({
 export default async function SolucionPage({
   params,
 }: {
-  params: { rubro: string; comuna: string };
+  params: Promise<{ rubro: string; comuna: string }>;
 }) {
-  const rubroName = params.rubro.charAt(0).toUpperCase() + params.rubro.slice(1);
-  const comunaName = params.comuna
+  const { rubro, comuna } = await params;
+  const rubroName = rubro.charAt(0).toUpperCase() + rubro.slice(1);
+  const comunaName = comuna
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
@@ -97,12 +100,12 @@ export default async function SolucionPage({
       )}
 
       <div className="mt-12 text-center">
-        <a
+        <Link
           href="/#contacto"
           className="inline-block rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700"
         >
           Solicitar demo gratis
-        </a>
+        </Link>
       </div>
     </div>
   );

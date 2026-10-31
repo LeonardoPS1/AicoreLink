@@ -51,7 +51,7 @@ beforeEach(() => {
 
 describe("GET /api/tenants/[id]/branches", () => {
   it("returns branches", async () => {
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/branches"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/branches"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -63,7 +63,7 @@ describe("POST /api/tenants/[id]/branches", () => {
   it("creates a branch", async () => {
     const res = await POST(
       makeReq("http://localhost/api/tenants/t1/branches", { name: "Sede 2", address: "Addr 2", phone: "456" }, "POST"),
-      { params: { id: "t1" } }
+      { params: Promise.resolve({ id: "t1" }) }
     );
     expect(res.status).toBe(201);
     const body = await res.json();
@@ -75,7 +75,7 @@ describe("PATCH /api/tenants/[id]/branches/[branchId]", () => {
   it("updates a branch", async () => {
     const res = await PATCH(
       makeReq("http://localhost/api/tenants/t1/branches/b1", { active: false }, "PATCH"),
-      { params: { id: "t1", branchId: "b1" } }
+      { params: Promise.resolve({ id: "t1", branchId: "b1" }) }
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -87,7 +87,7 @@ describe("DELETE /api/tenants/[id]/branches/[branchId]", () => {
   it("deletes a branch", async () => {
     const res = await DELETE(
       makeReq("http://localhost/api/tenants/t1/branches/b1", undefined, "DELETE"),
-      { params: { id: "t1", branchId: "b1" } }
+      { params: Promise.resolve({ id: "t1", branchId: "b1" }) }
     );
     expect(res.status).toBe(200);
     const body = await res.json();

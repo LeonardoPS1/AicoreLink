@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe("GET /api/tenants/[id]/corrections", () => {
   it("returns corrections", async () => {
-    const res = await GET(makeReq("http://localhost/api/tenants/t1/corrections"), { params: { id: "t1" } });
+    const res = await GET(makeReq("http://localhost/api/tenants/t1/corrections"), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -53,7 +53,7 @@ describe("POST /api/tenants/[id]/corrections", () => {
   it("creates a correction", async () => {
     const res = await POST(
       makeReq("http://localhost/api/tenants/t1/corrections", { original: "wrong", correction: "right", context: "test" }, "POST"),
-      { params: { id: "t1" } }
+      { params: Promise.resolve({ id: "t1" }) }
     );
     expect(res.status).toBe(201);
     const body = await res.json();

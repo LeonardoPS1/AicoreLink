@@ -44,7 +44,7 @@ beforeEach(() => {
 
 describe("POST /api/tenants/[id]/owner-assistant", () => {
   it("returns summary with corrections", async () => {
-    const res = await POST(makeReq("http://localhost/api/tenants/t1/owner-assistant", { question: "¿Cómo va mi negocio?" }), { params: { id: "t1" } });
+    const res = await POST(makeReq("http://localhost/api/tenants/t1/owner-assistant", { question: "¿Cómo va mi negocio?" }), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.answer).toContain("1 leads recientes");
@@ -54,7 +54,7 @@ describe("POST /api/tenants/[id]/owner-assistant", () => {
 
   it("handles no corrections", async () => {
     h.db.correctionLog.findMany.mockResolvedValue([]);
-    const res = await POST(makeReq("http://localhost/api/tenants/t1/owner-assistant", { question: "Hola" }), { params: { id: "t1" } });
+    const res = await POST(makeReq("http://localhost/api/tenants/t1/owner-assistant", { question: "Hola" }), { params: Promise.resolve({ id: "t1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.answer).toContain("0 correcciones de aprendizaje");

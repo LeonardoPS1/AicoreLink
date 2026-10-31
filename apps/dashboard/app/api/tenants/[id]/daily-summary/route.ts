@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
  * GET /api/tenants/[id]/daily-summary
  * Returns a daily summary: new leads, appointments, conversations, recovered revenue.
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   try {
     const tenantId = params.id;
     const today = new Date();

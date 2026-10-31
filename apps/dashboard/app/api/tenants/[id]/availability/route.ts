@@ -12,7 +12,8 @@ const availabilitySchema = z.object({
  * GET /api/tenants/[id]/availability?date=YYYY-MM-DD&duration=30&professional=...
  * Returns available time slots for a given date.
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   try {
     const tenantId = params.id;
     const url = new URL(req.url);
