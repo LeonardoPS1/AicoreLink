@@ -47,20 +47,9 @@ describe("trackEvent", () => {
     expect(() => trackEvent("whatsapp_click", { label: "sticky" })).not.toThrow();
   });
 
-  it("does nothing outside the browser", () => {
-    const provider = installMockProvider();
-    const windowRef = globalThis.window;
-
-    vi.stubGlobal("window", undefined);
-    try {
-      trackEvent("cta_click", { label: "hero" });
-    } finally {
-      vi.unstubAllGlobals();
-    }
-
-    expect(provider).not.toHaveBeenCalled();
-    expect(globalThis.window).toBe(windowRef);
-  });
+  // The "outside the browser" guard lives in analytics.node.test.ts, which runs
+  // in the node environment (window is genuinely undefined there). Stubbing the
+  // global window in jsdom is not possible under the vmThreads pool.
 });
 
 describe("event helpers", () => {

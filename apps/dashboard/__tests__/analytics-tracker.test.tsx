@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import { AnalyticsTracker } from "@/components/marketing/analytics-tracker";
@@ -10,7 +10,18 @@ function installMockProvider() {
   return provider;
 }
 
+// jsdom has no navigation: an untamed <a> default action prints
+// "Not implemented: navigation to another Document" for every click. Cancelling
+// the default in the capture phase keeps the tracker's own listener running.
+let cancelNavigation: (event: MouseEvent) => void;
+
+beforeEach(() => {
+  cancelNavigation = (event) => event.preventDefault();
+  document.addEventListener("click", cancelNavigation, true);
+});
+
 afterEach(() => {
+  document.removeEventListener("click", cancelNavigation, true);
   setAnalyticsProvider(null);
   vi.restoreAllMocks();
 });
